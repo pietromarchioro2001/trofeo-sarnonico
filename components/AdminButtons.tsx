@@ -1,0 +1,939 @@
+// components/AdminButtons.tsx
+'use client';
+import { useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
+import { X, Upload, Trash2, Download, Eye } from 'lucide-react';
+
+// ==================== DATI MOCK ====================
+const TEAMS_BY_GROUP = {
+  A: [
+    { id: '1', name: 'TAIO' }, { id: '2', name: 'CAVARENO' }, { id: '3', name: 'CASTELFONDO' },
+    { id: '4', name: 'SARNONICO' }, { id: '5', name: 'LOVER' }, { id: '6', name: 'ROMALLO' },
+  ],
+  B: [
+    { id: '7', name: 'FONDO' }, { id: '8', name: "REVO'" }, { id: '9', name: 'ROMENO' },
+    { id: '10', name: 'CLOZ' }, { id: '11', name: 'DAMBEL' }, { id: '12', name: 'DON/AMBLAR' },
+  ],
+};
+
+const TEAMS_DATA = {
+  home: {
+    name: 'SARNONICO',
+    logo: '/logos/sarnonico.png',
+    players: [
+      { id: 'h1', name: 'Ialetonas', fullName: 'Marco Ialetonas' },
+      { id: 'h2', name: 'Mats Menie', fullName: 'Andrea Mats Menie' },
+      { id: 'h3', name: 'L. Zucal', fullName: 'Luca Zucal' },
+      { id: 'h4', name: 'M. Rossi', fullName: 'Marco Rossi' },
+      { id: 'h5', name: 'G. Bianchi', fullName: 'Giovanni Bianchi' },
+    ]
+  },
+  away: {
+    name: 'RALO',
+    logo: '/logos/ralo.png',
+    players: [
+      { id: 'a1', name: 'Zeraere', fullName: 'Simone Zeraere' },
+      { id: 'a2', name: 'Balnoi', fullName: 'Marco Balnoi' },
+      { id: 'a3', name: 'Tizio', fullName: 'Luigi Tizio' },
+      { id: 'a4', name: 'Caio', fullName: 'Caio Sempronio' },
+      { id: 'a5', name: 'Sempronio', fullName: 'Sempronio Caio' },
+    ]
+  }
+};
+
+// ==================== TIPI DATI (NUOVI) ====================
+export interface UploadedDocument {
+  id: string;
+  url: string;
+  fileName: string;
+  uploadedAt: string;
+  uploadedBy: string;
+}
+
+export interface TeamLiberatorie {
+  teamId: string;
+  teamName: string;
+  documents: UploadedDocument[];
+}
+
+export interface AlboDoroData {
+  year: number;
+  winner: string;
+  runnerUp: string;
+  topScorer: { name: string; team: string; goals: number };
+  mvp: { name: string; team: string };
+  groupStandings: any[];
+  playoffBracket: any[];
+}
+
+export interface EventoProloco {
+  id: string;
+  url: string;
+  type: 'image' | 'pdf';
+  uploadedAt: string;
+}
+
+export interface Sponsor {
+  id: string;
+  logoUrl: string;
+  name: string;
+  website?: string;
+}
+
+export interface ContattiData {
+  phone: string;
+  email: string;
+  facebook?: string;
+  instagram?: string;
+  whatsapp?: string;
+}
+
+// ==================== TIPI DATI ESISTENTI ====================
+interface PenaltyKick {
+  team: 'home' | 'away';
+  scored: boolean;
+  kickerId: string;
+}
+
+interface PenaltyShootoutPopupProps {
+  homeTeam: { name: string; logo: string };
+  awayTeam: { name: string; logo: string };
+  isAdmin: boolean;
+  onClose: (winner: 'home' | 'away' | null) => void;
+}
+
+// ... (Tutti i componenti esistenti rimangono invariati qui sotto) ...
+
+export const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
+  homeTeam, awayTeam, isAdmin, onClose
+}) => {
+  const [started, setStarted] = useState(false);
+  const [firstKicker, setFirstKicker] = useState<'home' | 'away' | null>(null);
+  const [penaltyScore, setPenaltyScore] = useState({ home: 0, away: 0 });
+  const [kicks, setKicks] = useState<PenaltyKick[]>([]);
+  const [currentKick, setCurrentKick] = useState(0);
+  const [lightState, setLightState] = useState<'none' | 'green' | 'red'>('none');
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleFirstKickerSelect = (team: 'home' | 'away') => { setFirstKicker(team); setStarted(true); };
+
+  const handleKick = (scored: boolean) => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    const kickingTeam = currentKick % 2 === 0 ? (firstKicker === 'home' ? 'home' : 'away') : (firstKicker === 'home' ? 'away' : 'home');
+    setLightState(scored ? 'green' : 'red');
+    setTimeout(() => {
+      setKicks([...kicks, { team: kickingTeam, scored, kickerId: `kick-${currentKick}` }]);
+      if (scored) setPenaltyScore(prev => ({ ...prev, [kickingTeam]: prev[kickingTeam] + 1 }));
+      setCurrentKick(prev => prev + 1);
+      setLightState('none');
+      setIsProcessing(false);
+    }, 3000);
+  };
+
+  const handleEnd = () => {
+    const winner = penaltyScore.home > penaltyScore.away ? 'home' : penaltyScore.away > penaltyScore.home ? 'away' : null;
+    onClose(winner);
+  };
+
+  const getTeamKicks = (team: 'home' | 'away') => kicks.filter(kick => kick.team === team);
+
+  if (!started || !firstKicker) {
+    return (
+      <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+          <div className="bg-[#581C24] p-4"><h2 className="text-lg font-black text-white uppercase tracking-wider text-center">Calci di Rigore</h2></div>
+          <div className="p-6">
+            <p className="text-center text-sm font-bold text-gray-600 mb-4 uppercase">Chi inizia i rigori?</p>
+            <div className="flex gap-4">
+              <button onClick={() => handleFirstKickerSelect('home')} className="flex-1 flex flex-col items-center gap-3 p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors border-2 border-gray-200">
+                <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center"><span className="text-[10px] text-gray-500">LOGO</span></div>
+                <span className="font-bold text-sm text-[#581C24]">{homeTeam.name}</span>
+              </button>
+              <button onClick={() => handleFirstKickerSelect('away')} className="flex-1 flex flex-col items-center gap-3 p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors border-2 border-gray-200">
+                <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center"><span className="text-[10px] text-gray-500">LOGO</span></div>
+                <span className="font-bold text-sm text-[#581C24]">{awayTeam.name}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div className="bg-[#581C24] p-4"><h2 className="text-lg font-black text-white uppercase tracking-wider text-center">Calci di Rigore</h2></div>
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex-1 flex flex-col items-center">
+              <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center mb-2"><span className="text-[8px] text-gray-500">LOGO</span></div>
+              <span className="font-bold text-xs text-[#581C24]">{homeTeam.name}</span>
+            </div>
+            <div className="flex items-center gap-4 px-6">
+              <span className="text-4xl font-black text-[#581C24]">{penaltyScore.home}</span>
+              <span className="text-2xl text-gray-400">-</span>
+              <span className="text-4xl font-black text-[#581C24]">{penaltyScore.away}</span>
+            </div>
+            <div className="flex-1 flex flex-col items-center">
+              <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center mb-2"><span className="text-[8px] text-gray-500">LOGO</span></div>
+              <span className="font-bold text-xs text-[#581C24]">{awayTeam.name}</span>
+            </div>
+          </div>
+          <div className="flex justify-center mb-6">
+            <div className={`w-20 h-20 rounded-full border-4 transition-all duration-300 ${lightState === 'green' ? 'bg-green-500 border-green-700 shadow-lg shadow-green-500/50' : lightState === 'red' ? 'bg-red-600 border-red-800 shadow-lg shadow-red-600/50' : 'bg-gray-300 border-gray-400'}`} />
+          </div>
+          <div className="flex justify-between mb-6 px-4">
+            <div className="flex-1 space-y-2">{getTeamKicks('home').map((kick, idx) => (<div key={idx} className="flex items-center justify-center"><div className={`w-3 h-3 rounded-full ${kick.scored ? 'bg-green-500' : 'bg-red-600'}`} /></div>))}</div>
+            <div className="flex-1 space-y-2">{getTeamKicks('away').map((kick, idx) => (<div key={idx} className="flex items-center justify-center"><div className={`w-3 h-3 rounded-full ${kick.scored ? 'bg-green-500' : 'bg-red-600'}`} /></div>))}</div>
+          </div>
+          {isAdmin && (
+            <>
+              <div className="flex gap-3 mb-4">
+                <button onClick={() => handleKick(false)} disabled={isProcessing} className="flex-1 bg-red-600 text-white font-bold py-3 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 text-sm uppercase">Sbagliato</button>
+                <button onClick={() => handleKick(true)} disabled={isProcessing} className="flex-1 bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 text-sm uppercase">Gol</button>
+              </div>
+              <button onClick={handleEnd} className="w-full bg-gray-600 text-white font-bold py-2.5 rounded-lg hover:bg-gray-700 transition-colors text-sm uppercase">Fine</button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+interface AdminMatchControlsProps {
+  matchStatus: 'PROGRAMMATA' | 'LIVE' | 'SUPP' | 'TERMINATA' | 'RIGORI';
+  isFinalPhase: boolean;
+  matchId: string;
+  homeTeam: { name: string; logo: string };
+  awayTeam: { name: string; logo: string };
+  currentScore: { home: number; away: number };
+  onStatusChange: (status: 'PROGRAMMATA' | 'LIVE' | 'SUPP' | 'TERMINATA' | 'RIGORI') => void;
+}
+
+export const AdminMatchControls: React.FC<AdminMatchControlsProps> = ({ matchStatus, isFinalPhase, matchId, homeTeam, awayTeam, currentScore, onStatusChange }) => {
+  const [showPenaltyPopup, setShowPenaltyPopup] = useState(false);
+  const handleStartMatch = () => { if (confirm('Iniziare la partita?')) onStatusChange('LIVE'); };
+  const handleExtraTime = () => { if (confirm('Passare ai tempi supplementari?')) onStatusChange('SUPP'); };
+  const handlePenalties = () => { setShowPenaltyPopup(true); };
+  const handleEndMatch = () => { if (confirm('Terminare la partita? Verranno calcolate classifica e statistiche.')) { onStatusChange('TERMINATA'); console.log('Partita terminata'); } };
+  const handlePenaltyEnd = (winner: 'home' | 'away' | null) => { setShowPenaltyPopup(false); if (winner) console.log(`Vincitore ai rigori: ${winner === 'home' ? homeTeam.name : awayTeam.name}`); onStatusChange('TERMINATA'); };
+  const getButtonLabel = () => { if (matchStatus === 'PROGRAMMATA') return 'INIZIA'; if (matchStatus === 'LIVE') return 'TERMINA'; if (matchStatus === 'SUPP') return 'RIGORI'; return ''; };
+  const getExtraTimeButtonLabel = () => { if (matchStatus === 'LIVE' && isFinalPhase && currentScore.home === currentScore.away) return 'SUPPLEMENTARI'; return null; };
+  const extraTimeLabel = getExtraTimeButtonLabel();
+
+  return (
+    <>
+      <div className="flex gap-2">
+        {matchStatus !== 'TERMINATA' && (
+          <>
+            <button onClick={matchStatus === 'PROGRAMMATA' ? handleStartMatch : handleEndMatch} className={`px-4 py-2 rounded-lg font-bold text-xs uppercase transition-colors shadow-lg ${matchStatus === 'PROGRAMMATA' ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-red-600 text-white hover:bg-red-700'}`}>{getButtonLabel()}</button>
+            {extraTimeLabel && <button onClick={handleExtraTime} className="px-4 py-2 bg-orange-600 text-white rounded-lg font-bold text-xs uppercase hover:bg-orange-700 transition-colors shadow-lg">{extraTimeLabel}</button>}
+            {matchStatus === 'SUPP' && <button onClick={handlePenalties} className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold text-xs uppercase hover:bg-purple-700 transition-colors shadow-lg">RIGORI</button>}
+          </>
+        )}
+      </div>
+      {showPenaltyPopup && <PenaltyShootoutPopup homeTeam={homeTeam} awayTeam={awayTeam} isAdmin={true} onClose={handlePenaltyEnd} />}
+    </>
+  );
+};
+
+export const AdminPartiteButton = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<'A' | 'B'>('A');
+  const [homeTeam, setHomeTeam] = useState('');
+  const [awayTeam, setAwayTeam] = useState('');
+  const [matchDate, setMatchDate] = useState('');
+  const [matchTime, setMatchTime] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSave = () => {
+    if (!homeTeam || !awayTeam || !matchDate || !matchTime) { setError('️ Compila tutti i campi!'); return; }
+    if (homeTeam === awayTeam) { setError('⚠️ Le squadre devono essere diverse!'); return; }
+    const newMatch = {
+      id: Date.now().toString(),
+      homeTeam: TEAMS_BY_GROUP[selectedGroup].find(t => t.id === homeTeam)?.name || '',
+      awayTeam: TEAMS_BY_GROUP[selectedGroup].find(t => t.id === awayTeam)?.name || '',
+      date: matchDate.toUpperCase().replace(/\s+/g, ' '),
+      fullDate: new Date(matchDate).toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' }),
+      time: matchTime,
+      group: `GIRONE ${selectedGroup}`,
+      score: { home: 0, away: 0 },
+      isLive: false, isScheduled: true, status: 'PROGRAMMATA'
+    };
+    console.log(' Nuova partita creata:', newMatch);
+    alert(`✅ Partita creata:\n${newMatch.homeTeam} vs ${newMatch.awayTeam}\n${newMatch.fullDate} • ${newMatch.time}`);
+    setIsOpen(false); resetForm();
+  };
+  const resetForm = () => { setHomeTeam(''); setAwayTeam(''); setMatchDate(''); setMatchTime(''); setError(''); setSelectedGroup('A'); };
+  const handleClose = () => { setIsOpen(false); resetForm(); };
+
+  return (
+    <>
+      <div className="px-3 sm:px-4 mb-2">
+        <button onClick={() => setIsOpen(true)} className="bg-[#581C24] text-white font-bold py-1.5 px-3 rounded-lg shadow-lg hover:bg-[#581C24]/90 transition-colors flex items-center gap-1.5 text-xs">
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+          NUOVA PARTITA
+        </button>
+      </div>
+      {isOpen && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm" onClick={handleClose}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-[#581C24] p-4 flex items-center justify-between">
+              <h2 className="text-lg font-black text-white uppercase tracking-wider">Nuova Partita</h2>
+              <button onClick={handleClose} className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/20 transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-600 uppercase mb-2">Girone</label>
+                <div className="flex gap-2">
+                  <button onClick={() => { setSelectedGroup('A'); setHomeTeam(''); setAwayTeam(''); }} className={`flex-1 py-2 px-4 rounded-lg font-bold text-sm transition-all ${selectedGroup === 'A' ? 'bg-[#581C24] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>GIRONE A</button>
+                  <button onClick={() => { setSelectedGroup('B'); setHomeTeam(''); setAwayTeam(''); }} className={`flex-1 py-2 px-4 rounded-lg font-bold text-sm transition-all ${selectedGroup === 'B' ? 'bg-[#581C24] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>GIRONE B</button>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 uppercase mb-2">Squadra Casa</label>
+                  <select value={homeTeam} onChange={(e) => setHomeTeam(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm font-bold">
+                    <option value="">Seleziona...</option>
+                    {TEAMS_BY_GROUP[selectedGroup].map((team) => (<option key={team.id} value={team.id}>{team.name}</option>))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 uppercase mb-2">Squadra Ospite</label>
+                  <select value={awayTeam} onChange={(e) => setAwayTeam(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm font-bold">
+                    <option value="">Seleziona...</option>
+                    {TEAMS_BY_GROUP[selectedGroup].map((team) => (<option key={team.id} value={team.id}>{team.name}</option>))}
+                  </select>
+                </div>
+              </div>
+              <div className="flex items-center justify-center text-[#581C24] font-black text-lg">VS</div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Data</label><input type="date" value={matchDate} onChange={(e) => setMatchDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm" /></div>
+                <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Ora</label><input type="time" value={matchTime} onChange={(e) => setMatchTime(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm" /></div>
+              </div>
+              {error && <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs font-bold text-center">{error}</div>}
+            </div>
+            <div className="p-4 border-t border-gray-200 flex gap-3">
+              <button onClick={handleClose} className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 font-bold rounded-lg hover:bg-gray-50 transition-colors text-sm">Annulla</button>
+              <button onClick={handleSave} className="flex-1 px-4 py-2.5 bg-[#581C24] text-white font-bold rounded-lg hover:bg-[#581C24]/90 transition-colors text-sm shadow-md">SALVA</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+interface AdminMVPSelectorProps { onSave: (playerIds: string[]) => void; }
+export const AdminMVPSelector: React.FC<AdminMVPSelectorProps> = ({ onSave }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
+  const togglePlayer = (playerId: string) => {
+    if (selectedPlayers.includes(playerId)) setSelectedPlayers(selectedPlayers.filter(id => id !== playerId));
+    else { if (selectedPlayers.length < 3) setSelectedPlayers([...selectedPlayers, playerId]); else alert('Puoi selezionare massimo 3 giocatori'); }
+  };
+  const handleSave = () => { if (selectedPlayers.length === 0) { alert('Seleziona almeno un giocatore'); return; } onSave(selectedPlayers); setIsOpen(false); setSelectedPlayers([]); };
+  const handleClose = () => { setIsOpen(false); setSelectedPlayers([]); };
+  return (
+    <>
+      <button onClick={() => setIsOpen(true)} className="text-[10px] font-bold text-[#581C24] bg-[#581C24]/10 px-3 py-1.5 rounded-full border border-[#581C24]/20 hover:bg-[#581C24]/20 transition-colors flex items-center gap-1">
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+      </button>
+      {isOpen && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm" onClick={handleClose}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-[#581C24] p-3 flex items-center justify-between">
+              <h2 className="text-base font-black text-white uppercase tracking-wider">Seleziona Candidati MVP</h2>
+              <button onClick={handleClose} className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/20 transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <div className="p-3">
+              <div className="text-center text-xs font-bold text-gray-600 mb-3">Selezionati: {selectedPlayers.length}/3</div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <h3 className="text-[#581C24] font-bold text-xs uppercase tracking-wider mb-2">SARNONICO</h3>
+                  <div className="space-y-1">{['Ialetonas', 'Mats Menie', 'L. Zucal', 'M. Rossi', 'G. Bianchi'].map((player) => (<button key={player} onClick={() => togglePlayer(`h-${player}`)} className={`w-full text-left px-2 py-1.5 rounded text-xs transition-colors ${selectedPlayers.includes(`h-${player}`) ? 'bg-[#581C24] text-white font-bold' : 'bg-gray-50 hover:bg-gray-100'}`}>{player}</button>))}</div>
+                </div>
+                <div>
+                  <h3 className="text-[#581C24] font-bold text-xs uppercase tracking-wider mb-2">RALO</h3>
+                  <div className="space-y-1">{['Zeraere', 'Balnoi', 'Tizio', 'Caio', 'Sempronio'].map((player) => (<button key={player} onClick={() => togglePlayer(`a-${player}`)} className={`w-full text-left px-2 py-1.5 rounded text-xs transition-colors ${selectedPlayers.includes(`a-${player}`) ? 'bg-[#581C24] text-white font-bold' : 'bg-gray-50 hover:bg-gray-100'}`}>{player}</button>))}</div>
+                </div>
+              </div>
+            </div>
+            <div className="p-3 border-t border-gray-200 flex gap-2">
+              <button onClick={handleClose} className="flex-1 px-3 py-2 border border-gray-300 text-gray-700 font-bold rounded-lg hover:bg-gray-50 transition-colors text-xs">Annulla</button>
+              <button onClick={handleSave} className="flex-1 px-3 py-2 bg-[#581C24] text-white font-bold rounded-lg hover:bg-[#581C24]/90 transition-colors text-xs shadow-md">INVIA</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+interface AdminStopVotingProps { onStop: () => void; }
+export const AdminStopVoting: React.FC<AdminStopVotingProps> = ({ onStop }) => {
+  const handleStop = () => { if (confirm('Vuoi concludere la votazione?')) onStop(); };
+  return (
+    <button onClick={handleStop} className="text-[10px] font-bold text-red-700 bg-red-50 px-3 py-1.5 rounded-full border border-red-200 hover:bg-red-100 transition-colors flex items-center gap-1">
+      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" /></svg>
+    </button>
+  );
+};
+
+interface AdminAddEventProps { teamSide: 'home' | 'away'; onAddEvent: (event: { type: string; playerId: string; minute: number; teamSide: 'home' | 'away' }) => void; }
+export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, onAddEvent }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [eventType, setEventType] = useState('');
+  const [selectedPlayer, setSelectedPlayer] = useState('');
+  const [minute, setMinute] = useState('');
+  const [error, setError] = useState('');
+  const team = teamSide === 'home' ? TEAMS_DATA.home : TEAMS_DATA.away;
+  const handleSave = () => {
+    if (!eventType || !selectedPlayer || !minute) { setError('⚠️ Compila tutti i campi!'); return; }
+    onAddEvent({ type: eventType, playerId: selectedPlayer, minute: parseInt(minute), teamSide });
+    setIsOpen(false); setEventType(''); setSelectedPlayer(''); setMinute(''); setError('');
+  };
+  const handleClose = () => { setIsOpen(false); setEventType(''); setSelectedPlayer(''); setMinute(''); setError(''); };
+  return (
+    <>
+      <button onClick={() => setIsOpen(true)} className="text-[10px] font-bold text-[#581C24] bg-[#581C24]/10 px-3 py-1.5 rounded-full border border-[#581C24]/20 hover:bg-[#581C24]/20 transition-colors flex items-center gap-1">
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+        EVENTO
+      </button>
+      {isOpen && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm" onClick={handleClose}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-[#581C24] p-3 flex items-center justify-between">
+              <h2 className="text-base font-black text-white uppercase tracking-wider">Evento - {team.name}</h2>
+              <button onClick={handleClose} className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/20 transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <div className="p-4 space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-gray-600 uppercase mb-2">Tipo Evento</label>
+                <select value={eventType} onChange={(e) => setEventType(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm font-bold">
+                  <option value="">Seleziona...</option>
+                  <option value="goal">⚽ GOL</option>
+                  <option value="yellow">🟨 AMMONIZIONE</option>
+                  <option value="red">🟥 ESPULSIONE</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 uppercase mb-2">Giocatore</label>
+                <select value={selectedPlayer} onChange={(e) => setSelectedPlayer(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm font-bold">
+                  <option value="">Seleziona...</option>
+                  {team.players.map((player) => (<option key={player.id} value={player.id}>{player.name}</option>))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 uppercase mb-2">Minuto</label>
+                <input type="number" min="1" max="120" value={minute} onChange={(e) => setMinute(e.target.value)} placeholder="Es: 45" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm" />
+              </div>
+              {error && <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs font-bold text-center">{error}</div>}
+            </div>
+            <div className="p-3 border-t border-gray-200 flex gap-2">
+              <button onClick={handleClose} className="flex-1 px-3 py-2 border border-gray-300 text-gray-700 font-bold rounded-lg hover:bg-gray-50 transition-colors text-xs">Annulla</button>
+              <button onClick={handleSave} className="flex-1 px-3 py-2 bg-[#581C24] text-white font-bold rounded-lg hover:bg-[#581C24]/90 transition-colors text-xs shadow-md">SALVA</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+export const AdminSquadreButton = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [teamName, setTeamName] = useState('');
+  const [group, setGroup] = useState('');
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [error, setError] = useState('');
+  const handleSave = () => {
+    if (!teamName || !group || !logoFile || !photoFile) { setError('⚠️ Compila tutti i campi e carica le immagini!'); return; }
+    const newTeam = { id: Date.now().toString(), name: teamName.toUpperCase(), group: `GIRONE ${group}`, logo: URL.createObjectURL(logoFile), photo: URL.createObjectURL(photoFile) };
+    console.log('✅ Nuova squadra creata:', newTeam);
+    alert(`✅ Squadra creata con successo!\n\nNome: ${newTeam.name}\nGirone: ${newTeam.group}`);
+    setIsOpen(false); resetForm();
+  };
+  const resetForm = () => { setTeamName(''); setGroup(''); setLogoFile(null); setPhotoFile(null); setError(''); };
+  const handleClose = () => { setIsOpen(false); resetForm(); };
+  return (
+    <>
+      <div className="px-3 sm:px-4 mb-2">
+        <button onClick={() => setIsOpen(true)} className="bg-[#581C24] text-white font-bold py-1.5 px-3 rounded-lg shadow-lg hover:bg-[#581C24]/90 transition-colors flex items-center gap-1.5 text-xs uppercase">
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+          NUOVA SQUADRA
+        </button>
+      </div>
+      {isOpen && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm" onClick={handleClose}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-[#581C24] p-4 flex items-center justify-between">
+              <h2 className="text-lg font-black text-white uppercase tracking-wider">Nuova Squadra</h2>
+              <button onClick={handleClose} className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/20 transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Nome Squadra</label><input type="text" value={teamName} onChange={(e) => setTeamName(e.target.value)} placeholder="Nome squadra" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm placeholder:text-gray-400" /></div>
+              <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Girone</label><select value={group} onChange={(e) => setGroup(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm font-bold"><option value="">Seleziona Girone...</option><option value="A">GIRONE A</option><option value="B">GIRONE B</option></select></div>
+              <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Logo Squadra</label><input type="file" accept="image/*" onChange={(e) => setLogoFile(e.target.files ? e.target.files[0] : null)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-[#581C24] file:text-white hover:file:bg-[#581C24]/90 cursor-pointer" />{logoFile && <p className="text-xs text-green-700 mt-1 font-medium">✓ {logoFile.name}</p>}</div>
+              <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Foto Squadra</label><input type="file" accept="image/*" onChange={(e) => setPhotoFile(e.target.files ? e.target.files[0] : null)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-[#581C24] file:text-white hover:file:bg-[#581C24]/90 cursor-pointer" />{photoFile && <p className="text-xs text-green-700 mt-1 font-medium">✓ {photoFile.name}</p>}</div>
+              {error && <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs font-bold text-center">{error}</div>}
+            </div>
+            <div className="p-4 border-t border-gray-200 flex gap-3">
+              <button onClick={handleClose} className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 font-bold rounded-lg hover:bg-gray-50 transition-colors text-sm uppercase">Annulla</button>
+              <button onClick={handleSave} className="flex-1 px-4 py-2.5 bg-[#581C24] text-white font-bold rounded-lg hover:bg-[#581C24]/90 transition-colors text-sm shadow-md uppercase">SALVA</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+interface AdminTeamEditorProps { name: string; group: string; logo: string; onUpdate: (field: 'name' | 'group' | 'logo', value: string) => void; }
+export const AdminTeamEditor: React.FC<AdminTeamEditorProps> = ({ name, group, logo, onUpdate }) => {
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [tempName, setTempName] = useState(name);
+  const [isEditingGroup, setIsEditingGroup] = useState(false);
+  const [tempGroup, setTempGroup] = useState(group);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => { setTempName(name); setTempGroup(group); }, [name, group]);
+  const handleNameSave = () => { if (tempName.trim() !== '') onUpdate('name', tempName.trim().toUpperCase()); else setTempName(name); setIsEditingName(false); };
+  const handleGroupSave = (newGroup: string) => { onUpdate('group', newGroup); setIsEditingGroup(false); };
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => { const file = e.target.files?.[0]; if (file) onUpdate('logo', URL.createObjectURL(file)); };
+  return (
+    <div className="bg-white rounded-xl shadow-lg p-4 flex items-center gap-3">
+      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 cursor-pointer hover:bg-gray-200 transition-colors relative overflow-hidden group" onClick={() => logoInputRef.current?.click()} title="Clicca per cambiare il logo">
+        <input type="file" ref={logoInputRef} className="hidden" accept="image/*" onChange={handleLogoChange} />
+        {logo ? <Image src={logo} alt="Logo" fill className="object-cover rounded-full" /> : <span className="text-[10px] text-gray-400">LOGO</span>}
+        <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+        </div>
+      </div>
+      <div className="flex-1">
+        {isEditingName ? (
+          <input type="text" value={tempName} onChange={(e) => setTempName(e.target.value)} onBlur={handleNameSave} onKeyDown={(e) => e.key === 'Enter' && handleNameSave()} autoFocus className="text-2xl font-black text-[#581C24] uppercase tracking-wider bg-gray-100 border-2 border-[#581C24] rounded px-2 py-1 w-full focus:outline-none" />
+        ) : (
+          <h1 className="text-2xl font-black text-[#581C24] uppercase tracking-wider cursor-pointer hover:bg-gray-100 rounded px-1 -ml-1 transition-colors block" onClick={() => setIsEditingName(true)} title="Clicca per modificare il nome">{name}</h1>
+        )}
+        {isEditingGroup ? (
+          <select value={tempGroup} onChange={(e) => handleGroupSave(e.target.value)} onBlur={() => setIsEditingGroup(false)} autoFocus className="text-sm font-bold text-gray-600 uppercase bg-gray-100 border-2 border-[#581C24] rounded px-2 py-0.5 focus:outline-none mt-1 block">
+            <option value="GIRONE A">GIRONE A</option>
+            <option value="GIRONE B">GIRONE B</option>
+          </select>
+        ) : (
+          <p className="text-sm font-bold text-gray-600 uppercase cursor-pointer hover:bg-gray-100 rounded px-1 -ml-1 transition-colors block mt-1" onClick={() => setIsEditingGroup(true)} title="Clicca per modificare il girone">{group}</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+interface AdminTeamPhotoEditorProps { teamPhoto: string; onUpdate: (url: string) => void; }
+export const AdminTeamPhotoEditor: React.FC<AdminTeamPhotoEditorProps> = ({ teamPhoto, onUpdate }) => {
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => { const file = e.target.files?.[0]; if (file) onUpdate(URL.createObjectURL(file)); };
+  return (
+    <div className="rounded-xl overflow-hidden shadow-md bg-gray-300 relative h-40 cursor-pointer group" onClick={() => photoInputRef.current?.click()}>
+      <input type="file" ref={photoInputRef} className="hidden" accept="image/*" onChange={handlePhotoChange} />
+      {teamPhoto ? <Image src={teamPhoto} alt="Foto Squadra" fill className="object-cover" /> : <div className="absolute inset-0 flex items-center justify-center"><span className="text-gray-500 text-sm font-medium">FOTO SQUADRA</span></div>}
+      <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex flex-col items-center text-white">
+          <svg className="w-8 h-8 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+          <span className="text-xs font-bold uppercase">Cambia Foto Squadra</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+interface PlayerData { photo?: string; firstName: string; lastName: string; number: string; birthDate: string; }
+interface AdminPlayerEditorProps { player?: PlayerData | null; isOpen: boolean; onClose: () => void; onSave: (player: PlayerData) => void; }
+export const AdminPlayerEditor: React.FC<AdminPlayerEditorProps> = ({ player, isOpen, onClose, onSave }) => {
+  const [formData, setFormData] = useState<PlayerData>({ photo: '', firstName: '', lastName: '', number: '-', birthDate: '' });
+  const [error, setError] = useState('');
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (player) setFormData({ photo: player.photo || '', firstName: player.firstName || '', lastName: player.lastName || '', number: player.number || '-', birthDate: player.birthDate || '' });
+    else setFormData({ photo: '', firstName: '', lastName: '', number: '-', birthDate: '' });
+    setError('');
+  }, [player, isOpen]);
+  const handleSave = () => {
+    if (!formData.firstName.trim() || !formData.lastName.trim()) { setError('️ Inserisci nome e cognome!'); return; }
+    onSave({ ...formData, firstName: formData.firstName.trim(), lastName: formData.lastName.trim() });
+    onClose();
+  };
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => { const file = e.target.files?.[0]; if (file) setFormData(prev => ({ ...prev, photo: URL.createObjectURL(file) })); };
+  if (!isOpen) return null;
+  const isEditing = !!player;
+  return (
+    <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="bg-[#581C24] p-4 flex items-center justify-between">
+          <h2 className="text-lg font-black text-white uppercase tracking-wider">{isEditing ? 'Modifica Giocatore' : 'Nuovo Giocatore'}</h2>
+          <button onClick={onClose} className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/20 transition-colors"><X size={20} /></button>
+        </div>
+        <div className="p-6 space-y-4">
+          <div className="flex justify-center">
+            <div className="w-32 h-32 bg-gray-200 rounded-xl flex items-center justify-center cursor-pointer hover:bg-gray-300 transition-colors relative overflow-hidden group" onClick={() => photoInputRef.current?.click()}>
+              <input type="file" ref={photoInputRef} className="hidden" accept="image/*" onChange={handlePhotoChange} />
+              {formData.photo ? <Image src={formData.photo} alt="Foto" fill className="object-cover" /> : <span className="text-sm text-gray-400 font-medium">FOTO</span>}
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+              </div>
+            </div>
+          </div>
+          <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Nome</label><input type="text" value={formData.firstName} onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))} placeholder="Nome" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm placeholder:text-gray-400" /></div>
+          <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Cognome</label><input type="text" value={formData.lastName} onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))} placeholder="Cognome" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm placeholder:text-gray-400" /></div>
+          <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Numero di maglia</label><input type="text" value={formData.number} onChange={(e) => setFormData(prev => ({ ...prev, number: e.target.value }))} placeholder="-" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm placeholder:text-gray-400" /></div>
+          <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Data di nascita</label><input type="date" value={formData.birthDate} onChange={(e) => setFormData(prev => ({ ...prev, birthDate: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm" /></div>
+          {error && <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs font-bold text-center">{error}</div>}
+        </div>
+        <div className="p-4 border-t border-gray-200 flex gap-3">
+          <button onClick={onClose} className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 font-bold rounded-lg hover:bg-gray-50 transition-colors text-sm uppercase">Annulla</button>
+          <button onClick={handleSave} className="flex-1 px-4 py-2.5 bg-[#581C24] text-white font-bold rounded-lg hover:bg-[#581C24]/90 transition-colors text-sm shadow-md uppercase">SALVA</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+interface AdminAddPlayerButtonProps { onAdd: (player: PlayerData) => void; }
+export const AdminAddPlayerButton: React.FC<AdminAddPlayerButtonProps> = ({ onAdd }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <>
+      <button onClick={() => setIsOpen(true)} className="text-[10px] font-bold text-[#581C24] bg-[#581C24]/10 px-3 py-1.5 rounded-full border border-[#581C24]/20 hover:bg-[#581C24]/20 transition-colors flex items-center gap-1">
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+      </button>
+      <AdminPlayerEditor player={null} isOpen={isOpen} onClose={() => setIsOpen(false)} onSave={(player) => { onAdd(player); setIsOpen(false); }} />
+    </>
+  );
+};
+
+// ========================================================================
+// NUOVI COMPONENTI PER PAGINA "ALTRO" (SOLO STAFF PER ORA)
+// ========================================================================
+
+interface AdminLiberatorieManagerProps {
+  teams: TeamLiberatorie[];
+  templateDoc?: UploadedDocument;
+  userRole: 'staff' | 'captain';
+  userTeamId?: string;
+  onUpdate: (teams: TeamLiberatorie[]) => void;
+  onTemplateUpload: (doc: UploadedDocument) => void;
+}
+
+export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = ({
+  teams, templateDoc, userRole, userTeamId, onUpdate, onTemplateUpload
+}) => {
+  const [selectedTeam, setSelectedTeam] = useState<TeamLiberatorie | null>(null);
+  const [showTemplateUpload, setShowTemplateUpload] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleTemplateUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      onTemplateUpload({
+        id: Date.now().toString(), url: URL.createObjectURL(file), fileName: file.name,
+        uploadedAt: new Date().toISOString(), uploadedBy: 'staff'
+      });
+      setShowTemplateUpload(false);
+    }
+  };
+
+  const handleTeamDocumentUpload = (teamId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      onUpdate(teams.map(team =>
+        team.teamId === teamId ? { ...team, documents: [...team.documents, {
+          id: Date.now().toString(), url: URL.createObjectURL(file), fileName: file.name,
+          uploadedAt: new Date().toISOString(), uploadedBy: userRole
+        }] } : team
+      ));
+    }
+  };
+
+  const handleDeleteDocument = (teamId: string, docId: string) => {
+    onUpdate(teams.map(team =>
+      team.teamId === teamId ? { ...team, documents: team.documents.filter(d => d.id !== docId) } : team
+    ));
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* 1. DOWNLOAD MODELLO (Visibile a TUTTI se esiste) */}
+      {templateDoc && (
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <h3 className="text-sm font-bold text-[#581C24] uppercase mb-3">Modello da Compilare</h3>
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-3">
+              <Download className="w-5 h-5 text-[#581C24]" />
+              <span className="text-sm font-medium">{templateDoc.fileName}</span>
+            </div>
+            <a 
+              href={templateDoc.url} 
+              download 
+              className="px-3 py-1.5 bg-[#581C24] text-white text-xs font-bold rounded-lg hover:bg-[#581C24]/90 transition-colors flex items-center gap-1"
+            >
+              <Download className="w-3.5 h-3.5" /> Scarica
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* 2. GESTIONE TEMPLATE (Solo Staff) */}
+      {userRole === 'staff' && (
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <h3 className="text-sm font-bold text-[#581C24] uppercase mb-3">Gestione Modello (Solo Staff)</h3>
+          {templateDoc ? (
+            <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-100">
+              <span className="text-xs font-medium text-red-700">Il modello è già caricato. Puoi sostituirlo o eliminarlo.</span>
+              <button onClick={() => onTemplateUpload({} as any)} className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors">
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => setShowTemplateUpload(true)} className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-[#581C24] hover:text-[#581C24] transition-colors text-sm font-medium">
+              + Carica Nuovo Modello
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* 3. LISTA SQUADRE E UPLOAD DOCUMENTI */}
+      <div className="space-y-2">
+        <h3 className="text-sm font-bold text-[#581C24] uppercase">
+          {userRole === 'staff' ? 'Gestione Liberatorie Squadre' : 'Carica le tue Liberatorie'}
+        </h3>
+        {teams.map(team => {
+          const hasDocs = team.documents.length > 0;
+          const canEdit = userRole === 'staff' || (userRole === 'captain' && team.teamId === userTeamId);
+          
+          return (
+            <div 
+              key={team.teamId} 
+              onClick={() => canEdit && setSelectedTeam(team)} 
+              className={`bg-white rounded-xl p-4 shadow-sm border flex items-center justify-between transition-all ${
+                canEdit 
+                  ? 'border-gray-100 cursor-pointer hover:shadow-md hover:border-[#581C24]/30' 
+                  : 'border-gray-100 opacity-60 cursor-not-allowed'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`w-3 h-3 rounded-full ${hasDocs ? 'bg-green-500' : 'bg-gray-300'}`} />
+                <span className={`font-bold text-sm ${canEdit ? 'text-[#581C24]' : 'text-gray-500'}`}>
+                  {team.teamName} {userRole === 'captain' && team.teamId === userTeamId && '(La tua squadra)'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">{team.documents.length} file</span>
+                {canEdit && <Eye className="w-4 h-4 text-gray-400" />}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 4. POPUP DETTAGLIO SQUADRA */}
+      {selectedTeam && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="bg-[#581C24] p-4 flex items-center justify-between">
+              <h2 className="text-lg font-black text-white uppercase">
+                {selectedTeam.teamName} - Liberatorie
+              </h2>
+              <button onClick={() => setSelectedTeam(null)} className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/20 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-4 space-y-4">
+              {/* Upload per chi ha i permessi */}
+              {userRole === 'staff' || (userRole === 'captain' && selectedTeam.teamId === userTeamId) ? (
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 uppercase mb-2">
+                    Carica Documento Firmato
+                  </label>
+                  <input 
+                    type="file" 
+                    accept=".pdf,.jpg,.jpeg,.png" 
+                    onChange={(e) => handleTeamDocumentUpload(selectedTeam.teamId, e)} 
+                    className="w-full text-sm file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-[#581C24] file:text-white hover:file:bg-[#581C24]/90 cursor-pointer" 
+                  />
+                </div>
+              ) : (
+                <p className="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg text-center">
+                  Non hai i permessi per caricare documenti per questa squadra.
+                </p>
+              )}
+
+              {/* Storico */}
+              <div>
+                <h3 className="text-xs font-bold text-gray-600 uppercase mb-2">Storico Documenti</h3>
+                <div className="space-y-2">
+                  {selectedTeam.documents.map(doc => (
+                    <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <Download className="w-4 h-4 text-[#581C24] flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{doc.fileName}</p>
+                          <p className="text-xs text-gray-500">{new Date(doc.uploadedAt).toLocaleDateString('it-IT')}</p>
+                        </div>
+                      </div>
+                      {/* Elimina solo se sei staff o se hai caricato tu il file */}
+                      {(userRole === 'staff' || doc.uploadedBy === userRole) && (
+                        <button 
+                          onClick={() => handleDeleteDocument(selectedTeam.teamId, doc.id)} 
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg flex-shrink-0"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  {selectedTeam.documents.length === 0 && (
+                    <p className="text-sm text-gray-400 text-center py-4">Nessun documento caricato</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. POPUP UPLOAD TEMPLATE (Solo Staff) */}
+      {showTemplateUpload && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <h3 className="text-lg font-bold text-[#581C24] uppercase mb-4">Carica Modello Base</h3>
+            <input type="file" accept=".pdf,.doc,.docx" ref={fileInputRef} onChange={handleTemplateUpload} className="w-full mb-4" />
+            <div className="flex gap-3">
+              <button onClick={() => setShowTemplateUpload(false)} className="flex-1 py-2 border border-gray-300 rounded-lg font-bold text-sm">Annulla</button>
+              <button onClick={() => fileInputRef.current?.click()} className="flex-1 py-2 bg-[#581C24] text-white rounded-lg font-bold text-sm">Carica</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface AdminMultiUploadProps {
+  items: any[];
+  onUpload: (files: FileList) => void;
+  onDelete: (id: string) => void;
+  accept: string;
+  title: string;
+  showPreview?: boolean;
+}
+
+export const AdminMultiUpload: React.FC<AdminMultiUploadProps> = ({ items, onUpload, onDelete, accept, title, showPreview = true }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-bold text-[#581C24] uppercase">{title}</h3>
+        <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-1 px-3 py-1.5 bg-[#581C24] text-white rounded-lg text-xs font-bold hover:bg-[#581C24]/90 transition-colors">
+          <Upload className="w-3.5 h-3.5" /> Carica
+        </button>
+      </div>
+      <input type="file" ref={fileInputRef} onChange={(e) => e.target.files && onUpload(e.target.files)} accept={accept} multiple className="hidden" />
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {items.map((item: any) => (
+          <div key={item.id} className="relative group">
+            {showPreview && item.type === 'image' ? (
+              <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
+                <Image src={item.url} alt={item.name || ''} fill className="object-cover" />
+              </div>
+            ) : (
+              <div className="aspect-square rounded-lg bg-gray-100 flex items-center justify-center">
+                <Download className="w-8 h-8 text-gray-400" />
+              </div>
+            )}
+            <button onClick={() => onDelete(item.id)} className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ))}
+      </div>
+      {items.length === 0 && <div className="py-8 text-center text-gray-400 text-sm">Nessun file caricato</div>}
+    </div>
+  );
+};
+
+interface AdminContactsEditorProps {
+  contacts: ContattiData;
+  onSave: (contacts: ContattiData) => void;
+}
+
+export const AdminContactsEditor: React.FC<AdminContactsEditorProps> = ({ contacts, onSave }) => {
+  const [formData, setFormData] = useState(contacts);
+  return (
+    <div className="space-y-4">
+      <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Telefono</label><input type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="+39 012 3456789" /></div>
+      <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Email</label><input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="info@proloco.it" /></div>
+      <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Facebook</label><input type="url" value={formData.facebook || ''} onChange={(e) => setFormData({ ...formData, facebook: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="https://facebook.com/..." /></div>
+      <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Instagram</label><input type="url" value={formData.instagram || ''} onChange={(e) => setFormData({ ...formData, instagram: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="https://instagram.com/..." /></div>
+      <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">WhatsApp</label><input type="tel" value={formData.whatsapp || ''} onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="+39 333 1234567" /></div>
+      <button onClick={() => onSave(formData)} className="w-full py-2.5 bg-[#581C24] text-white font-bold rounded-lg hover:bg-[#581C24]/90 transition-colors text-sm uppercase">Salva Contatti</button>
+    </div>
+  );
+};
+
+interface AdminSaveAlboDoroProps {
+  onSave: (data: AlboDoroData) => void;
+  currentYear: number;
+}
+
+export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, currentYear }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [formData, setFormData] = useState<Partial<AlboDoroData>>({ year: currentYear });
+  const handleSave = () => {
+    if (formData.winner && formData.topScorer && formData.mvp) {
+      onSave({
+        year: formData.year || currentYear,
+        winner: formData.winner,
+        runnerUp: formData.runnerUp || '',
+        topScorer: formData.topScorer!,
+        mvp: formData.mvp!,
+        groupStandings: [],
+        playoffBracket: []
+      });
+      setIsOpen(false);
+      alert('✅ Albo d\'Oro aggiornato!');
+    }
+  };
+  return (
+    <>
+      <button onClick={() => setIsOpen(true)} className="w-full py-3 bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-[#581C24] font-black rounded-xl shadow-lg hover:shadow-xl transition-shadow text-sm uppercase tracking-wider">
+        Salva nell'Albo d'Oro
+      </button>
+      {isOpen && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="bg-[#581C24] p-4 flex items-center justify-between">
+              <h2 className="text-lg font-black text-white uppercase">Salva Albo d'Oro {currentYear}</h2>
+              <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white"><X size={20} /></button>
+            </div>
+            <div className="p-4 space-y-3">
+              <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Squadra Vincitrice</label><input type="text" value={formData.winner || ''} onChange={(e) => setFormData({ ...formData, winner: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-bold" placeholder="Nome squadra" /></div>
+              <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Finalista</label><input type="text" value={formData.runnerUp || ''} onChange={(e) => setFormData({ ...formData, runnerUp: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-bold" placeholder="Nome squadra" /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Capocannoniere</label><input type="text" value={formData.topScorer?.name || ''} onChange={(e) => setFormData({ ...formData, topScorer: { ...formData.topScorer!, name: e.target.value } })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Nome" /></div>
+                <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Gol</label><input type="number" value={formData.topScorer?.goals || ''} onChange={(e) => setFormData({ ...formData, topScorer: { ...formData.topScorer!, goals: parseInt(e.target.value) } })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="N." /></div>
+              </div>
+              <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">MVP Torneo</label><input type="text" value={formData.mvp?.name || ''} onChange={(e) => setFormData({ ...formData, mvp: { ...formData.mvp!, name: e.target.value } })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Nome giocatore" /></div>
+            </div>
+            <div className="p-4 border-t border-gray-200 flex gap-3">
+              <button onClick={() => setIsOpen(false)} className="flex-1 py-2.5 border border-gray-300 rounded-lg font-bold text-sm">Annulla</button>
+              <button onClick={handleSave} className="flex-1 py-2.5 bg-[#581C24] text-white rounded-lg font-bold text-sm">Salva</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
