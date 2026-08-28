@@ -4,23 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Tv, Coins, Gift } from 'lucide-react';
 import { BarTVView, BarCassaView, BarPremiView } from '@/components/BarArea';
+import { createClient } from '@/lib/supabase/client';
 
 const BAR_PASSWORD = 'BAR2026';
-
-const BAR_TEAMS = [
-  { id: '1', name: 'TAIO', logo: '/logos/taio.png' },
-  { id: '2', name: 'CAVARENO', logo: '/logos/cavareno.png' },
-  { id: '3', name: 'CASTELFONDO', logo: '/logos/castelfondo.png' },
-  { id: '4', name: 'SARNONICO', logo: '/logos/sarnonico.png' },
-  { id: '5', name: 'LOVER', logo: '/logos/lover.png' },
-  { id: '6', name: 'ROMALLO', logo: '/logos/romallo.png' },
-  { id: '7', name: 'FONDO', logo: '/logos/fondo.png' },
-  { id: '8', name: "REVO'", logo: '/logos/revo.png' },
-  { id: '9', name: 'ROMENO', logo: '/logos/romeno.png' },
-  { id: '10', name: 'CLOZ', logo: '/logos/cloz.png' },
-  { id: '11', name: 'DAMBEL', logo: '/logos/dambel.png' },
-  { id: '12', name: 'DON/AMBLAR', logo: '/logos/don-amblar.png' },
-];
 
 export default function BarPage() {
   const router = useRouter();
@@ -29,9 +15,15 @@ export default function BarPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [currentView, setCurrentView] = useState<'menu' | 'tv' | 'cassa' | 'premi'>('menu');
-  const [meters, setMeters] = useState<Record<string, number>>({ '1': 12, '4': 45, '7': 30 });
+  
+  // Stati dati reali
+  const [meters, setMeters] = useState<Record<string, number>>({});
+  const [teams, setTeams] = useState<Array<{ id: string; name: string; logo_url: string | null }>>([]);
+  const [teamsMap, setTeamsMap] = useState<Record<string, { id: string; name: string; logo_url: string | null }>>({});
   const [celebrationTeam, setCelebrationTeam] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
+  // Carica password salvata
   useEffect(() => {
     const savedPassword = localStorage.getItem('barPassword');
     if (savedPassword) {
@@ -40,7 +32,62 @@ export default function BarPage() {
     }
   }, []);
 
-  // ✅ Listener ESC per tornare al menu dalla vista TV
+  // Fetch dati da Supabase
+  useEffect(() => {
+    const fetchBarData = async () => {
+      if (!isAuthenticated) return;
+      
+      setLoading(true);
+      const supabase = createClient();
+
+      try {
+        // 1. Recupera tutte le squadre
+        const { data: teamsData, error: teamsError } = await supabase
+          .from('teams')
+          .select('id, name, logo_url')
+          .order('name');
+
+        if (teamsError) throw teamsError;
+
+        if (teamsData) {
+          setTeams(teamsData);
+          
+          // Crea mappa per lookup veloce nella TV view
+          const map: Record<string, { id: string; name: string; logo_url: string | null }> = {};
+          teamsData.forEach(t => { map[t.id] = t; });
+          setTeamsMap(map);
+        }
+
+        // 2. Recupera metri di birra
+        const { data: metersData, error: metersError } = await supabase
+          .from('bar_meters')
+          .select('team_id, total_meters');
+
+        if (metersError) throw metersError;
+
+        if (metersData) {
+          const metersMap: Record<string, number> = {};
+          metersData.forEach(m => { metersMap[m.team_id] = m.total_meters; });
+          setMeters(metersMap);
+        }
+
+      } catch (err) {
+        console.error('Errore fetch bar:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (isAuthenticated) {
+      fetchBarData();
+      
+      // Polling ogni 5 secondi per aggiornamenti in tempo reale (solo vista TV)
+      const interval = setInterval(fetchBarData, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [isAuthenticated]);
+
+  // Listener ESC per tornare al menu dalla vista TV
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && currentView === 'tv') {
@@ -67,18 +114,48 @@ export default function BarPage() {
     }
   };
 
-  const handleAddMeter = (teamId: string, teamName: string) => {
-    setMeters(prev => ({ ...prev, [teamId]: (prev[teamId] || 0) + 1 }));
-    setCelebrationTeam(teamName);
-    setTimeout(() => setCelebrationTeam(null), 3000);
+  const handleAddMeter = async (teamId: string, teamName: string) => {
+    const supabase = createClient();
+    
+    // Ottieni valore attuale
+    const current = meters[teamId] || 0;
+    const newValue = current + 1;
+
+    // Aggiorna Supabase
+    const { error } = await supabase
+      .from('bar_meters')
+      .update({ total_meters: newValue, updated_at: new Date().toISOString() })
+      .eq('team_id', teamId);
+
+    if (!error) {
+      // Aggiorna stato locale immediatamente
+      setMeters(prev => ({ ...prev, [teamId]: newValue }));
+      setCelebrationTeam(teamName);
+      setTimeout(() => setCelebrationTeam(null), 3000);
+    } else {
+      console.error('Errore aggiornamento metri:', error);
+      alert('Errore nel salvataggio');
+    }
   };
 
-  const handleRemoveMeter = (teamId: string) => {
-    setMeters(prev => {
-      const current = prev[teamId] || 0;
-      if (current <= 0) return prev;
-      return { ...prev, [teamId]: current - 1 };
-    });
+  const handleRemoveMeter = async (teamId: string) => {
+    const supabase = createClient();
+    const current = meters[teamId] || 0;
+    if (current <= 0) return;
+
+    const newValue = current - 1;
+
+    const { error } = await supabase
+      .from('bar_meters')
+      .update({ total_meters: newValue, updated_at: new Date().toISOString() })
+      .eq('team_id', teamId);
+
+    if (!error) {
+      setMeters(prev => ({ ...prev, [teamId]: newValue }));
+    } else {
+      console.error('Errore rimozione metri:', error);
+      alert('Errore nel salvataggio');
+    }
   };
 
   // --- SCHERMATA DI LOGIN ---
@@ -123,6 +200,18 @@ export default function BarPage() {
     );
   }
 
+  // Loading state dopo login
+  if (loading) {
+    return (
+      <div className="h-[100dvh] bg-[#F5F5F7] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-[#581C24] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-[#581C24] font-bold uppercase">Caricamento dati bar...</p>
+        </div>
+      </div>
+    );
+  }
+
   // --- MENU PRINCIPALE ---
   if (currentView === 'menu') {
     return (
@@ -152,11 +241,15 @@ export default function BarPage() {
     );
   }
 
-  // --- VISTA TV (SCHERMO INTERO, NO HEADER, ESC PER USCIRE) ---
+  // --- VISTA TV ---
   if (currentView === 'tv') {
     return (
       <div className="h-[100dvh] w-full overflow-hidden bg-gradient-to-br from-[#581C24] via-[#7A2D3A] to-[#581C24]">
-        <BarTVView meters={meters} celebrationTeam={celebrationTeam} />
+        <BarTVView 
+          meters={meters} 
+          teamsMap={teamsMap}
+          celebrationTeam={celebrationTeam} 
+        />
       </div>
     );
   }
@@ -172,7 +265,12 @@ export default function BarPage() {
           <h2 className="text-lg font-black text-[#581C24] uppercase">Cassa Bar</h2>
           <div className="w-20" />
         </div>
-        <BarCassaView teams={BAR_TEAMS} meters={meters} onAdd={handleAddMeter} onRemove={handleRemoveMeter} />
+        <BarCassaView 
+          teams={teams} 
+          meters={meters} 
+          onAdd={handleAddMeter} 
+          onRemove={handleRemoveMeter} 
+        />
       </div>
     );
   }
