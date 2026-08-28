@@ -660,9 +660,21 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
             {/* MVP */}
             <div className="mb-6">
               <div className="flex items-center justify-between mb-4">
-                {isStaffMode && <AdminMVPSelector onSave={handleSaveMvpCandidates} />}
+                {isStaffMode && match && (
+                  <AdminMVPSelector 
+                    matchId={match.id}
+                    homeTeamId={match.home_team.id}
+                    awayTeamId={match.away_team.id}
+                    onSave={handleSaveMvpCandidates} 
+                  />
+                )}
                 <h2 className="text-[#581C24] font-bold text-base uppercase tracking-wider text-center flex-1">MVP della Partita</h2>
-                {isStaffMode && !isVotingClosed && mvpPlayers.length > 0 && <AdminStopVoting onStop={handleStopVoting} />}
+               {isStaffMode && !isVotingClosed && mvpPlayers.length > 0 && match && (
+                  <AdminStopVoting 
+                    matchId={match.id}
+                    onStop={handleStopVoting} 
+                  />
+                )}
               </div>
 
               <div className="grid grid-cols-3 gap-3">
@@ -695,9 +707,23 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
             {/* CRONACA */}
             <div>
               <div className="flex items-center justify-between mb-4">
-                {isStaffMode && match.status !== 'FINITA' && <AdminAddEvent teamSide="home" onAddEvent={(e) => handleAddEvent('home', e.type, e.playerId, e.minute)} />}
+                {isStaffMode && match.status !== 'FINITA' && (
+                  <>
+                    <AdminAddEvent 
+                      matchId={match.id}
+                      teamSide="home" 
+                      onAddEvent={(e) => handleAddEvent('home', e.type, e.playerId, e.minute)} 
+                    />
+                    {/* ... */}
+                    <AdminAddEvent 
+                      matchId={match.id}
+                      teamSide="away" 
+                      onAddEvent={(e) => handleAddEvent('away', e.type, e.playerId, e.minute)} 
+                    />
+                  </>
+                )}
                 <h2 className="text-[#581C24] font-bold text-base uppercase tracking-wider text-center flex-1">Cronaca</h2>
-                {isStaffMode && match.status !== 'FINITA' && <AdminAddEvent teamSide="away" onAddEvent={(e) => handleAddEvent('away', e.type, e.playerId, e.minute)} />}
+                {isStaffMode && match.status !== 'FINITA' && <AdminAddEvent matchId={match.id} teamSide="away" onAddEvent={(e) => handleAddEvent('away', e.type, e.playerId, e.minute)} />}
               </div>
 
               <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
