@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { ArrowLeft, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/AuthContext';
+import { createClient } from '@/lib/supabase/client';
 import { 
   AdminTeamEditor, 
   AdminTeamPhotoEditor, 
@@ -13,56 +14,11 @@ import {
   type PlayerData 
 } from '@/components/AdminButtons';
 
-// Dati mock squadra (Modificato per testare SARNONICO con ID 12, abbinato al codice 1234)
-const INITIAL_TEAM_DATA = {
-  id: '12', 
-  name: 'SARNONICO', 
-  logo: '', 
-  group: 'GIRONE A',
-  teamPhoto: '', 
-  stats: {
-    pt: 45,
-    v: 14,
-    p: 3,
-    s: 5,
-    gf: 48,
-    gs: 24,
-    dr: 24,
-  },
-  players: [
-    { 
-      number: '10', 
-      name: 'LORENZO PANCHERI', 
-      firstName: 'Lorenzo',
-      lastName: 'Pancheri',
-      birthDate: '1995-05-12',
-      photo: '', 
-      goals: 12, 
-      assists: 1, 
-      yellow: 4, 
-      red: 1, 
-      mvp: 3 
-    },
-    { 
-      number: '-', 
-      name: 'SIMONE PANCHERI', 
-      firstName: 'Simone',
-      lastName: 'Pancheri',
-      birthDate: '1990-01-01',
-      photo: '', 
-      goals: 0, 
-      assists: 0, 
-      yellow: 0, 
-      red: 0, 
-      mvp: 0 
-    },
-  ],
-};
-
 export default function TeamDetailPage({ params }: { params: { id: string } }) {
   const { isStaffMode } = useAuth();
-  const [selectedPlayer, setSelectedPlayer] = useState<typeof INITIAL_TEAM_DATA.players[0] | null>(null);
-  const [teamData, setTeamData] = useState(INITIAL_TEAM_DATA);
+  const [selectedPlayer, setSelectedPlayer] = useState<any | null>(null);
+  const [teamData, setTeamData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   
   // Stati per l'editor giocatori
   const [isPlayerEditorOpen, setIsPlayerEditorOpen] = useState(false);
@@ -81,49 +37,235 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     }
   }, []);
 
-  const handleTeamUpdate = (field: 'name' | 'group' | 'logo' | 'teamPhoto', value: string) => {
-    setTeamData(prev => ({ ...prev, [field]: value }));
-    console.log(`✅ Aggiornato ${field}:`, value);
-  };
+  // Fetch dati da Supabase
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      const supabase = createClient();
+      const teamId = params.id;
 
-  const handleAddPlayer = (newPlayer: PlayerData) => {
-    const playerWithStats = {
-      ...newPlayer,
-      name: `${newPlayer.firstName.toUpperCase()} ${newPlayer.lastName.toUpperCase()}`,
-      photo: newPlayer.photo || '',
-      goals: 0, assists: 0, yellow: 0, red: 0, mvp: 0,
+      try {
+        // 1. Fetch Dati Squadra
+        const { data: team, error: teamError } = await supabase
+          .from('teams')
+          .select('id, name, girone, logo_url, team_photo_url')
+          .eq('id', teamId)
+          .single();
+
+        if (teamError) throw teamError;
+
+        // 2. Fetch Giocatori
+        const { data: players, error: playersError } = await supabase
+          .from('players')
+          .select('id, first_name, last_name, jersey_number, birth_date, photo_url, goals, yellow_cards, red_cards, mvp_wins')
+          .eq('team_id', teamId)
+          .order('jersey_number', { ascending: true, nullsFirst: false });
+
+        if (playersError) throw playersError;
+
+        // 3. Fetch Partite per Calcolo Statistiche (solo partite finite)
+        const { data: matches, error: matchesError } = await supabase
+          .from('matches')
+          .select('home_team_id, away_team_id, home_score, away_score')
+          .or(`home_team_id.eq.${teamId},away_team_id.eq.${teamId}`)
+          .eq('status', 'FINITA');
+
+        let stats = { pt: 0, v: 0, p: 0, s: 0, gf: 0, gs: 0, dr: 0 };
+
+        if (matches && !matchesError) {
+          matches.forEach((m: any) => {
+            const isHome = m.home_team_id === teamId;
+            const myScore = isHome ? (m.home_score || 0) : (m.away_score || 0);
+            const oppScore = isHome ? (m.away_score || 0) : (m.home_score || 0);
+
+            stats.gf += myScore;
+            stats.gs += oppScore;
+
+            if (myScore > oppScore) {
+              stats.v += 1;
+              stats.pt += 3;
+            } else if (myScore === oppScore) {
+              stats.p += 1;
+              stats.pt += 1;
+            } else {
+              stats.s += 1;
+            }
+          });
+          stats.dr = stats.gf - stats.gs;
+        }
+
+        // Mappa giocatori per corrispondere alla struttura UI
+        const mappedPlayers = (players || []).map((p: any) => ({
+          id: p.id,
+          number: p.jersey_number || '-',
+          name: `${p.first_name.toUpperCase()} ${p.last_name.toUpperCase()}`,
+          firstName: p.first_name,
+          lastName: p.last_name,
+          birthDate: p.birth_date || '',
+          photo: p.photo_url || '',
+          goals: p.goals || 0,
+          yellow: p.yellow_cards || 0,
+          red: p.red_cards || 0,
+          mvp: p.mvp_wins || 0,
+        }));
+
+        setTeamData({
+          id: team.id,
+          name: team.name,
+          logo: team.logo_url || '',
+          group: team.girone ? `GIRONE ${team.girone}` : 'N/A',
+          teamPhoto: team.team_photo_url || '',
+          stats: stats,
+          players: mappedPlayers,
+        });
+
+      } catch (err) {
+        console.error('Errore fetch team:', err);
+      } finally {
+        setLoading(false);
+      }
     };
-    setTeamData(prev => ({ ...prev, players: [...prev.players, playerWithStats] }));
-    console.log('✅ Giocatore aggiunto:', newPlayer);
+
+    if (params.id) {
+      fetchData();
+    }
+  }, [params.id]);
+
+  // Aggiorna dati squadra (Nome, Girone, Logo, Foto)
+  const handleTeamUpdate = async (field: 'name' | 'group' | 'logo' | 'teamPhoto', value: string) => {
+    const supabase = createClient();
+    const updateData: any = {};
+    
+    if (field === 'name') updateData.name = value;
+    if (field === 'group') updateData.girone = value.replace('GIRONE ', '');
+    if (field === 'logo') updateData.logo_url = value;
+    if (field === 'teamPhoto') updateData.team_photo_url = value;
+
+    const { error } = await supabase.from('teams').update(updateData).eq('id', params.id);
+
+    if (error) {
+      console.error('Errore aggiornamento squadra:', error);
+      alert('Errore nel salvataggio');
+      return;
+    }
+
+    setTeamData((prev: any) => ({ ...prev, [field]: value }));
   };
 
-  const handleUpdatePlayer = (updatedData: PlayerData) => {
-    if (editingPlayer) {
-      setTeamData(prev => ({
-        ...prev,
-        players: prev.players.map(p => 
-          p.firstName === editingPlayer.firstName && p.lastName === editingPlayer.lastName
-            ? { ...p, ...updatedData, name: `${updatedData.firstName.toUpperCase()} ${updatedData.lastName.toUpperCase()}`, photo: updatedData.photo || p.photo }
-            : p
-        )
-      }));
-      console.log('✅ Giocatore aggiornato:', updatedData);
+  // Aggiungi Giocatore (Salva su Supabase)
+  const handleAddPlayer = async (newPlayer: PlayerData) => {
+    const supabase = createClient();
+    const playerData = {
+      team_id: params.id,
+      first_name: newPlayer.firstName.trim(),
+      last_name: newPlayer.lastName.trim(),
+      jersey_number: newPlayer.number === '-' ? null : newPlayer.number,
+      birth_date: newPlayer.birthDate || null,
+      photo_url: newPlayer.photo || null,
+    };
+
+    const { data, error } = await supabase.from('players').insert(playerData).select().single();
+
+    if (error) {
+      console.error('Errore aggiunta giocatore:', error);
+      alert('Errore nel salvataggio del giocatore');
+      return;
     }
+
+    const mappedPlayer = {
+      id: data.id,
+      number: data.jersey_number || '-',
+      name: `${data.first_name.toUpperCase()} ${data.last_name.toUpperCase()}`,
+      firstName: data.first_name,
+      lastName: data.last_name,
+      birthDate: data.birth_date || '',
+      photo: data.photo_url || '',
+      goals: 0, yellow: 0, red: 0, mvp: 0,
+    };
+
+    setTeamData((prev: any) => ({ ...prev, players: [...prev.players, mappedPlayer] }));
+  };
+
+  // Modifica Giocatore (Aggiorna su Supabase)
+  const handleUpdatePlayer = async (updatedData: PlayerData) => {
+    if (!editingPlayer) return;
+    const supabase = createClient();
+    
+    const currentPlayer = teamData.players.find((p: any) => p.firstName === editingPlayer.firstName && p.lastName === editingPlayer.lastName);
+    if (!currentPlayer || !currentPlayer.id) return;
+
+    const { error } = await supabase
+      .from('players')
+      .update({
+        first_name: updatedData.firstName.trim(),
+        last_name: updatedData.lastName.trim(),
+        jersey_number: updatedData.number === '-' ? null : updatedData.number,
+        birth_date: updatedData.birthDate || null,
+        photo_url: updatedData.photo || currentPlayer.photo,
+      })
+      .eq('id', currentPlayer.id);
+
+    if (error) {
+      console.error('Errore aggiornamento giocatore:', error);
+      alert('Errore nell\'aggiornamento del giocatore');
+      return;
+    }
+
+    setTeamData((prev: any) => ({
+      ...prev,
+      players: prev.players.map((p: any) => 
+        p.id === currentPlayer.id
+          ? { 
+              ...p, 
+              firstName: updatedData.firstName.trim(),
+              lastName: updatedData.lastName.trim(),
+              number: updatedData.number,
+              birthDate: updatedData.birthDate,
+              photo: updatedData.photo || p.photo,
+              name: `${updatedData.firstName.trim().toUpperCase()} ${updatedData.lastName.trim().toUpperCase()}`
+            }
+          : p
+      )
+    }));
     setEditingPlayer(null);
     setIsPlayerEditorOpen(false);
   };
 
-  const handlePlayerClick = (player: typeof INITIAL_TEAM_DATA.players[0]) => {
+  const handlePlayerClick = (player: any) => {
     if (isStaffMode || isMyTeam) {
-      setEditingPlayer({ photo: player.photo, firstName: player.firstName, lastName: player.lastName, number: player.number, birthDate: player.birthDate });
+      setEditingPlayer({ 
+        photo: player.photo, 
+        firstName: player.firstName, 
+        lastName: player.lastName, 
+        number: player.number, 
+        birthDate: player.birthDate 
+      });
       setIsPlayerEditorOpen(true);
     } else {
       setSelectedPlayer(player);
     }
   };
 
-  // Verifica se il capitano sta guardando la SUA squadra
   const isMyTeam = isCaptain && captainTeamId === params.id;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-[#581C24] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-[#581C24] font-bold uppercase">Caricamento squadra...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!teamData) {
+    return (
+      <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center">
+        <p className="text-[#581C24] font-bold uppercase">Squadra non trovata</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F5F5F7]">
@@ -172,7 +314,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
         )}
       </div>
 
-      {/* AREA CAPITANO (TEST) - Visibile SOLO se il capitano è nella sua squadra */}
+      {/* AREA CAPITANO - Visibile SOLO se il capitano è nella sua squadra */}
       {isMyTeam && (
         <div className="px-4 mb-6">
           <div className="bg-[#FFD700]/10 border-2 border-[#FFD700] rounded-xl p-4 shadow-sm">
@@ -182,7 +324,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
               </svg>
               Pannello Capitano - {teamData.name}
             </p>
-            <CaptainTestButton teamId={params.id} teamName={teamData.name} />
+            <p className="text-xs text-gray-600">Funzionalità capitano attive per questa squadra.</p>
           </div>
         </div>
       )}
@@ -228,7 +370,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
           <div className="w-1" />
           <div className="flex-1 flex flex-col items-center">
             <p className="text-[8px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">DR</p>
-            <p className="text-base font-bold text-gray-700">+{teamData.stats.dr}</p>
+            <p className="text-base font-bold text-gray-700">{teamData.stats.dr > 0 ? `+${teamData.stats.dr}` : teamData.stats.dr}</p>
           </div>
           <div className="w-16" />
         </div>
@@ -253,33 +395,37 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
           </div>
 
           <div className="divide-y divide-gray-100">
-            {teamData.players.map((player, index) => (
-              <div key={index} onClick={() => handlePlayerClick(player)} className="flex items-center px-3 py-2.5 cursor-pointer hover:bg-gray-50 transition-colors">
-                <div className="w-8 flex justify-center flex-shrink-0 relative">
-                  <div className="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
-                    {player.photo ? (
-                      <Image src={player.photo} alt={player.name} fill className="object-cover rounded-full" onError={(e) => { e.currentTarget.style.display = 'none'; const p = e.currentTarget.nextElementSibling; if (p) (p as HTMLElement).style.display = 'flex'; }} />
-                    ) : null}
-                    <span className="text-[6px] text-gray-400">FOTO</span>
+            {teamData.players.length === 0 ? (
+              <div className="px-3 py-6 text-center text-gray-500 text-sm">Nessun giocatore registrato</div>
+            ) : (
+              teamData.players.map((player: any) => (
+                <div key={player.id} onClick={() => handlePlayerClick(player)} className="flex items-center px-3 py-2.5 cursor-pointer hover:bg-gray-50 transition-colors">
+                  <div className="w-8 flex justify-center flex-shrink-0 relative">
+                    <div className="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
+                      {player.photo ? (
+                        <Image src={player.photo} alt={player.name} fill className="object-cover rounded-full" onError={(e) => { e.currentTarget.style.display = 'none'; const p = e.currentTarget.nextElementSibling; if (p) (p as HTMLElement).style.display = 'flex'; }} />
+                      ) : null}
+                      <span className="text-[6px] text-gray-400">FOTO</span>
+                    </div>
                   </div>
+                  <div className="w-6 text-center flex-shrink-0">
+                    <span className="text-xs font-bold text-gray-500">{player.number}</span>
+                  </div>
+                  <div className="flex-1 pl-2">
+                    <span className="font-bold text-[11px] text-[#581C24] uppercase truncate block">{player.name}</span>
+                  </div>
+                  <div className="w-6 text-center flex-shrink-0"><span className="text-xs font-bold text-gray-800">{player.goals}</span></div>
+                  <div className="w-6 text-center flex-shrink-0"><span className="text-xs font-bold text-gray-800">{player.yellow}</span></div>
+                  <div className="w-7 text-center flex-shrink-0"><span className="text-xs font-bold text-gray-800">{player.red}</span></div>
+                  <div className="w-6 text-center flex-shrink-0"><span className="text-xs font-bold text-gray-800">{player.mvp}</span></div>
                 </div>
-                <div className="w-6 text-center flex-shrink-0">
-                  <span className="text-xs font-bold text-gray-500">{player.number}</span>
-                </div>
-                <div className="flex-1 pl-2">
-                  <span className="font-bold text-[11px] text-[#581C24] uppercase truncate block">{player.name}</span>
-                </div>
-                <div className="w-6 text-center flex-shrink-0"><span className="text-xs font-bold text-gray-800">{player.goals}</span></div>
-                <div className="w-6 text-center flex-shrink-0"><span className="text-xs font-bold text-gray-800">{player.yellow}</span></div>
-                <div className="w-7 text-center flex-shrink-0"><span className="text-xs font-bold text-gray-800">{player.red}</span></div>
-                <div className="w-6 text-center flex-shrink-0"><span className="text-xs font-bold text-gray-800">{player.mvp}</span></div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>
 
-      {/* POPUP EDITOR GIOCATORE (SOLO ADMIN) */}
+      {/* POPUP EDITOR GIOCATORE (SOLO ADMIN/CAPITANO) */}
       <AdminPlayerEditor player={editingPlayer} isOpen={isPlayerEditorOpen} onClose={() => { setIsPlayerEditorOpen(false); setEditingPlayer(null); }} onSave={handleUpdatePlayer} />
 
       {/* POPUP DETTAGLI GIOCATORE (SOLO UTENTE NORMALE) */}
@@ -304,7 +450,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
                 </div>
               </div>
               <div className="flex items-center gap-10 mt-4">
-                <div className="w-15 flex-shrink-0">
+                <div className="flex-shrink-0">
                   <div className="bg-white rounded-lg px-3 py-2 shadow-lg">
                     <p className="text-3xl font-black text-[#581C24] text-center">{selectedPlayer.number}</p>
                   </div>

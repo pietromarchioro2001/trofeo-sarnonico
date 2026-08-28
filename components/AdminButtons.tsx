@@ -550,7 +550,13 @@ export const AdminTeamPhotoEditor: React.FC<AdminTeamPhotoEditorProps> = ({ team
   );
 };
 
-interface PlayerData { photo?: string; firstName: string; lastName: string; number: string; birthDate: string; }
+export interface PlayerData { 
+  photo?: string; 
+  firstName: string; 
+  lastName: string; 
+  number: string; 
+  birthDate: string; 
+}
 interface AdminPlayerEditorProps { player?: PlayerData | null; isOpen: boolean; onClose: () => void; onSave: (player: PlayerData) => void; }
 export const AdminPlayerEditor: React.FC<AdminPlayerEditorProps> = ({ player, isOpen, onClose, onSave }) => {
   const [formData, setFormData] = useState<PlayerData>({ photo: '', firstName: '', lastName: '', number: '-', birthDate: '' });
