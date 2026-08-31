@@ -3,43 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { X, Upload, Trash2, Download, Eye } from 'lucide-react';
-
-// ==================== DATI MOCK ====================
-const TEAMS_BY_GROUP = {
-  A: [
-    { id: '1', name: 'TAIO' }, { id: '2', name: 'CAVARENO' }, { id: '3', name: 'CASTELFONDO' },
-    { id: '4', name: 'SARNONICO' }, { id: '5', name: 'LOVER' }, { id: '6', name: 'ROMALLO' },
-  ],
-  B: [
-    { id: '7', name: 'FONDO' }, { id: '8', name: "REVO'" }, { id: '9', name: 'ROMENO' },
-    { id: '10', name: 'CLOZ' }, { id: '11', name: 'DAMBEL' }, { id: '12', name: 'DON/AMBLAR' },
-  ],
-};
-
-const TEAMS_DATA = {
-  home: {
-    name: 'SARNONICO',
-    logo: '/logos/sarnonico.png',
-    players: [
-      { id: 'h1', name: 'Ialetonas', fullName: 'Marco Ialetonas' },
-      { id: 'h2', name: 'Mats Menie', fullName: 'Andrea Mats Menie' },
-      { id: 'h3', name: 'L. Zucal', fullName: 'Luca Zucal' },
-      { id: 'h4', name: 'M. Rossi', fullName: 'Marco Rossi' },
-      { id: 'h5', name: 'G. Bianchi', fullName: 'Giovanni Bianchi' },
-    ]
-  },
-  away: {
-    name: 'RALO',
-    logo: '/logos/ralo.png',
-    players: [
-      { id: 'a1', name: 'Zeraere', fullName: 'Simone Zeraere' },
-      { id: 'a2', name: 'Balnoi', fullName: 'Marco Balnoi' },
-      { id: 'a3', name: 'Tizio', fullName: 'Luigi Tizio' },
-      { id: 'a4', name: 'Caio', fullName: 'Caio Sempronio' },
-      { id: 'a5', name: 'Sempronio', fullName: 'Sempronio Caio' },
-    ]
-  }
-};
+import { createClient } from '@/lib/supabase/client';
 
 // ==================== TIPI DATI (NUOVI) ====================
 export interface UploadedDocument {
@@ -248,27 +212,46 @@ export const AdminPartiteButton = () => {
   const [matchDate, setMatchDate] = useState('');
   const [matchTime, setMatchTime] = useState('');
   const [error, setError] = useState('');
+  const [teams, setTeams] = useState<any[]>([]);
 
-  const handleSave = () => {
-    if (!homeTeam || !awayTeam || !matchDate || !matchTime) { setError('️ Compila tutti i campi!'); return; }
-    if (homeTeam === awayTeam) { setError('⚠️ Le squadre devono essere diverse!'); return; }
-    const newMatch = {
-      id: Date.now().toString(),
-      homeTeam: TEAMS_BY_GROUP[selectedGroup].find(t => t.id === homeTeam)?.name || '',
-      awayTeam: TEAMS_BY_GROUP[selectedGroup].find(t => t.id === awayTeam)?.name || '',
-      date: matchDate.toUpperCase().replace(/\s+/g, ' '),
-      fullDate: new Date(matchDate).toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' }),
-      time: matchTime,
-      group: `GIRONE ${selectedGroup}`,
-      score: { home: 0, away: 0 },
-      isLive: false, isScheduled: true, status: 'PROGRAMMATA'
-    };
-    console.log(' Nuova partita creata:', newMatch);
-    alert(`✅ Partita creata:\n${newMatch.homeTeam} vs ${newMatch.awayTeam}\n${newMatch.fullDate} • ${newMatch.time}`);
-    setIsOpen(false); resetForm();
+  useEffect(() => {
+    if (isOpen) {
+      const fetchTeams = async () => {
+        const supabase = createClient();
+        const { data } = await supabase.from('teams').select('id, name, girone').order('name');
+        if (data) setTeams(data);
+      };
+      fetchTeams();
+    }
+  }, [isOpen]);
+
+  const filteredTeams = teams.filter(t => t.girone === selectedGroup);
+
+  const handleSave = async () => {
+    if (!homeTeam || !awayTeam || !matchDate || !matchTime) { setError('⚠️ Compila tutti i campi!'); return; }
+    if (homeTeam === awayTeam) { setError('️ Le squadre devono essere diverse!'); return; }
+    
+    const supabase = createClient();
+    const { error } = await supabase.from('matches').insert({
+      home_team_id: homeTeam,
+      away_team_id: awayTeam,
+      match_date: matchDate,
+      match_time: matchTime,
+      status: 'PROGRAMMATA',
+      phase: 'GIRONI'
+    });
+
+    if (error) {
+      setError('Errore nel salvataggio');
+      return;
+    }
+
+    alert('✅ Partita creata con successo!');
+    setIsOpen(false);
+    setHomeTeam(''); setAwayTeam(''); setMatchDate(''); setMatchTime(''); setError('');
   };
-  const resetForm = () => { setHomeTeam(''); setAwayTeam(''); setMatchDate(''); setMatchTime(''); setError(''); setSelectedGroup('A'); };
-  const handleClose = () => { setIsOpen(false); resetForm(); };
+
+  const handleClose = () => { setIsOpen(false); setHomeTeam(''); setAwayTeam(''); setMatchDate(''); setMatchTime(''); setError(''); };
 
   return (
     <>
@@ -298,14 +281,14 @@ export const AdminPartiteButton = () => {
                   <label className="block text-xs font-bold text-gray-600 uppercase mb-2">Squadra Casa</label>
                   <select value={homeTeam} onChange={(e) => setHomeTeam(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm font-bold">
                     <option value="">Seleziona...</option>
-                    {TEAMS_BY_GROUP[selectedGroup].map((team) => (<option key={team.id} value={team.id}>{team.name}</option>))}
+                    {filteredTeams.map((team) => (<option key={team.id} value={team.id}>{team.name}</option>))}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-600 uppercase mb-2">Squadra Ospite</label>
                   <select value={awayTeam} onChange={(e) => setAwayTeam(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm font-bold">
                     <option value="">Seleziona...</option>
-                    {TEAMS_BY_GROUP[selectedGroup].map((team) => (<option key={team.id} value={team.id}>{team.name}</option>))}
+                    {filteredTeams.map((team) => (<option key={team.id} value={team.id}>{team.name}</option>))}
                   </select>
                 </div>
               </div>
@@ -327,16 +310,59 @@ export const AdminPartiteButton = () => {
   );
 };
 
-interface AdminMVPSelectorProps { onSave: (playerIds: string[]) => void; }
-export const AdminMVPSelector: React.FC<AdminMVPSelectorProps> = ({ onSave }) => {
+// ============================================================
+// MVP Selector REALE (con Supabase)
+// ============================================================
+interface AdminMVPSelectorProps { 
+  onSave: (playerIds: string[]) => void; 
+  matchId: string;
+  homeTeamId: string;
+  awayTeamId: string;
+}
+
+export const AdminMVPSelector: React.FC<AdminMVPSelectorProps> = ({ onSave, matchId, homeTeamId, awayTeamId }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
+  const [homePlayers, setHomePlayers] = useState<any[]>([]);
+  const [awayPlayers, setAwayPlayers] = useState<any[]>([]);
+  
+  useEffect(() => {
+    if (isOpen) {
+      const fetchPlayers = async () => {
+        const supabase = createClient();
+        const { data: h } = await supabase.from('players').select('id, first_name, last_name').eq('team_id', homeTeamId);
+        const { data: a } = await supabase.from('players').select('id, first_name, last_name').eq('team_id', awayTeamId);
+        if (h) setHomePlayers(h);
+        if (a) setAwayPlayers(a);
+      };
+      fetchPlayers();
+    }
+  }, [isOpen, homeTeamId, awayTeamId]);
+
   const togglePlayer = (playerId: string) => {
     if (selectedPlayers.includes(playerId)) setSelectedPlayers(selectedPlayers.filter(id => id !== playerId));
     else { if (selectedPlayers.length < 3) setSelectedPlayers([...selectedPlayers, playerId]); else alert('Puoi selezionare massimo 3 giocatori'); }
   };
-  const handleSave = () => { if (selectedPlayers.length === 0) { alert('Seleziona almeno un giocatore'); return; } onSave(selectedPlayers); setIsOpen(false); setSelectedPlayers([]); };
+  
+  const handleSave = async () => { 
+    if (selectedPlayers.length === 0) { alert('Seleziona almeno un giocatore'); return; } 
+    
+    const supabase = createClient();
+    await supabase.from('mvp_candidates').upsert({
+      match_id: matchId,
+      candidate_1_id: selectedPlayers[0],
+      candidate_2_id: selectedPlayers[1],
+      candidate_3_id: selectedPlayers[2],
+      voting_closed: false
+    }, { onConflict: 'match_id' });
+    
+    onSave(selectedPlayers); 
+    setIsOpen(false); 
+    setSelectedPlayers([]); 
+  };
+  
   const handleClose = () => { setIsOpen(false); setSelectedPlayers([]); };
+  
   return (
     <>
       <button onClick={() => setIsOpen(true)} className="text-[10px] font-bold text-[#581C24] bg-[#581C24]/10 px-3 py-1.5 rounded-full border border-[#581C24]/20 hover:bg-[#581C24]/20 transition-colors flex items-center gap-1">
@@ -347,18 +373,32 @@ export const AdminMVPSelector: React.FC<AdminMVPSelectorProps> = ({ onSave }) =>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="bg-[#581C24] p-3 flex items-center justify-between">
               <h2 className="text-base font-black text-white uppercase tracking-wider">Seleziona Candidati MVP</h2>
-              <button onClick={handleClose} className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/20 transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+              <button onClick={handleClose} className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/20 transition-colors"><X size={20} /></button>
             </div>
             <div className="p-3">
               <div className="text-center text-xs font-bold text-gray-600 mb-3">Selezionati: {selectedPlayers.length}/3</div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <h3 className="text-[#581C24] font-bold text-xs uppercase tracking-wider mb-2">SARNONICO</h3>
-                  <div className="space-y-1">{['Ialetonas', 'Mats Menie', 'L. Zucal', 'M. Rossi', 'G. Bianchi'].map((player) => (<button key={player} onClick={() => togglePlayer(`h-${player}`)} className={`w-full text-left px-2 py-1.5 rounded text-xs transition-colors ${selectedPlayers.includes(`h-${player}`) ? 'bg-[#581C24] text-white font-bold' : 'bg-gray-50 hover:bg-gray-100'}`}>{player}</button>))}</div>
+                  <h3 className="text-[#581C24] font-bold text-xs uppercase tracking-wider mb-2">CASA</h3>
+                  <div className="space-y-1">
+                    {homePlayers.length === 0 && <p className="text-xs text-gray-500 py-2">Nessun giocatore</p>}
+                    {homePlayers.map((player) => (
+                      <button key={player.id} onClick={() => togglePlayer(player.id)} className={`w-full text-left px-2 py-1.5 rounded text-xs transition-colors ${selectedPlayers.includes(player.id) ? 'bg-[#581C24] text-white font-bold' : 'bg-gray-50 hover:bg-gray-100'}`}>
+                        {player.first_name} {player.last_name}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div>
-                  <h3 className="text-[#581C24] font-bold text-xs uppercase tracking-wider mb-2">RALO</h3>
-                  <div className="space-y-1">{['Zeraere', 'Balnoi', 'Tizio', 'Caio', 'Sempronio'].map((player) => (<button key={player} onClick={() => togglePlayer(`a-${player}`)} className={`w-full text-left px-2 py-1.5 rounded text-xs transition-colors ${selectedPlayers.includes(`a-${player}`) ? 'bg-[#581C24] text-white font-bold' : 'bg-gray-50 hover:bg-gray-100'}`}>{player}</button>))}</div>
+                  <h3 className="text-[#581C24] font-bold text-xs uppercase tracking-wider mb-2">TRASFERTA</h3>
+                  <div className="space-y-1">
+                    {awayPlayers.length === 0 && <p className="text-xs text-gray-500 py-2">Nessun giocatore</p>}
+                    {awayPlayers.map((player) => (
+                      <button key={player.id} onClick={() => togglePlayer(player.id)} className={`w-full text-left px-2 py-1.5 rounded text-xs transition-colors ${selectedPlayers.includes(player.id) ? 'bg-[#581C24] text-white font-bold' : 'bg-gray-50 hover:bg-gray-100'}`}>
+                        {player.first_name} {player.last_name}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -373,9 +413,34 @@ export const AdminMVPSelector: React.FC<AdminMVPSelectorProps> = ({ onSave }) =>
   );
 };
 
-interface AdminStopVotingProps { onStop: () => void; }
-export const AdminStopVoting: React.FC<AdminStopVotingProps> = ({ onStop }) => {
-  const handleStop = () => { if (confirm('Vuoi concludere la votazione?')) onStop(); };
+// ============================================================
+// AdminStopVoting REALE
+// ============================================================
+interface AdminStopVotingProps { onStop: () => void; matchId: string; }
+export const AdminStopVoting: React.FC<AdminStopVotingProps> = ({ onStop, matchId }) => {
+  const handleStop = async () => { 
+    if (!confirm('Vuoi concludere la votazione?')) return; 
+    
+    const supabase = createClient();
+    await supabase.from('mvp_candidates').update({ voting_closed: true }).eq('match_id', matchId);
+    
+    const { data: votes } = await supabase.from('mvp_votes').select('player_id').eq('match_id', matchId);
+    if (votes && votes.length > 0) {
+      const counts: Record<string, number> = {};
+      votes.forEach(v => { counts[v.player_id] = (counts[v.player_id] || 0) + 1; });
+      const winnerId = Object.entries(counts).sort((a,b) => b[1] - a[1])[0]?.[0];
+      
+      if (winnerId) {
+        await supabase.from('matches').update({ mvp_player_id: winnerId }).eq('id', matchId);
+        const { data: player } = await supabase.from('players').select('mvp_wins').eq('id', winnerId).single();
+        if (player) {
+          await supabase.from('players').update({ mvp_wins: (player.mvp_wins || 0) + 1 }).eq('id', winnerId);
+        }
+      }
+    }
+    onStop(); 
+  };
+  
   return (
     <button onClick={handleStop} className="text-[10px] font-bold text-red-700 bg-red-50 px-3 py-1.5 rounded-full border border-red-200 hover:bg-red-100 transition-colors flex items-center gap-1">
       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" /></svg>
@@ -383,20 +448,79 @@ export const AdminStopVoting: React.FC<AdminStopVotingProps> = ({ onStop }) => {
   );
 };
 
-interface AdminAddEventProps { teamSide: 'home' | 'away'; onAddEvent: (event: { type: string; playerId: string; minute: number; teamSide: 'home' | 'away' }) => void; }
-export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, onAddEvent }) => {
+// ============================================================
+// AdminAddEvent REALE
+// ============================================================
+interface AdminAddEventProps { 
+  teamSide: 'home' | 'away'; 
+  matchId: string;
+  onAddEvent: (event: { type: string; playerId: string; minute: number; teamSide: 'home' | 'away' }) => void; 
+}
+
+export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, matchId, onAddEvent }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [eventType, setEventType] = useState('');
   const [selectedPlayer, setSelectedPlayer] = useState('');
   const [minute, setMinute] = useState('');
+  const [players, setPlayers] = useState<any[]>([]);
   const [error, setError] = useState('');
-  const team = teamSide === 'home' ? TEAMS_DATA.home : TEAMS_DATA.away;
-  const handleSave = () => {
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && matchId) {
+      const fetchPlayers = async () => {
+        const supabase = createClient();
+        const { data: match } = await supabase.from('matches').select('home_team_id, away_team_id').eq('id', matchId).single();
+        if (match) {
+          const teamId = teamSide === 'home' ? match.home_team_id : match.away_team_id;
+          const { data } = await supabase.from('players').select('id, first_name, last_name, jersey_number').eq('team_id', teamId).order('jersey_number', { ascending: true, nullsFirst: false });
+          if (data) setPlayers(data);
+        }
+      };
+      fetchPlayers();
+    }
+  }, [isOpen, matchId, teamSide]);
+
+  const handleSave = async () => {
     if (!eventType || !selectedPlayer || !minute) { setError('⚠️ Compila tutti i campi!'); return; }
-    onAddEvent({ type: eventType, playerId: selectedPlayer, minute: parseInt(minute), teamSide });
-    setIsOpen(false); setEventType(''); setSelectedPlayer(''); setMinute(''); setError('');
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      const { data: match } = await supabase.from('matches').select('home_team_id, away_team_id').eq('id', matchId).single();
+      if (!match) throw new Error('Partita non trovata');
+
+      const teamId = teamSide === 'home' ? match.home_team_id : match.away_team_id;
+      
+      const { error: eventError } = await supabase.from('match_events').insert({
+        match_id: matchId,
+        player_id: selectedPlayer,
+        event_type: eventType === 'goal' ? 'GOAL' : eventType === 'yellow' ? 'YELLOW_CARD' : 'RED_CARD',
+        minute: parseInt(minute),
+        team_id: teamId
+      });
+      if (eventError) throw eventError;
+
+      const player = players.find(p => p.id === selectedPlayer);
+      if (player) {
+        const updates: any = {};
+        if (eventType === 'goal') updates.goals = (player.goals || 0) + 1;
+        if (eventType === 'yellow') updates.yellow_cards = (player.yellow_cards || 0) + 1;
+        if (eventType === 'red') updates.red_cards = (player.red_cards || 0) + 1;
+        await supabase.from('players').update(updates).eq('id', selectedPlayer);
+      }
+
+      onAddEvent({ type: eventType, playerId: selectedPlayer, minute: parseInt(minute), teamSide });
+      setIsOpen(false); setEventType(''); setSelectedPlayer(''); setMinute(''); setError('');
+    } catch (err) {
+      console.error(err);
+      setError('Errore nel salvataggio');
+    } finally {
+      setLoading(false);
+    }
   };
+
   const handleClose = () => { setIsOpen(false); setEventType(''); setSelectedPlayer(''); setMinute(''); setError(''); };
+
   return (
     <>
       <button onClick={() => setIsOpen(true)} className="text-[10px] font-bold text-[#581C24] bg-[#581C24]/10 px-3 py-1.5 rounded-full border border-[#581C24]/20 hover:bg-[#581C24]/20 transition-colors flex items-center gap-1">
@@ -407,8 +531,8 @@ export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, onAddEve
         <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm" onClick={handleClose}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="bg-[#581C24] p-3 flex items-center justify-between">
-              <h2 className="text-base font-black text-white uppercase tracking-wider">Evento - {team.name}</h2>
-              <button onClick={handleClose} className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/20 transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+              <h2 className="text-base font-black text-white uppercase tracking-wider">Evento - {teamSide === 'home' ? 'Casa' : 'Trasferta'}</h2>
+              <button onClick={handleClose} className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/20 transition-colors"><X size={20} /></button>
             </div>
             <div className="p-4 space-y-3">
               <div>
@@ -424,7 +548,11 @@ export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, onAddEve
                 <label className="block text-xs font-bold text-gray-600 uppercase mb-2">Giocatore</label>
                 <select value={selectedPlayer} onChange={(e) => setSelectedPlayer(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm font-bold">
                   <option value="">Seleziona...</option>
-                  {team.players.map((player) => (<option key={player.id} value={player.id}>{player.name}</option>))}
+                  {players.map((player) => (
+                    <option key={player.id} value={player.id}>
+                      {player.jersey_number ? `${player.jersey_number}. ` : ''}{player.first_name} {player.last_name}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -435,7 +563,9 @@ export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, onAddEve
             </div>
             <div className="p-3 border-t border-gray-200 flex gap-2">
               <button onClick={handleClose} className="flex-1 px-3 py-2 border border-gray-300 text-gray-700 font-bold rounded-lg hover:bg-gray-50 transition-colors text-xs">Annulla</button>
-              <button onClick={handleSave} className="flex-1 px-3 py-2 bg-[#581C24] text-white font-bold rounded-lg hover:bg-[#581C24]/90 transition-colors text-xs shadow-md">SALVA</button>
+              <button onClick={handleSave} disabled={loading} className="flex-1 px-3 py-2 bg-[#581C24] text-white font-bold rounded-lg hover:bg-[#581C24]/90 transition-colors text-xs shadow-md disabled:opacity-50">
+                {loading ? 'Salvataggio...' : 'SALVA'}
+              </button>
             </div>
           </div>
         </div>
