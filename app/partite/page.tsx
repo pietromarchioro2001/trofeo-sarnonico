@@ -38,14 +38,15 @@ export default function PartitePage() {
     }
   }, [selectedDate]);
 
-  // Fetch partite da Supabase
+  // Fetch partite da Supabase (VERSIONE CORRETTA SENZA RELAZIONI ANNIDATE)
   useEffect(() => {
     const fetchMatches = async () => {
       setLoading(true);
       const supabase = createClient();
 
       try {
-        const { data, error } = await supabase
+        // 1. Prendi le partite SENZA relazioni annidate
+        const { data: matchesData, error: matchesError } = await supabase
           .from('matches')
           .select(`
             id,
@@ -55,32 +56,52 @@ export default function PartitePage() {
             status,
             home_score,
             away_score,
-            home_team:teams!matches_home_team_id_fkey(name, logo_url),
-            away_team:teams!matches_away_team_id_fkey(name, logo_url)
+            home_team_id,
+            away_team_id
           `)
           .order('match_date', { ascending: true })
           .order('match_time', { ascending: true });
 
-        if (error) throw error;
+        if (matchesError) throw matchesError;
 
-        // Mappa esplicita dei dati per correggere il tipo
-        const mappedMatches: MatchData[] = (data || []).map((m: any) => ({
-          id: m.id,
-          match_date: m.match_date,
-          match_time: m.match_time,
-          phase: m.phase,
-          status: m.status,
-          home_score: m.home_score,
-          away_score: m.away_score,
-          home_team: m.home_team ? {
-            name: m.home_team.name,
-            logo_url: m.home_team.logo_url
-          } : null,
-          away_team: m.away_team ? {
-            name: m.away_team.name,
-            logo_url: m.away_team.logo_url
-          } : null
-        }));
+        // 2. Raccogli tutti gli ID delle squadre unici da tutte le partite
+        const teamIds = Array.from(
+          new Set(
+            (matchesData || [])
+              .flatMap(m => [m.home_team_id, m.away_team_id])
+              .filter(Boolean)
+          )
+        );
+
+        // 3. Prendi i dati delle squadre separatamente in una sola chiamata
+        let teamsData: any[] = [];
+        if (teamIds.length > 0) {
+          const { data: teams, error: teamsError } = await supabase
+            .from('teams')
+            .select('id, name, logo_url')
+            .in('id', teamIds);
+          
+          if (teamsError) throw teamsError;
+          teamsData = teams || [];
+        }
+
+        // 4. Mappa esplicita dei dati unendo partite e squadre manualmente
+        const mappedMatches: MatchData[] = (matchesData || []).map((m: any) => {
+          const homeTeam = teamsData.find((t: any) => t.id === m.home_team_id) || null;
+          const awayTeam = teamsData.find((t: any) => t.id === m.away_team_id) || null;
+
+          return {
+            id: m.id,
+            match_date: m.match_date,
+            match_time: m.match_time,
+            phase: m.phase,
+            status: m.status,
+            home_score: m.home_score,
+            away_score: m.away_score,
+            home_team: homeTeam,
+            away_team: awayTeam
+          };
+        });
 
         // Estrai le date uniche per la barra di scorrimento
         const dates = Array.from(new Set((mappedMatches || []).map(m => {

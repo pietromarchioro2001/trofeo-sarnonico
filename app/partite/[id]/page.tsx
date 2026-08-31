@@ -289,19 +289,36 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       const matchId = params.id;
 
       try {
-        // 1. Match con type assertion
+        // 1. Prendi i dati della partita SENZA relazioni annidate
         const { data: matchData, error: matchError } = await supabase
           .from('matches')
-          .select(`id, home_score, away_score, status, phase, match_date, match_time, home_team:teams!matches_home_team_id_fkey(id, name, logo_url), away_team:teams!matches_away_team_id_fkey(id, name, logo_url)`)
+          .select('id, home_score, away_score, status, phase, match_date, match_time, home_team_id, away_team_id')
           .eq('id', matchId)
           .single();
+          
         if (matchError) throw matchError;
 
-        // ✅ TYPE ASSERTION: Supabase restituisce any, noi castiamo al nostro tipo
-        const typedMatch = matchData as unknown as MatchData;
+        // 2. Prendi i dati delle squadre separatamente
+        const { data: teamsData, error: teamsError } = await supabase
+          .from('teams')
+          .select('id, name, logo_url')
+          .in('id', [matchData.home_team_id, matchData.away_team_id]);
+          
+        if (teamsError) throw teamsError;
+
+        // 3. Unisci i dati manualmente per creare l'oggetto MatchData completo
+        const homeTeam = teamsData?.find(t => t.id === matchData.home_team_id) || null;
+        const awayTeam = teamsData?.find(t => t.id === matchData.away_team_id) || null;
+        
+        const typedMatch: MatchData = {
+          ...matchData,
+          home_team: homeTeam as TeamData,
+          away_team: awayTeam as TeamData
+        };
+        
         setMatch(typedMatch);
 
-        // 2. Players con null check
+        // 4. Players con null check
         const { data: playersData, error: playersError } = await supabase
           .from('players')
           .select('id, first_name, last_name, jersey_number, photo_url, goals, yellow_cards, red_cards, mvp_wins, team_id')
@@ -313,7 +330,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         setHomePlayers(typedPlayers.filter(p => p.team_id === typedMatch.home_team.id));
         setAwayPlayers(typedPlayers.filter(p => p.team_id === typedMatch.away_team.id));
 
-        // 3. Events con gestione corretta del player nullable
+        // 5. Events con gestione corretta del player nullable
         const { data: eventsData, error: eventsError } = await supabase
           .from('match_events')
           .select('id, minute, event_type, player_id, team_id, player:players(first_name, last_name)')
@@ -335,7 +352,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         }));
         setEvents(typedEvents);
 
-        // 4. MVP
+        // 6. MVP
         const { data: candidatesData } = await supabase
           .from('mvp_candidates')
           .select('candidate_1_id, candidate_2_id, candidate_3_id, voting_closed')

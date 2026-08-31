@@ -82,42 +82,58 @@ export default function HomePage() {
   }, []);
 
   // Fetch dati iniziali
+    // Fetch dati iniziali (VERSIONE CORRETTA SENZA RELAZIONI ANNIDATE)
   useEffect(() => {
     const fetchHomeData = async () => {
       setLoading(true);
       const supabase = createClient();
 
       try {
-        // 1. ULTIMA PARTITA (Live o ultima finita)
-        const { data: lastData } = await supabase
+        // 1. ULTIMA PARTITA (Live o ultima finita) - Query separata
+        const { data: lastMatchArray } = await supabase
           .from('matches')
-          .select(`id, status, match_date, match_time, home_score, away_score, 
-                   home_team:teams!matches_home_team_id_fkey(id, name, logo_url), 
-                   away_team:teams!matches_away_team_id_fkey(id, name, logo_url)`)
+          .select('id, status, match_date, match_time, home_score, away_score, home_team_id, away_team_id')
           .or('status.eq.LIVE,status.eq.FINITA')
           .order('match_date', { ascending: false })
           .order('match_time', { ascending: false })
-          .limit(1)
-          .single();
+          .limit(1);
         
-        if (lastData) setLastMatch(lastData as unknown as MatchSummary);
+        if (lastMatchArray && lastMatchArray.length > 0) {
+          const match = lastMatchArray[0];
+          const { data: teamsData } = await supabase
+            .from('teams')
+            .select('id, name, logo_url')
+            .in('id', [match.home_team_id, match.away_team_id]);
+          
+          const homeTeam = teamsData?.find(t => t.id === match.home_team_id) || null;
+          const awayTeam = teamsData?.find(t => t.id === match.away_team_id) || null;
+          
+          setLastMatch({ ...match, home_team: homeTeam as TeamData, away_team: awayTeam as TeamData });
+        }
 
-        // 2. PROSSIMA PARTITA
-        const { data: nextData } = await supabase
+        // 2. PROSSIMA PARTITA - Query separata
+        const { data: nextMatchArray } = await supabase
           .from('matches')
-          .select(`id, status, match_date, match_time, home_score, away_score, 
-                   home_team:teams!matches_home_team_id_fkey(id, name, logo_url), 
-                   away_team:teams!matches_away_team_id_fkey(id, name, logo_url)`)
+          .select('id, status, match_date, match_time, home_score, away_score, home_team_id, away_team_id')
           .eq('status', 'PROGRAMMATA')
           .order('match_date', { ascending: true })
           .order('match_time', { ascending: true })
-          .limit(1)
-          .single();
+          .limit(1);
         
-        if (nextData) setNextMatch(nextData as unknown as MatchSummary);
+        if (nextMatchArray && nextMatchArray.length > 0) {
+          const match = nextMatchArray[0];
+          const { data: teamsData } = await supabase
+            .from('teams')
+            .select('id, name, logo_url')
+            .in('id', [match.home_team_id, match.away_team_id]);
+          
+          const homeTeam = teamsData?.find(t => t.id === match.home_team_id) || null;
+          const awayTeam = teamsData?.find(t => t.id === match.away_team_id) || null;
+          
+          setNextMatch({ ...match, home_team: homeTeam as TeamData, away_team: awayTeam as TeamData });
+        }
 
         // 3. CLASSIFICHE (Calcolate al volo dalle partite finite)
-        // Nota: In un'app reale si userebbe una view SQL o RPC, qui facciamo il calcolo lato client per semplicità iniziale
         const { data: allMatches } = await supabase
           .from('matches')
           .select('home_team_id, away_team_id, home_score, away_score, status')
@@ -130,12 +146,10 @@ export default function HomePage() {
         if (allMatches && teams) {
           const statsMap = new Map<string, StandingTeam>();
           
-          // Inizializza
           teams.forEach(t => {
             statsMap.set(t.id, { ...t, pt: 0, gf: 0, gs: 0 });
           });
 
-          // Calcola
           allMatches.forEach(m => {
             const h = statsMap.get(m.home_team_id);
             const a = statsMap.get(m.away_team_id);
@@ -157,15 +171,30 @@ export default function HomePage() {
           setStandingsB(sorted.filter(t => t.girone === 'B').slice(0, 4));
         }
 
-        // 4. TOP SCORERS
-        const { data: scorers } = await supabase
+        // 4. TOP SCORERS - Query separata per sicurezza
+        const { data: scorersArray } = await supabase
           .from('players')
-          .select('id, first_name, last_name, goals, team:teams(name, logo_url)')
+          .select('id, first_name, last_name, goals, team_id')
           .gt('goals', 0)
           .order('goals', { ascending: false })
           .limit(3);
         
-        if (scorers) setTopScorers(scorers as unknown as TopScorer[]);
+        if (scorersArray && scorersArray.length > 0) {
+          const teamIds = scorersArray.map(s => s.team_id).filter(Boolean);
+          const { data: teamsData } = await supabase
+            .from('teams')
+            .select('id, name, logo_url')
+            .in('id', teamIds);
+
+          const mappedScorers: TopScorer[] = scorersArray.map(s => ({
+            id: s.id,
+            first_name: s.first_name,
+            last_name: s.last_name,
+            goals: s.goals,
+            team: teamsData?.find(t => t.id === s.team_id) || null
+          }));
+          setTopScorers(mappedScorers);
+        }
 
       } catch (err) {
         console.error('Errore fetch home:', err);

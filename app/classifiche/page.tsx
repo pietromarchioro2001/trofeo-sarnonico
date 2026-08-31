@@ -106,6 +106,7 @@ export default function ClassifichePage() {
   }, [searchParams]);
 
   // Fetch dati da Supabase
+    // Fetch dati da Supabase (VERSIONE CORRETTA SENZA RELAZIONI ANNIDATE)
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -113,48 +114,49 @@ export default function ClassifichePage() {
 
       try {
         // 1. CLASSIFICA GIRONI (Calcolata dalle partite finite)
-        const { data: matches, error: matchesError } = await supabase
+        const { data: matchesData, error: matchesError } = await supabase
           .from('matches')
-          .select(`
-            home_team_id,
-            away_team_id,
-            home_score,
-            away_score,
-            home_team:teams!matches_home_team_id_fkey(id, name, logo_url, girone),
-            away_team:teams!matches_away_team_id_fkey(id, name, logo_url, girone)
-          `)
+          .select('home_team_id, away_team_id, home_score, away_score, status')
           .eq('status', 'FINITA');
 
         if (matchesError) throw matchesError;
 
+        // Raccogli tutti gli ID delle squadre unici
+        const teamIds = Array.from(
+          new Set(
+            (matchesData || [])
+              .flatMap(m => [m.home_team_id, m.away_team_id])
+              .filter(Boolean)
+          )
+        );
+
+        let teamsData: any[] = [];
+        if (teamIds.length > 0) {
+          const { data: teams, error: teamsError } = await supabase
+            .from('teams')
+            .select('id, name, logo_url, girone')
+            .in('id', teamIds);
+          if (teamsError) throw teamsError;
+          teamsData = teams || [];
+        }
+
         const statsMap = new Map<string, TeamStats>();
 
-        matches?.forEach((m: any) => {
-          const home = m.home_team;
-          const away = m.away_team;
-          if (!home || !away) return;
+        // Inizializza la mappa con i dati delle squadre
+        teamsData.forEach(t => {
+          statsMap.set(t.id, { 
+            id: t.id, 
+            name: t.name, 
+            logo_url: t.logo_url, 
+            girone: t.girone, 
+            pt: 0, pg: 0, v: 0, p: 0, s: 0, gf: 0, gs: 0, dr: 0 
+          });
+        });
 
-          if (!statsMap.has(m.home_team_id)) {
-            statsMap.set(m.home_team_id, { 
-              id: m.home_team_id, 
-              name: home.name, 
-              logo_url: home.logo_url, 
-              girone: home.girone, 
-              pt: 0, pg: 0, v: 0, p: 0, s: 0, gf: 0, gs: 0, dr: 0 
-            });
-          }
-          if (!statsMap.has(m.away_team_id)) {
-            statsMap.set(m.away_team_id, { 
-              id: m.away_team_id, 
-              name: away.name, 
-              logo_url: away.logo_url, 
-              girone: away.girone, 
-              pt: 0, pg: 0, v: 0, p: 0, s: 0, gf: 0, gs: 0, dr: 0 
-            });
-          }
-
-          const homeStats = statsMap.get(m.home_team_id)!;
-          const awayStats = statsMap.get(m.away_team_id)!;
+        matchesData?.forEach((m: any) => {
+          const homeStats = statsMap.get(m.home_team_id);
+          const awayStats = statsMap.get(m.away_team_id);
+          if (!homeStats || !awayStats) return;
 
           homeStats.pg += 1;
           awayStats.pg += 1;
@@ -190,92 +192,97 @@ export default function ClassifichePage() {
           gironeB: allStats.filter(t => t.girone === 'B').sort(sortFn),
         });
 
-        // 2. FASE FINALE - Mappatura corretta
-        const { data: phaseData, error: phaseError } = await supabase
+        // 2. FASE FINALE
+        const { data: phaseMatchesData, error: phaseError } = await supabase
           .from('matches')
-          .select(`
-            id,
-            match_key,
-            phase,
-            status,
-            home_score,
-            away_score,
-            home_team:teams!matches_home_team_id_fkey(id, name, logo_url),
-            away_team:teams!matches_away_team_id_fkey(id, name, logo_url)
-          `)
+          .select('id, match_key, phase, status, home_score, away_score, home_team_id, away_team_id')
           .in('phase', ['QUARTI', 'SEMIFINALI', 'FINALE', 'FINALE_3_4'])
           .order('match_key', { ascending: true });
 
         if (phaseError) throw phaseError;
 
-        // Mappa esplicita dei dati
-        const mappedPhaseMatches: MatchData[] = (phaseData || []).map((m: any) => ({
+        const phaseTeamIds = Array.from(
+          new Set(
+            (phaseMatchesData || [])
+              .flatMap(m => [m.home_team_id, m.away_team_id])
+              .filter(Boolean)
+          )
+        );
+
+        let phaseTeamsData: any[] = [];
+        if (phaseTeamIds.length > 0) {
+          const { data: teams, error: teamsError } = await supabase
+            .from('teams')
+            .select('id, name, logo_url')
+            .in('id', phaseTeamIds);
+          if (teamsError) throw teamsError;
+          phaseTeamsData = teams || [];
+        }
+
+        const mappedPhaseMatches: MatchData[] = (phaseMatchesData || []).map((m: any) => ({
           id: m.id,
           match_key: m.match_key,
           phase: m.phase,
           status: m.status,
           home_score: m.home_score,
           away_score: m.away_score,
-          home_team: m.home_team ? {
-            id: m.home_team.id,
-            name: m.home_team.name,
-            logo_url: m.home_team.logo_url
-          } : null,
-          away_team: m.away_team ? {
-            id: m.away_team.id,
-            name: m.away_team.name,
-            logo_url: m.away_team.logo_url
-          } : null
+          home_team: phaseTeamsData.find((t: any) => t.id === m.home_team_id) || null,
+          away_team: phaseTeamsData.find((t: any) => t.id === m.away_team_id) || null,
         }));
         setPhaseMatches(mappedPhaseMatches);
 
-        // 3. MARCATORI - Mappatura corretta
+        // 3. MARCATORI
         const { data: scorersData, error: scorersError } = await supabase
           .from('players')
-          .select(`
-            id,
-            first_name,
-            last_name,
-            goals,
-            team:teams(name, logo_url)
-          `)
+          .select('id, first_name, last_name, goals, team_id')
           .gt('goals', 0)
           .order('goals', { ascending: false })
           .limit(20);
 
         if (scorersError) throw scorersError;
 
-        // Mappa esplicita dei dati
+        const scorerTeamIds = Array.from(new Set((scorersData || []).map(p => p.team_id).filter(Boolean)));
+        let scorerTeamsData: any[] = [];
+        if (scorerTeamIds.length > 0) {
+          const { data: teams, error: teamsError } = await supabase
+            .from('teams')
+            .select('id, name, logo_url')
+            .in('id', scorerTeamIds);
+          if (teamsError) throw teamsError;
+          scorerTeamsData = teams || [];
+        }
+
         const mappedScorers: PlayerData[] = (scorersData || []).map((p: any) => ({
           id: p.id,
           first_name: p.first_name,
           last_name: p.last_name,
           goals: p.goals,
-          team: p.team ? {
-            name: p.team.name,
-            logo_url: p.team.logo_url
-          } : null
+          team: scorerTeamsData.find((t: any) => t.id === p.team_id) || null,
         }));
         setTopScorers(mappedScorers);
 
-        // 4. COPPA CHIOSCO - Mappatura corretta
+        // 4. COPPA CHIOSCO
         const { data: metersData, error: metersError } = await supabase
           .from('bar_meters')
-          .select(`
-            total_meters,
-            team:teams(name, logo_url)
-          `)
+          .select('total_meters, team_id')
           .order('total_meters', { ascending: false });
 
         if (metersError) throw metersError;
 
-        // Mappa esplicita dei dati
+        const meterTeamIds = Array.from(new Set((metersData || []).map(m => m.team_id).filter(Boolean)));
+        let meterTeamsData: any[] = [];
+        if (meterTeamIds.length > 0) {
+          const { data: teams, error: teamsError } = await supabase
+            .from('teams')
+            .select('id, name, logo_url')
+            .in('id', meterTeamIds);
+          if (teamsError) throw teamsError;
+          meterTeamsData = teams || [];
+        }
+
         const mappedMeters: BarMeterData[] = (metersData || []).map((m: any) => ({
           total_meters: m.total_meters,
-          team: m.team ? {
-            name: m.team.name,
-            logo_url: m.team.logo_url
-          } : null
+          team: meterTeamsData.find((t: any) => t.id === m.team_id) || null,
         }));
         setBarMeters(mappedMeters);
 
@@ -299,8 +306,7 @@ export default function ClassifichePage() {
       </div>
     );
   }
-
-  // ... (qui continua tutto il resto del JSX originale con GIRONI, FASE FINALE, MARCATORI, COPPA CHIOSCO)
+  
   // Mantieni TUTTO il codice JSX originale delle ~600 righe
   
   return (
