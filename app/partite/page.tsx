@@ -20,6 +20,14 @@ interface MatchData {
   away_team: { name: string; logo_url: string | null } | null;
 }
 
+// ✅ FUNZIONE HELPER FUORI DAL COMPONENTE
+const parseDate = (dateStr: string | null) => {
+  if (!dateStr) return null;
+  const isoDate = dateStr.replace(' ', 'T');
+  const d = new Date(isoDate);
+  return isNaN(d.getTime()) ? null : d;
+};
+
 export default function PartitePage() {
   const { isStaffMode } = useAuth();
   const [selectedDate, setSelectedDate] = useState('');
@@ -38,14 +46,14 @@ export default function PartitePage() {
     }
   }, [selectedDate]);
 
-  // Fetch partite da Supabase (VERSIONE CORRETTA SENZA RELAZIONI ANNIDATE)
+  // Fetch partite da Supabase
   useEffect(() => {
     const fetchMatches = async () => {
       setLoading(true);
       const supabase = createClient();
 
       try {
-        // 1. Prendi le partite SENZA relazioni annidate
+        // 1. Prendi le partite
         const { data: matchesData, error: matchesError } = await supabase
           .from('matches')
           .select(`
@@ -64,7 +72,7 @@ export default function PartitePage() {
 
         if (matchesError) throw matchesError;
 
-        // 2. Raccogli tutti gli ID delle squadre unici da tutte le partite
+        // 2. Raccogli gli ID delle squadre
         const teamIds = Array.from(
           new Set(
             (matchesData || [])
@@ -73,7 +81,7 @@ export default function PartitePage() {
           )
         );
 
-        // 3. Prendi i dati delle squadre separatamente in una sola chiamata
+        // 3. Prendi i dati delle squadre
         let teamsData: any[] = [];
         if (teamIds.length > 0) {
           const { data: teams, error: teamsError } = await supabase
@@ -85,7 +93,7 @@ export default function PartitePage() {
           teamsData = teams || [];
         }
 
-        // 4. Mappa esplicita dei dati unendo partite e squadre manualmente
+        // 4. Mappa i dati unendo partite e squadre
         const mappedMatches: MatchData[] = (matchesData || []).map((m: any) => {
           const homeTeam = teamsData.find((t: any) => t.id === m.home_team_id) || null;
           const awayTeam = teamsData.find((t: any) => t.id === m.away_team_id) || null;
@@ -103,10 +111,10 @@ export default function PartitePage() {
           };
         });
 
-        // Estrai le date uniche per la barra di scorrimento
+        // 5. Estrai le date uniche
         const dates = Array.from(new Set((mappedMatches || []).map(m => {
-          if (!m.match_date) return 'DA DEFINIRE';
-          const d = new Date(m.match_date);
+          const d = parseDate(m.match_date);
+          if (!d) return 'DA DEFINIRE';
           return `${d.getDate()} ${d.toLocaleString('it-IT', { month: 'short' }).toUpperCase()}`;
         })));
         
@@ -127,8 +135,8 @@ export default function PartitePage() {
 
   // Filtra le partite per la data selezionata
   const filteredMatches = matches.filter(match => {
-    if (!match.match_date) return selectedDate === 'DA DEFINIRE';
-    const d = new Date(match.match_date);
+    const d = parseDate(match.match_date);
+    if (!d) return selectedDate === 'DA DEFINIRE';
     const dateStr = `${d.getDate()} ${d.toLocaleString('it-IT', { month: 'short' }).toUpperCase()}`;
     return dateStr === selectedDate;
   });
