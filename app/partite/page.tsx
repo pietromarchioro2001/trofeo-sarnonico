@@ -16,8 +16,8 @@ interface MatchData {
   status: string;
   home_score: number | null;
   away_score: number | null;
-  home_team: { name: string; logo_url: string | null } | null;
-  away_team: { name: string; logo_url: string | null } | null;
+  home_team: { name: string; logo_url: string | null; girone?: 'A' | 'B' } | null;
+  away_team: { name: string; logo_url: string | null; girone?: 'A' | 'B' } | null;
 }
 
 // Funzione helper per parsare le date
@@ -86,7 +86,7 @@ export default function PartitePage() {
         if (teamIds.length > 0) {
           const { data: teams, error: teamsError } = await supabase
             .from('teams')
-            .select('id, name, logo_url')
+            .select('id, name, logo_url, girone') 
             .in('id', teamIds);
           
           if (teamsError) throw teamsError;
@@ -232,7 +232,9 @@ export default function PartitePage() {
                     <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
                       isLive ? 'bg-white/20 text-white' : 'bg-gray-100 text-[#581C24]'
                     }`}>
-                      {match.phase === 'GIRONI' ? 'GIRONE A/B' : match.phase}
+                      {match.phase === 'GIRONI' 
+                        ? `GIRONE ${match.home_team?.girone || 'A'}` 
+                        : match.phase}
                     </span>
                   </div>
 
