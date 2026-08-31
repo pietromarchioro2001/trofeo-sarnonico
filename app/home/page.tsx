@@ -171,14 +171,13 @@ export default function HomePage() {
           setStandingsB(sorted.filter(t => t.girone === 'B').slice(0, 4));
         }
 
-        // 4. TOP SCORERS - Query separata per sicurezza
+        // 4. TOP SCORERS - Prendi tutti i giocatori, anche con 0 gol
         const { data: scorersArray } = await supabase
           .from('players')
           .select('id, first_name, last_name, goals, team_id')
-          .gt('goals', 0)
           .order('goals', { ascending: false })
-          .limit(3);
-        
+          .limit(5); // Aumenta a 5 per averne abbastanza
+
         if (scorersArray && scorersArray.length > 0) {
           const teamIds = scorersArray.map(s => s.team_id).filter(Boolean);
           const { data: teamsData } = await supabase
