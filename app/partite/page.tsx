@@ -20,7 +20,7 @@ interface MatchData {
   away_team: { name: string; logo_url: string | null } | null;
 }
 
-// ✅ FUNZIONE HELPER FUORI DAL COMPONENTE
+// Funzione helper per parsare le date
 const parseDate = (dateStr: string | null) => {
   if (!dateStr) return null;
   const isoDate = dateStr.replace(' ', 'T');
@@ -211,7 +211,7 @@ export default function PartitePage() {
                 <div className={`rounded-xl p-3.5 shadow-sm border transition-all hover:shadow-md ${
                   isLive ? 'bg-[#581C24] border-[#581C24] shadow-[0_0_20px_rgba(88,28,36,0.3)]' : 'bg-white border-gray-100'
                 }`}>
-                  {/* Header card */}
+                  {/* Header card - MODIFICATO */}
                   <div className="flex items-center justify-between mb-2.5">
                     {isLive && (
                       <span className="bg-red-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
@@ -223,14 +223,16 @@ export default function PartitePage() {
                     )}
                     {isScheduled && <span className="text-gray-500 text-sm font-bold">In programma</span>}
                     
+                    {/* Orario al centro */}
+                    <span className={`text-[10px] font-bold ${isLive ? 'text-white/90' : 'text-gray-500'}`}>
+                      {match.match_time || '--:--'}
+                    </span>
+                    
+                    {/* Girone a destra */}
                     <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
                       isLive ? 'bg-white/20 text-white' : 'bg-gray-100 text-[#581C24]'
                     }`}>
-                      {match.phase === 'GIRONI' ? `GIRONE ${match.home_team?.name ? 'A/B' : ''}` : match.phase}
-                    </span>
-                    
-                    <span className={`text-[10px] ${isLive ? 'text-white/90' : 'text-gray-500'}`}>
-                      {match.match_time || '--:--'}
+                      {match.phase === 'GIRONI' ? 'GIRONE A/B' : match.phase}
                     </span>
                   </div>
 
