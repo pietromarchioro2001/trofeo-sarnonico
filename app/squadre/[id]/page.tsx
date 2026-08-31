@@ -476,14 +476,13 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      // Poi nel JSX, trova dove usi AdminPlayerEditor e modificalo così:
-      <AdminPlayerEditor 
-        player={editingPlayer} 
-        isOpen={isPlayerEditorOpen} 
-        onClose={() => { setIsPlayerEditorOpen(false); setEditingPlayer(null); }} 
-        onSave={handleUpdatePlayer}
-        onDelete={handleDeletePlayer} // NUOVO: passa la funzione di eliminazione
-      />
+    <AdminPlayerEditor 
+      player={editingPlayer} 
+      isOpen={isPlayerEditorOpen} 
+      onClose={() => { setIsPlayerEditorOpen(false); setEditingPlayer(null); }} 
+      onSave={handleUpdatePlayer}
+      onDelete={handleDeletePlayer}
+    />
 
       {/* POPUP DETTAGLI GIOCATORE (SOLO UTENTE NORMALE) */}
       {selectedPlayer && !isStaffMode && (
