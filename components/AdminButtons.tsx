@@ -595,30 +595,30 @@ export const AdminPlayerEditor: React.FC<AdminPlayerEditorProps> = ({ player, is
   return (
     <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" onClick={(e) => e.stopPropagation()}>
-        {/* HEADER CON TITOLO E PULSANTI */}
+        {/* HEADER SOLO CON TITOLO E CHIUSURA */}
         <div className="bg-[#581C24] p-4 flex items-center justify-between">
           <h2 className="text-lg font-black text-white uppercase tracking-wider">{isEditing ? 'Modifica Giocatore' : 'Nuovo Giocatore'}</h2>
-          <div className="flex items-center gap-2">
-            {/* CESTINO - visibile solo in modifica */}
-            {isEditing && onDelete && (
-              <button 
-                onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                className="p-2 bg-red-600/20 hover:bg-red-600/30 text-white rounded-full transition-colors"
-                title="Elimina giocatore"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
-            )}
-            {/* CHIUDI */}
-            <button onClick={onClose} className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/20 transition-colors">
-              <X size={20} />
-            </button>
-          </div>
+          <button onClick={onClose} className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/20 transition-colors">
+            <X size={20} />
+          </button>
         </div>
         
         <div className="p-6 space-y-4">
+          {/* CESTINO - visibile solo in modifica, in alto a sinistra nella zona bianca */}
+          {isEditing && onDelete && (
+            <div className="flex justify-start mb-2">
+              <button 
+                onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                className="flex items-center gap-2 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors text-xs font-bold uppercase"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Elimina giocatore
+              </button>
+            </div>
+          )}
+          
           <div className="flex justify-center">
             <div className="w-32 h-32 bg-gray-200 rounded-xl flex items-center justify-center cursor-pointer hover:bg-gray-300 transition-colors relative overflow-hidden group" onClick={() => photoInputRef.current?.click()}>
               <input type="file" ref={photoInputRef} className="hidden" accept="image/*" onChange={handlePhotoChange} />
