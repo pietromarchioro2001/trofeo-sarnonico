@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import BottomNav from '@/components/BottomNav';
 import { Oswald, Montserrat } from 'next/font/google';
 import { AuthProvider } from '@/lib/AuthContext';
+import ForceHomeOnLoad from '@/components/ForceHomeOnLoad';
 
 const oswald = Oswald({ subsets: ['latin'] });
 const montserrat = Montserrat({ 
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="it">
       <body className="bg-[#F5F5F7] text-[#111] pb-[60px] overflow-x-hidden">
         <AuthProvider>
+          <ForceHomeOnLoad />
           {children}
           <BottomNav />
         </AuthProvider>
