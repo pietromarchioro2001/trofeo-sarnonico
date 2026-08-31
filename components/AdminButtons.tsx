@@ -556,25 +556,42 @@ export interface PlayerData {
   lastName: string; 
   number: string; 
   birthDate: string; 
+  id?: string; // Aggiungi questo per identificare il giocatore
 }
-interface AdminPlayerEditorProps { player?: PlayerData | null; isOpen: boolean; onClose: () => void; onSave: (player: PlayerData) => void; }
-export const AdminPlayerEditor: React.FC<AdminPlayerEditorProps> = ({ player, isOpen, onClose, onSave }) => {
+
+interface AdminPlayerEditorProps { 
+  player?: PlayerData | null; 
+  isOpen: boolean; 
+  onClose: () => void; 
+  onSave: (player: PlayerData) => void;
+  onDelete?: () => void; // NUOVO: prop opzionale per l'eliminazione
+}
+
+export const AdminPlayerEditor: React.FC<AdminPlayerEditorProps> = ({ player, isOpen, onClose, onSave, onDelete }) => {
   const [formData, setFormData] = useState<PlayerData>({ photo: '', firstName: '', lastName: '', number: '-', birthDate: '' });
   const [error, setError] = useState('');
   const photoInputRef = useRef<HTMLInputElement>(null);
+  
   useEffect(() => {
     if (player) setFormData({ photo: player.photo || '', firstName: player.firstName || '', lastName: player.lastName || '', number: player.number || '-', birthDate: player.birthDate || '' });
     else setFormData({ photo: '', firstName: '', lastName: '', number: '-', birthDate: '' });
     setError('');
   }, [player, isOpen]);
+  
   const handleSave = () => {
     if (!formData.firstName.trim() || !formData.lastName.trim()) { setError('️ Inserisci nome e cognome!'); return; }
     onSave({ ...formData, firstName: formData.firstName.trim(), lastName: formData.lastName.trim() });
     onClose();
   };
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => { const file = e.target.files?.[0]; if (file) setFormData(prev => ({ ...prev, photo: URL.createObjectURL(file) })); };
+  
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => { 
+    const file = e.target.files?.[0]; 
+    if (file) setFormData(prev => ({ ...prev, photo: URL.createObjectURL(file) })); 
+  };
+  
   if (!isOpen) return null;
   const isEditing = !!player;
+  
   return (
     <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" onClick={(e) => e.stopPropagation()}>
@@ -598,9 +615,29 @@ export const AdminPlayerEditor: React.FC<AdminPlayerEditorProps> = ({ player, is
           <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Data di nascita</label><input type="date" value={formData.birthDate} onChange={(e) => setFormData(prev => ({ ...prev, birthDate: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm" /></div>
           {error && <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs font-bold text-center">{error}</div>}
         </div>
+        
+        {/* FOOTER CON TRE PULSANTI */}
         <div className="p-4 border-t border-gray-200 flex gap-3">
-          <button onClick={onClose} className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 font-bold rounded-lg hover:bg-gray-50 transition-colors text-sm uppercase">Annulla</button>
-          <button onClick={handleSave} className="flex-1 px-4 py-2.5 bg-[#581C24] text-white font-bold rounded-lg hover:bg-[#581C24]/90 transition-colors text-sm shadow-md uppercase">SALVA</button>
+          <button onClick={onClose} className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 font-bold rounded-lg hover:bg-gray-50 transition-colors text-sm uppercase">
+            Annulla
+          </button>
+          
+          {/* PULSANTE CESTINO: appare SOLO in modalità modifica */}
+          {isEditing && onDelete && (
+            <button 
+              onClick={onDelete}
+              className="px-4 py-2.5 bg-red-50 text-red-600 font-bold rounded-lg hover:bg-red-100 transition-colors text-sm uppercase flex items-center justify-center gap-1"
+              title="Elimina giocatore"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          )}
+
+          <button onClick={handleSave} className="flex-1 px-4 py-2.5 bg-[#581C24] text-white font-bold rounded-lg hover:bg-[#581C24]/90 transition-colors text-sm shadow-md uppercase">
+            {isEditing ? 'Aggiorna' : 'Salva'}
+          </button>
         </div>
       </div>
     </div>

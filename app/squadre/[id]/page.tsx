@@ -231,6 +231,57 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     setIsPlayerEditorOpen(false);
   };
 
+  const handleDeletePlayer = async () => {
+        if (!editingPlayer) return;
+        
+        // ⚠️ CONFERMA DI SICUREZZA
+        const isConfirmed = window.confirm(
+          `⚠️ Eliminare definitivamente ${editingPlayer.firstName} ${editingPlayer.lastName}?\n\nQuesta azione è irreversibile.`
+        );
+        
+        if (!isConfirmed) return;
+
+        try {
+          const supabase = createClient();
+          
+          // Trova il giocatore nel database per ottenere l'ID
+          const currentPlayer = teamData.players.find((p: any) => 
+            p.firstName === editingPlayer.firstName && p.lastName === editingPlayer.lastName
+          );
+          
+          if (!currentPlayer || !currentPlayer.id) {
+            alert('Giocatore non trovato');
+            return;
+          }
+
+          // Elimina dal database
+          const { error } = await supabase
+            .from('players')
+            .delete()
+            .eq('id', currentPlayer.id);
+
+          if (error) {
+            console.error('Errore eliminazione:', error);
+            alert('Errore nell\'eliminazione del giocatore');
+            return;
+          }
+
+          // Aggiorna lo stato locale rimuovendo il giocatore
+          setTeamData((prev: any) => ({
+            ...prev,
+            players: prev.players.filter((p: any) => p.id !== currentPlayer.id)
+          }));
+
+          alert('✅ Giocatore eliminato con successo');
+          setIsPlayerEditorOpen(false);
+          setEditingPlayer(null);
+          
+        } catch (err) {
+          console.error('Errore:', err);
+          alert('Errore nell\'eliminazione');
+        }
+      };
+
   const handlePlayerClick = (player: any) => {
     if (isStaffMode || isMyTeam) {
       setEditingPlayer({ 
@@ -425,8 +476,14 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      {/* POPUP EDITOR GIOCATORE (SOLO ADMIN/CAPITANO) */}
-      <AdminPlayerEditor player={editingPlayer} isOpen={isPlayerEditorOpen} onClose={() => { setIsPlayerEditorOpen(false); setEditingPlayer(null); }} onSave={handleUpdatePlayer} />
+      // Poi nel JSX, trova dove usi AdminPlayerEditor e modificalo così:
+      <AdminPlayerEditor 
+        player={editingPlayer} 
+        isOpen={isPlayerEditorOpen} 
+        onClose={() => { setIsPlayerEditorOpen(false); setEditingPlayer(null); }} 
+        onSave={handleUpdatePlayer}
+        onDelete={handleDeletePlayer} // NUOVO: passa la funzione di eliminazione
+      />
 
       {/* POPUP DETTAGLI GIOCATORE (SOLO UTENTE NORMALE) */}
       {selectedPlayer && !isStaffMode && (
