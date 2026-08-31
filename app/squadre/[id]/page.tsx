@@ -18,13 +18,10 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
   const { isStaffMode } = useAuth();
   const [selectedPlayer, setSelectedPlayer] = useState<any | null>(null);
   const [teamData, setTeamData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   
-  // Stati per l'editor giocatori
   const [isPlayerEditorOpen, setIsPlayerEditorOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<PlayerData | null>(null);
-
-  // Stati per verificare se l'utente è il capitano di QUESTA squadra
   const [isCaptain, setIsCaptain] = useState(false);
   const [captainTeamId, setCaptainTeamId] = useState('');
 
@@ -37,7 +34,6 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     }
   }, []);
 
-  // Fetch dati da Supabase
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -45,7 +41,6 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
       const teamId = params.id;
 
       try {
-        // 1. Fetch Dati Squadra
         const { data: team, error: teamError } = await supabase
           .from('teams')
           .select('id, name, girone, logo_url, team_photo_url')
@@ -54,7 +49,6 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
 
         if (teamError) throw teamError;
 
-        // 2. Fetch Giocatori
         const { data: players, error: playersError } = await supabase
           .from('players')
           .select('id, first_name, last_name, jersey_number, birth_date, photo_url, goals, yellow_cards, red_cards, mvp_wins')
@@ -63,7 +57,6 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
 
         if (playersError) throw playersError;
 
-        // 3. Fetch Partite per Calcolo Statistiche (solo partite finite)
         const { data: matches, error: matchesError } = await supabase
           .from('matches')
           .select('home_team_id, away_team_id, home_score, away_score')
@@ -94,7 +87,6 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
           stats.dr = stats.gf - stats.gs;
         }
 
-        // Mappa giocatori per corrispondere alla struttura UI
         const mappedPlayers = (players || []).map((p: any) => ({
           id: p.id,
           number: p.jersey_number || '-',
@@ -131,15 +123,13 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     }
   }, [params.id]);
 
-  // Aggiorna dati squadra (Nome, Girone, Logo, Foto)
-  const handleTeamUpdate = async (field: 'name' | 'group' | 'logo' | 'teamPhoto', value: string) => {
+  // Aggiorna dati testo (Nome, Girone)
+  const handleTeamUpdate = async (field: 'name' | 'group', value: string) => {
     const supabase = createClient();
     const updateData: any = {};
     
     if (field === 'name') updateData.name = value;
     if (field === 'group') updateData.girone = value.replace('GIRONE ', '');
-    if (field === 'logo') updateData.logo_url = value;
-    if (field === 'teamPhoto') updateData.team_photo_url = value;
 
     const { error } = await supabase.from('teams').update(updateData).eq('id', params.id);
 
@@ -152,139 +142,283 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     setTeamData((prev: any) => ({ ...prev, [field]: value }));
   };
 
-  // Aggiungi Giocatore (Salva su Supabase)
-  const handleAddPlayer = async (newPlayer: PlayerData) => {
+  // Upload Logo Squadra su Supabase Storage
+  const handleLogoUpload = async (file: File) => {
+    if (!file || !teamData) return;
+    
+    setLoading(true);
     const supabase = createClient();
+    
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_logo_${teamData.name.replace(/\s/g, '_')}.${fileExt}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('team-logos')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+      
+      if (uploadError) throw uploadError;
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('team-logos')
+        .getPublicUrl(fileName);
+      
+      const { error: updateError } = await supabase
+        .from('teams')
+        .update({ logo_url: publicUrl })
+        .eq('id', params.id);
+      
+      if (updateError) throw updateError;
+      
+      setTeamData((prev: any) => ({ ...prev, logo: publicUrl }));
+      alert('✅ Logo caricato con successo!');
+      
+    } catch (err) {
+      console.error('Errore upload logo:', err);
+      alert('Errore nel caricamento del logo');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Upload Foto Squadra su Supabase Storage
+  const handleTeamPhotoUpload = async (file: File) => {
+    if (!file || !teamData) return;
+    
+    setLoading(true);
+    const supabase = createClient();
+    
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_photo_${teamData.name.replace(/\s/g, '_')}.${fileExt}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('team-photos')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+      
+      if (uploadError) throw uploadError;
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('team-photos')
+        .getPublicUrl(fileName);
+      
+      const { error: updateError } = await supabase
+        .from('teams')
+        .update({ team_photo_url: publicUrl })
+        .eq('id', params.id);
+      
+      if (updateError) throw updateError;
+      
+      setTeamData((prev: any) => ({ ...prev, teamPhoto: publicUrl }));
+      alert('✅ Foto squadra caricata con successo!');
+      
+    } catch (err) {
+      console.error('Errore upload foto:', err);
+      alert('Errore nel caricamento della foto');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Upload Foto Giocatore su Supabase Storage
+  const handlePlayerPhotoUpload = async (file: File): Promise<string | null> => {
+    if (!file) return null;
+    
+    const supabase = createClient();
+    
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_player.${fileExt}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('player-photos')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+      
+      if (uploadError) throw uploadError;
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('player-photos')
+        .getPublicUrl(fileName);
+      
+      return publicUrl;
+      
+    } catch (err) {
+      console.error('Errore upload foto giocatore:', err);
+      alert('Errore nel caricamento della foto');
+      return null;
+    }
+  };
+
+  // Aggiungi Giocatore
+  const handleAddPlayer = async (newPlayer: PlayerData) => {
+    setLoading(true);
+    const supabase = createClient();
+    
+    let photoUrl: string | undefined = newPlayer.photo;
+    
+    // Se la foto è un blob URL, caricala su Storage
+    if (newPlayer.photo && newPlayer.photo.startsWith('blob:')) {
+      // Devi recuperare il file dal blob - semplificazione: chiedi di ricaricare
+      alert('⚠️ Per caricare la foto, seleziona nuovamente il file');
+      photoUrl = undefined;
+    }
+    
     const playerData = {
       team_id: params.id,
       first_name: newPlayer.firstName.trim(),
       last_name: newPlayer.lastName.trim(),
       jersey_number: newPlayer.number === '-' ? null : newPlayer.number,
       birth_date: newPlayer.birthDate || null,
-      photo_url: newPlayer.photo || null,
+      photo_url: photoUrl,
     };
 
-    const { data, error } = await supabase.from('players').insert(playerData).select().single();
+    try {
+      const { data, error } = await supabase.from('players').insert(playerData).select().single();
 
-    if (error) {
-      console.error('Errore aggiunta giocatore:', error);
+      if (error) throw error;
+
+      const mappedPlayer = {
+        id: data.id,
+        number: data.jersey_number || '-',
+        name: `${data.first_name.toUpperCase()} ${data.last_name.toUpperCase()}`,
+        firstName: data.first_name,
+        lastName: data.last_name,
+        birthDate: data.birth_date || '',
+        photo: data.photo_url || '',
+        goals: 0, yellow: 0, red: 0, mvp: 0,
+      };
+
+      setTeamData((prev: any) => ({ ...prev, players: [...prev.players, mappedPlayer] }));
+      alert('✅ Giocatore aggiunto con successo!');
+      
+    } catch (err) {
+      console.error('Errore aggiunta giocatore:', err);
       alert('Errore nel salvataggio del giocatore');
-      return;
+    } finally {
+      setLoading(false);
     }
-
-    const mappedPlayer = {
-      id: data.id,
-      number: data.jersey_number || '-',
-      name: `${data.first_name.toUpperCase()} ${data.last_name.toUpperCase()}`,
-      firstName: data.first_name,
-      lastName: data.last_name,
-      birthDate: data.birth_date || '',
-      photo: data.photo_url || '',
-      goals: 0, yellow: 0, red: 0, mvp: 0,
-    };
-
-    setTeamData((prev: any) => ({ ...prev, players: [...prev.players, mappedPlayer] }));
   };
 
-  // Modifica Giocatore (Aggiorna su Supabase)
+  // Modifica Giocatore
   const handleUpdatePlayer = async (updatedData: PlayerData) => {
     if (!editingPlayer) return;
+    setLoading(true);
     const supabase = createClient();
     
-    const currentPlayer = teamData.players.find((p: any) => p.firstName === editingPlayer.firstName && p.lastName === editingPlayer.lastName);
-    if (!currentPlayer || !currentPlayer.id) return;
-
-    const { error } = await supabase
-      .from('players')
-      .update({
-        first_name: updatedData.firstName.trim(),
-        last_name: updatedData.lastName.trim(),
-        jersey_number: updatedData.number === '-' ? null : updatedData.number,
-        birth_date: updatedData.birthDate || null,
-        photo_url: updatedData.photo || currentPlayer.photo,
-      })
-      .eq('id', currentPlayer.id);
-
-    if (error) {
-      console.error('Errore aggiornamento giocatore:', error);
-      alert('Errore nell\'aggiornamento del giocatore');
+    const currentPlayer = teamData.players.find((p: any) => p.id === editingPlayer.id);
+    if (!currentPlayer) {
+      setLoading(false);
       return;
     }
 
-    setTeamData((prev: any) => ({
-      ...prev,
-      players: prev.players.map((p: any) => 
-        p.id === currentPlayer.id
-          ? { 
-              ...p, 
-              firstName: updatedData.firstName.trim(),
-              lastName: updatedData.lastName.trim(),
-              number: updatedData.number,
-              birthDate: updatedData.birthDate,
-              photo: updatedData.photo || p.photo,
-              name: `${updatedData.firstName.trim().toUpperCase()} ${updatedData.lastName.trim().toUpperCase()}`
-            }
-          : p
-      )
-    }));
-    setEditingPlayer(null);
-    setIsPlayerEditorOpen(false);
+    let photoUrl = updatedData.photo || currentPlayer.photo;
+    
+    // Se la foto è un blob URL, caricala su Storage
+    if (updatedData.photo && updatedData.photo.startsWith('blob:')) {
+      alert('⚠️ Per aggiornare la foto, seleziona nuovamente il file');
+      photoUrl = currentPlayer.photo;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('players')
+        .update({
+          first_name: updatedData.firstName.trim(),
+          last_name: updatedData.lastName.trim(),
+          jersey_number: updatedData.number === '-' ? null : updatedData.number,
+          birth_date: updatedData.birthDate || null,
+          photo_url: photoUrl,
+        })
+        .eq('id', currentPlayer.id);
+
+      if (error) throw error;
+
+      setTeamData((prev: any) => ({
+        ...prev,
+        players: prev.players.map((p: any) => 
+          p.id === currentPlayer.id
+            ? { 
+                ...p, 
+                firstName: updatedData.firstName.trim(),
+                lastName: updatedData.lastName.trim(),
+                number: updatedData.number,
+                birthDate: updatedData.birthDate,
+                photo: photoUrl,
+                name: `${updatedData.firstName.trim().toUpperCase()} ${updatedData.lastName.trim().toUpperCase()}`
+              }
+            : p
+        )
+      }));
+      alert('✅ Giocatore aggiornato con successo!');
+      
+    } catch (err) {
+      console.error('Errore aggiornamento giocatore:', err);
+      alert('Errore nell\'aggiornamento del giocatore');
+    } finally {
+      setLoading(false);
+      setEditingPlayer(null);
+      setIsPlayerEditorOpen(false);
+    }
   };
 
   const handleDeletePlayer = async () => {
-        if (!editingPlayer) return;
-        
-        // ⚠️ CONFERMA DI SICUREZZA
-        const isConfirmed = window.confirm(
-          `⚠️ Eliminare definitivamente ${editingPlayer.firstName} ${editingPlayer.lastName}?\n\nQuesta azione è irreversibile.`
-        );
-        
-        if (!isConfirmed) return;
+    if (!editingPlayer) return;
+    
+    const isConfirmed = window.confirm(
+      `️ Eliminare definitivamente ${editingPlayer.firstName} ${editingPlayer.lastName}?\n\nQuesta azione è irreversibile.`
+    );
+    
+    if (!isConfirmed) return;
 
-        try {
-          const supabase = createClient();
-          
-          // Trova il giocatore nel database per ottenere l'ID
-          const currentPlayer = teamData.players.find((p: any) => 
-            p.firstName === editingPlayer.firstName && p.lastName === editingPlayer.lastName
-          );
-          
-          if (!currentPlayer || !currentPlayer.id) {
-            alert('Giocatore non trovato');
-            return;
-          }
+    setLoading(true);
+    const supabase = createClient();
+    
+    const currentPlayer = teamData.players.find((p: any) => p.id === editingPlayer.id);
+    
+    if (!currentPlayer || !currentPlayer.id) {
+      alert('Giocatore non trovato');
+      setLoading(false);
+      return;
+    }
 
-          // Elimina dal database
-          const { error } = await supabase
-            .from('players')
-            .delete()
-            .eq('id', currentPlayer.id);
+    try {
+      const { error } = await supabase
+        .from('players')
+        .delete()
+        .eq('id', currentPlayer.id);
 
-          if (error) {
-            console.error('Errore eliminazione:', error);
-            alert('Errore nell\'eliminazione del giocatore');
-            return;
-          }
+      if (error) throw error;
 
-          // Aggiorna lo stato locale rimuovendo il giocatore
-          setTeamData((prev: any) => ({
-            ...prev,
-            players: prev.players.filter((p: any) => p.id !== currentPlayer.id)
-          }));
+      setTeamData((prev: any) => ({
+        ...prev,
+        players: prev.players.filter((p: any) => p.id !== currentPlayer.id)
+      }));
 
-          alert('✅ Giocatore eliminato con successo');
-          setIsPlayerEditorOpen(false);
-          setEditingPlayer(null);
-          
-        } catch (err) {
-          console.error('Errore:', err);
-          alert('Errore nell\'eliminazione');
-        }
-      };
+      alert('✅ Giocatore eliminato con successo');
+      
+    } catch (err) {
+      console.error('Errore:', err);
+      alert('Errore nell\'eliminazione');
+    } finally {
+      setLoading(false);
+      setIsPlayerEditorOpen(false);
+      setEditingPlayer(null);
+    }
+  };
 
   const handlePlayerClick = (player: any) => {
     if (isStaffMode || isMyTeam) {
       setEditingPlayer({ 
+        id: player.id,
         photo: player.photo, 
         firstName: player.firstName, 
         lastName: player.lastName, 
@@ -304,7 +438,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
       <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-[#581C24] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-[#581C24] font-bold uppercase">Caricamento squadra...</p>
+          <p className="text-[#581C24] font-bold uppercase">Caricamento...</p>
         </div>
       </div>
     );
@@ -320,7 +454,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
 
   return (
     <div className="min-h-screen bg-[#F5F5F7]">
-      {/* HEADER CON IMMAGINE CAMPO */}
+      {/* HEADER */}
       <div className="relative h-40 sm:h-48 w-full overflow-hidden">
         <Image src="/header-team.jpg" alt="Campo" fill className="object-cover" priority />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-transparent" />
@@ -329,17 +463,22 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
         </Link>
       </div>
 
-      {/* CARD NOME SQUADRA E GIRONE */}
+      {/* CARD NOME SQUADRA */}
       <div className="relative z-10 -mt-12 px-4 mb-4">
         {isStaffMode ? (
-          <AdminTeamEditor name={teamData.name} group={teamData.group} logo={teamData.logo} onUpdate={handleTeamUpdate} />
+          <AdminTeamEditor 
+            name={teamData.name} 
+            group={teamData.group} 
+            logo={teamData.logo} 
+            onUpdate={handleTeamUpdate}
+            onLogoUpload={handleLogoUpload}
+          />
         ) : (
           <div className="bg-white rounded-xl shadow-lg p-4 flex items-center gap-3">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 relative">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 relative overflow-hidden">
               {teamData.logo ? (
-                <Image src={teamData.logo} alt="Logo" fill className="object-cover rounded-full" onError={(e) => { e.currentTarget.style.display = 'none'; const p = e.currentTarget.nextElementSibling; if (p) (p as HTMLElement).style.display = 'flex'; }} />
-              ) : null}
-              <span className="text-[10px] text-gray-400">LOGO</span>
+                <Image src={teamData.logo} alt="Logo" fill className="object-cover rounded-full" />
+              ) : <span className="text-[10px] text-gray-400">LOGO</span>}
             </div>
             <div>
               <h1 className="text-2xl font-black text-[#581C24] uppercase tracking-wider">{teamData.name}</h1>
@@ -352,20 +491,24 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
       {/* FOTO SQUADRA */}
       <div className="px-4 mb-6">
         {isStaffMode ? (
-          <AdminTeamPhotoEditor teamPhoto={teamData.teamPhoto} onUpdate={(url) => handleTeamUpdate('teamPhoto', url)} />
+          <AdminTeamPhotoEditor 
+            teamPhoto={teamData.teamPhoto} 
+            onPhotoUpload={handleTeamPhotoUpload} 
+          />
         ) : (
           <div className="rounded-xl overflow-hidden shadow-md bg-gray-300 relative h-40">
             {teamData.teamPhoto ? (
-              <Image src={teamData.teamPhoto} alt="Foto Squadra" fill className="object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; const p = e.currentTarget.nextElementSibling; if (p) (p as HTMLElement).style.display = 'flex'; }} />
-            ) : null}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-gray-500 text-sm font-medium">FOTO SQUADRA</span>
-            </div>
+              <Image src={teamData.teamPhoto} alt="Foto Squadra" fill className="object-cover" />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-gray-500 text-sm font-medium">FOTO SQUADRA</span>
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* AREA CAPITANO - Visibile SOLO se il capitano è nella sua squadra */}
+      {/* AREA CAPITANO */}
       {isMyTeam && (
         <div className="px-4 mb-6">
           <div className="bg-[#FFD700]/10 border-2 border-[#FFD700] rounded-xl p-4 shadow-sm">
@@ -375,12 +518,11 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
               </svg>
               Pannello Capitano - {teamData.name}
             </p>
-            <p className="text-xs text-gray-600">Funzionalità capitano attive per questa squadra.</p>
           </div>
         </div>
       )}
 
-      {/* STATISTICHE SQUADRA */}
+      {/* STATISTICHE */}
       <div className="px-4 mb-6">
         <div className="flex items-end">
           <div className="w-8" />
@@ -402,26 +544,6 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
           <div className="flex-1 flex flex-col items-center">
             <p className="text-[8px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">S</p>
             <p className="text-base font-bold text-gray-700">{teamData.stats.s}</p>
-          </div>
-          <div className="w-16" />
-        </div>
-        <div className="flex items-end mt-1">
-          <div className="w-10" />
-          <div className="w-[2.5rem]" />
-          <div className="w-12" />
-          <div className="flex-1 flex flex-col items-center">
-            <p className="text-[8px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">GF</p>
-            <p className="text-base font-bold text-gray-700">{teamData.stats.gf}</p>
-          </div>
-          <div className="w-1" />
-          <div className="flex-1 flex flex-col items-center">
-            <p className="text-[8px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">GS</p>
-            <p className="text-base font-bold text-gray-700">{teamData.stats.gs}</p>
-          </div>
-          <div className="w-1" />
-          <div className="flex-1 flex flex-col items-center">
-            <p className="text-[8px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">DR</p>
-            <p className="text-base font-bold text-gray-700">{teamData.stats.dr > 0 ? `+${teamData.stats.dr}` : teamData.stats.dr}</p>
           </div>
           <div className="w-16" />
         </div>
@@ -454,9 +576,8 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
                   <div className="w-8 flex justify-center flex-shrink-0 relative">
                     <div className="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
                       {player.photo ? (
-                        <Image src={player.photo} alt={player.name} fill className="object-cover rounded-full" onError={(e) => { e.currentTarget.style.display = 'none'; const p = e.currentTarget.nextElementSibling; if (p) (p as HTMLElement).style.display = 'flex'; }} />
-                      ) : null}
-                      <span className="text-[6px] text-gray-400">FOTO</span>
+                        <Image src={player.photo} alt={player.name} fill className="object-cover rounded-full" />
+                      ) : <span className="text-[6px] text-gray-400">FOTO</span>}
                     </div>
                   </div>
                   <div className="w-6 text-center flex-shrink-0">
@@ -476,15 +597,15 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-    <AdminPlayerEditor 
-      player={editingPlayer} 
-      isOpen={isPlayerEditorOpen} 
-      onClose={() => { setIsPlayerEditorOpen(false); setEditingPlayer(null); }} 
-      onSave={handleUpdatePlayer}
-      onDelete={handleDeletePlayer}
-    />
+      <AdminPlayerEditor 
+        player={editingPlayer} 
+        isOpen={isPlayerEditorOpen} 
+        onClose={() => { setIsPlayerEditorOpen(false); setEditingPlayer(null); }} 
+        onSave={handleUpdatePlayer}
+        onDelete={handleDeletePlayer}
+      />
 
-      {/* POPUP DETTAGLI GIOCATORE (SOLO UTENTE NORMALE) */}
+      {/* POPUP DETTAGLI GIOCATORE */}
       {selectedPlayer && !isStaffMode && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setSelectedPlayer(null)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden relative" onClick={(e) => e.stopPropagation()}>
@@ -495,25 +616,13 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
               <div className="flex items-center gap-4">
                 <div className="w-20 h-20 bg-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden relative">
                   {selectedPlayer.photo ? (
-                    <Image src={selectedPlayer.photo} alt={selectedPlayer.name} fill className="object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; const p = e.currentTarget.nextElementSibling; if (p) (p as HTMLElement).style.display = 'flex'; }} />
-                  ) : null}
-                  <span className="text-[10px] text-gray-400">FOTO</span>
+                    <Image src={selectedPlayer.photo} alt={selectedPlayer.name} fill className="object-cover" />
+                  ) : <span className="text-[10px] text-gray-400">FOTO</span>}
                 </div>
                 <div className="flex-1">
                   <p className="text-white/80 text-xs uppercase tracking-wider mb-0.5">Nome</p>
                   <h3 className="text-2xl font-black text-white uppercase leading-tight">{selectedPlayer.firstName}</h3>
                   <p className="text-xl font-bold text-white/90 uppercase">{selectedPlayer.lastName}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-10 mt-4">
-                <div className="flex-shrink-0">
-                  <div className="bg-white rounded-lg px-3 py-2 shadow-lg">
-                    <p className="text-3xl font-black text-[#581C24] text-center">{selectedPlayer.number}</p>
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <p className="text-white/80 text-xs uppercase tracking-wider mb-0.5">Data di nascita</p>
-                  <p className="text-white font-bold text-sm">{selectedPlayer.birthDate}</p>
                 </div>
               </div>
             </div>
@@ -524,23 +633,6 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
                 </div>
                 <div className="flex-1"><p className="text-[#581C24] font-bold uppercase text-sm">GOL</p></div>
                 <p className="text-2xl font-black text-[#581C24]">{selectedPlayer.goals}</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-[#581C24]/10 rounded-full flex items-center justify-center flex-shrink-0">
-                  <svg className="w-5 h-5 text-[#581C24]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                </div>
-                <div className="flex-1"><p className="text-[#581C24] font-bold uppercase text-sm">MVP</p></div>
-                <p className="text-2xl font-black text-[#581C24]">{selectedPlayer.mvp}</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-6 h-8 bg-yellow-400 rounded-sm flex-shrink-0 border border-yellow-600" />
-                <div className="flex-1"><p className="text-[#581C24] font-bold uppercase text-sm">AMMONIZIONI</p></div>
-                <p className="text-2xl font-black text-[#581C24]">{selectedPlayer.yellow}</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-6 h-8 bg-red-600 rounded-sm flex-shrink-0 border border-red-800" />
-                <div className="flex-1"><p className="text-[#581C24] font-bold uppercase text-sm">ESPULSIONI</p></div>
-                <p className="text-2xl font-black text-[#581C24]">{selectedPlayer.red}</p>
               </div>
             </div>
           </div>

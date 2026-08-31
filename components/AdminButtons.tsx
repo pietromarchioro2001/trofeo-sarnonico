@@ -493,17 +493,50 @@ export const AdminSquadreButton = () => {
   );
 };
 
-interface AdminTeamEditorProps { name: string; group: string; logo: string; onUpdate: (field: 'name' | 'group' | 'logo', value: string) => void; }
-export const AdminTeamEditor: React.FC<AdminTeamEditorProps> = ({ name, group, logo, onUpdate }) => {
+interface AdminTeamEditorProps { 
+  name: string; 
+  group: string; 
+  logo: string; 
+  onUpdate: (field: 'name' | 'group', value: string) => void;
+  onLogoUpload: (file: File) => void; // NUOVO
+}
+
+export const AdminTeamEditor: React.FC<AdminTeamEditorProps> = ({ 
+  name, group, logo, onUpdate, onLogoUpload 
+}) => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState(name);
   const [isEditingGroup, setIsEditingGroup] = useState(false);
   const [tempGroup, setTempGroup] = useState(group);
   const logoInputRef = useRef<HTMLInputElement>(null);
-  useEffect(() => { setTempName(name); setTempGroup(group); }, [name, group]);
-  const handleNameSave = () => { if (tempName.trim() !== '') onUpdate('name', tempName.trim().toUpperCase()); else setTempName(name); setIsEditingName(false); };
-  const handleGroupSave = (newGroup: string) => { onUpdate('group', newGroup); setIsEditingGroup(false); };
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => { const file = e.target.files?.[0]; if (file) onUpdate('logo', URL.createObjectURL(file)); };
+  
+  useEffect(() => { 
+    setTempName(name); 
+    setTempGroup(group); 
+  }, [name, group]);
+  
+  const handleNameSave = () => { 
+    if (tempName.trim() !== '') {
+      onUpdate('name', tempName.trim().toUpperCase());
+    } else {
+      setTempName(name);
+    }
+    setIsEditingName(false); 
+  };
+  
+  const handleGroupSave = (newGroup: string) => { 
+    onUpdate('group', newGroup); 
+    setIsEditingGroup(false); 
+  };
+  
+  // Questa funzione ora chiama onLogoUpload invece di onUpdate
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => { 
+    const file = e.target.files?.[0]; 
+    if (file) {
+      onLogoUpload(file); // Upload su Supabase
+    }
+  };
+  
   return (
     <div className="bg-white rounded-xl shadow-lg p-4 flex items-center gap-3">
       <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 cursor-pointer hover:bg-gray-200 transition-colors relative overflow-hidden group" onClick={() => logoInputRef.current?.click()} title="Clicca per cambiare il logo">
@@ -532,10 +565,23 @@ export const AdminTeamEditor: React.FC<AdminTeamEditorProps> = ({ name, group, l
   );
 };
 
-interface AdminTeamPhotoEditorProps { teamPhoto: string; onUpdate: (url: string) => void; }
-export const AdminTeamPhotoEditor: React.FC<AdminTeamPhotoEditorProps> = ({ teamPhoto, onUpdate }) => {
+interface AdminTeamPhotoEditorProps { 
+  teamPhoto: string; 
+  onPhotoUpload: (file: File) => void; // CAMBIATO
+}
+
+export const AdminTeamPhotoEditor: React.FC<AdminTeamPhotoEditorProps> = ({ 
+  teamPhoto, onPhotoUpload 
+}) => {
   const photoInputRef = useRef<HTMLInputElement>(null);
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => { const file = e.target.files?.[0]; if (file) onUpdate(URL.createObjectURL(file)); };
+  
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => { 
+    const file = e.target.files?.[0]; 
+    if (file) {
+      onPhotoUpload(file); // Upload su Supabase
+    }
+  };
+  
   return (
     <div className="rounded-xl overflow-hidden shadow-md bg-gray-300 relative h-40 cursor-pointer group" onClick={() => photoInputRef.current?.click()}>
       <input type="file" ref={photoInputRef} className="hidden" accept="image/*" onChange={handlePhotoChange} />
