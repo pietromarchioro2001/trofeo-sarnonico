@@ -522,30 +522,43 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
         </div>
       )}
 
-      {/* STATISTICHE */}
-      <div className="px-4 mb-6">
-        <div className="flex items-end">
-          <div className="w-8" />
-          <div className="flex flex-col items-center">
-            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">PT</p>
-            <p className="text-[2.5rem] font-black text-[#581C24] leading-none">{teamData.stats.pt}</p>
+      {/* STATISTICHE SQUADRA */}
+      <div className="bg-gray-50 rounded-xl p-4 mb-6">
+        <div className="grid grid-cols-4 gap-3">
+          <div className="text-center">
+            <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">PT</p>
+            <p className="text-3xl font-black text-[#581C24]">{teamData.stats.pt || 0}</p>
           </div>
-          <div className="w-12" />
-          <div className="flex-1 flex flex-col items-center">
-            <p className="text-[8px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">V</p>
-            <p className="text-base font-bold text-gray-700">{teamData.stats.v}</p>
+          <div className="text-center">
+            <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">PG</p>
+            <p className="text-xl font-bold text-[#581C24]">{teamData.stats.pg || 0}</p>
           </div>
-          <div className="w-1" />
-          <div className="flex-1 flex flex-col items-center">
-            <p className="text-[8px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">P</p>
-            <p className="text-base font-bold text-gray-700">{teamData.stats.p}</p>
+          <div className="text-center">
+            <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">V</p>
+            <p className="text-xl font-bold text-[#581C24]">{teamData.stats.v || 0}</p>
           </div>
-          <div className="w-1" />
-          <div className="flex-1 flex flex-col items-center">
-            <p className="text-[8px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">S</p>
-            <p className="text-base font-bold text-gray-700">{teamData.stats.s}</p>
+          <div className="text-center">
+            <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">P</p>
+            <p className="text-xl font-bold text-[#581C24]">{teamData.stats.p || 0}</p>
           </div>
-          <div className="w-16" />
+          <div className="text-center">
+            <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">S</p>
+            <p className="text-xl font-bold text-[#581C24]">{teamData.stats.s || 0}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">GF</p>
+            <p className="text-xl font-bold text-[#581C24]">{teamData.stats.gf || 0}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">GS</p>
+            <p className="text-xl font-bold text-[#581C24]">{teamData.stats.gs || 0}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">DR</p>
+            <p className="text-xl font-bold text-[#581C24]">
+              {(teamData.stats.dr || 0) > 0 ? `+${teamData.stats.dr}` : teamData.stats.dr || 0}
+            </p>
+          </div>
         </div>
       </div>
 
