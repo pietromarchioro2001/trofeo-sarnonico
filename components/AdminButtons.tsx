@@ -66,7 +66,28 @@ interface PenaltyShootoutPopupProps {
   onClose: (winner: 'home' | 'away' | null) => void;
 }
 
-// ... (Tutti i componenti esistenti rimangono invariati qui sotto) ...
+// ==================== COMPONENTE RIUTILIZZABILE PER MAIUSCOLO ====================
+const UppercaseInput = ({ 
+  value, 
+  onChange, 
+  placeholder, 
+  className = '' 
+}: { 
+  value: string; 
+  onChange: (value: string) => void; 
+  placeholder?: string; 
+  className?: string;
+}) => (
+  <input
+    type="text"
+    value={value}
+    onChange={(e) => onChange(e.target.value.toUpperCase())}
+    placeholder={placeholder}
+    className={`uppercase ${className}`}
+    style={{ textTransform: 'uppercase' }}
+  />
+);
+// ================================================================================
 
 export const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
   homeTeam, awayTeam, isAdmin, onClose
@@ -606,7 +627,15 @@ export const AdminSquadreButton = () => {
               <button onClick={handleClose} className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/20 transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
             </div>
             <div className="p-6 space-y-4">
-              <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Nome Squadra</label><input type="text" value={teamName} onChange={(e) => setTeamName(e.target.value)} placeholder="Nome squadra" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm placeholder:text-gray-400" /></div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 uppercase mb-2">Nome Squadra</label>
+                <UppercaseInput
+                  value={teamName}
+                  onChange={setTeamName}
+                  placeholder="Nome squadra"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm placeholder:text-gray-400"
+                />
+              </div>
               <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Girone</label><select value={group} onChange={(e) => setGroup(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm font-bold"><option value="">Seleziona Girone...</option><option value="A">GIRONE A</option><option value="B">GIRONE B</option></select></div>
               <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Logo Squadra</label><input type="file" accept="image/*" onChange={(e) => setLogoFile(e.target.files ? e.target.files[0] : null)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-[#581C24] file:text-white hover:file:bg-[#581C24]/90 cursor-pointer" />{logoFile && <p className="text-xs text-green-700 mt-1 font-medium">✓ {logoFile.name}</p>}</div>
               <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Foto Squadra</label><input type="file" accept="image/*" onChange={(e) => setPhotoFile(e.target.files ? e.target.files[0] : null)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-[#581C24] file:text-white hover:file:bg-[#581C24]/90 cursor-pointer" />{photoFile && <p className="text-xs text-green-700 mt-1 font-medium">✓ {photoFile.name}</p>}</div>
@@ -803,8 +832,24 @@ export const AdminPlayerEditor: React.FC<AdminPlayerEditorProps> = ({ player, is
               </div>
             </div>
           </div>
-          <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Nome</label><input type="text" value={formData.firstName} onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))} placeholder="Nome" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm placeholder:text-gray-400" /></div>
-          <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Cognome</label><input type="text" value={formData.lastName} onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))} placeholder="Cognome" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm placeholder:text-gray-400" /></div>
+          <div>
+            <label className="block text-xs font-bold text-gray-600 uppercase mb-2">Nome</label>
+            <UppercaseInput
+              value={formData.firstName}
+              onChange={(val) => setFormData(prev => ({ ...prev, firstName: val }))}
+              placeholder="Nome"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm placeholder:text-gray-400"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-600 uppercase mb-2">Cognome</label>
+            <UppercaseInput
+              value={formData.lastName}
+              onChange={(val) => setFormData(prev => ({ ...prev, lastName: val }))}
+              placeholder="Cognome"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm placeholder:text-gray-400"
+            />
+          </div>
           <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Numero di maglia</label><input type="text" value={formData.number} onChange={(e) => setFormData(prev => ({ ...prev, number: e.target.value }))} placeholder="-" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm placeholder:text-gray-400" /></div>
           <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Data di nascita</label><input type="date" value={formData.birthDate} onChange={(e) => setFormData(prev => ({ ...prev, birthDate: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm" /></div>
           {error && <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs font-bold text-center">{error}</div>}
