@@ -176,7 +176,7 @@ export default function HomePage() {
           .from('players')
           .select('id, first_name, last_name, goals, team_id')
           .order('goals', { ascending: false })
-          .limit(5); // Aumenta a 5 per averne abbastanza
+          .limit(3); // Aumenta a 5 per averne abbastanza
 
         if (scorersArray && scorersArray.length > 0) {
           const teamIds = scorersArray.map(s => s.team_id).filter(Boolean);
