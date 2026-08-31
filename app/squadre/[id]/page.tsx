@@ -524,40 +524,41 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
 
       {/* STATISTICHE SQUADRA */}
       <div className="bg-gray-50 rounded-xl p-4 mb-6">
-        <div className="grid grid-cols-4 gap-3">
-          <div className="text-center">
+        <div className="flex items-center justify-between">
+          {/* PT - Grande */}
+          <div className="flex-1 text-center border-r border-gray-200 pr-4">
             <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">PT</p>
-            <p className="text-3xl font-black text-[#581C24]">{teamData.stats.pt || 0}</p>
+            <p className="text-4xl font-black text-[#581C24]">{teamData.stats.pt || 0}</p>
           </div>
-          <div className="text-center">
-            <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">PG</p>
-            <p className="text-xl font-bold text-[#581C24]">{teamData.stats.pg || 0}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">V</p>
-            <p className="text-xl font-bold text-[#581C24]">{teamData.stats.v || 0}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">P</p>
-            <p className="text-xl font-bold text-[#581C24]">{teamData.stats.p || 0}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">S</p>
-            <p className="text-xl font-bold text-[#581C24]">{teamData.stats.s || 0}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">GF</p>
-            <p className="text-xl font-bold text-[#581C24]">{teamData.stats.gf || 0}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">GS</p>
-            <p className="text-xl font-bold text-[#581C24]">{teamData.stats.gs || 0}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">DR</p>
-            <p className="text-xl font-bold text-[#581C24]">
-              {(teamData.stats.dr || 0) > 0 ? `+${teamData.stats.dr}` : teamData.stats.dr || 0}
-            </p>
+          
+          {/* Altre statistiche - Più piccole */}
+          <div className="flex-1 grid grid-cols-3 gap-2 pl-4">
+            <div className="text-center">
+              <p className="text-[8px] font-bold text-gray-500 uppercase mb-0.5">V</p>
+              <p className="text-lg font-bold text-[#581C24]">{teamData.stats.v || 0}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[8px] font-bold text-gray-500 uppercase mb-0.5">P</p>
+              <p className="text-lg font-bold text-[#581C24]">{teamData.stats.p || 0}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[8px] font-bold text-gray-500 uppercase mb-0.5">S</p>
+              <p className="text-lg font-bold text-[#581C24]">{teamData.stats.s || 0}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[8px] font-bold text-gray-500 uppercase mb-0.5">GF</p>
+              <p className="text-lg font-bold text-[#581C24]">{teamData.stats.gf || 0}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[8px] font-bold text-gray-500 uppercase mb-0.5">GS</p>
+              <p className="text-lg font-bold text-[#581C24]">{teamData.stats.gs || 0}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[8px] font-bold text-gray-500 uppercase mb-0.5">DR</p>
+              <p className="text-lg font-bold text-[#581C24]">
+                {(teamData.stats.dr || 0) > 0 ? `+${teamData.stats.dr}` : teamData.stats.dr || 0}
+              </p>
+            </div>
           </div>
         </div>
       </div>
