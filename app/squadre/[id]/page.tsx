@@ -142,7 +142,6 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     setTeamData((prev: any) => ({ ...prev, [field]: value }));
   };
 
-  // Upload Logo Squadra su Supabase Storage
   const handleLogoUpload = async (file: File) => {
     if (!file || !teamData) return;
     
@@ -153,9 +152,10 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}_logo_${teamData.name.replace(/\s/g, '_')}.${fileExt}`;
       
+      // CAMBIAMENTO: usa tournament-files/team-logos invece di team-logos
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('team-logos')
-        .upload(fileName, file, {
+        .from('tournament-files')
+        .upload(`team-logos/${fileName}`, file, {
           cacheControl: '3600',
           upsert: true
         });
@@ -163,8 +163,8 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
       if (uploadError) throw uploadError;
       
       const { data: { publicUrl } } = supabase.storage
-        .from('team-logos')
-        .getPublicUrl(fileName);
+        .from('tournament-files')
+        .getPublicUrl(`team-logos/${fileName}`);
       
       const { error: updateError } = await supabase
         .from('teams')
@@ -184,7 +184,6 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     }
   };
 
-  // Upload Foto Squadra su Supabase Storage
   const handleTeamPhotoUpload = async (file: File) => {
     if (!file || !teamData) return;
     
@@ -195,9 +194,10 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}_photo_${teamData.name.replace(/\s/g, '_')}.${fileExt}`;
       
+      // CAMBIAMENTO: usa tournament-files/team-photos
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('team-photos')
-        .upload(fileName, file, {
+        .from('tournament-files')
+        .upload(`team-photos/${fileName}`, file, {
           cacheControl: '3600',
           upsert: true
         });
@@ -205,8 +205,8 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
       if (uploadError) throw uploadError;
       
       const { data: { publicUrl } } = supabase.storage
-        .from('team-photos')
-        .getPublicUrl(fileName);
+        .from('tournament-files')
+        .getPublicUrl(`team-photos/${fileName}`);
       
       const { error: updateError } = await supabase
         .from('teams')
@@ -225,8 +225,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
       setLoading(false);
     }
   };
-
-  // Upload Foto Giocatore su Supabase Storage
+  
   const handlePlayerPhotoUpload = async (file: File): Promise<string | null> => {
     if (!file) return null;
     
@@ -236,9 +235,10 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}_player.${fileExt}`;
       
+      // CAMBIAMENTO: usa tournament-files/player-photos
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('player-photos')
-        .upload(fileName, file, {
+        .from('tournament-files')
+        .upload(`player-photos/${fileName}`, file, {
           cacheControl: '3600',
           upsert: true
         });
@@ -246,8 +246,8 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
       if (uploadError) throw uploadError;
       
       const { data: { publicUrl } } = supabase.storage
-        .from('player-photos')
-        .getPublicUrl(fileName);
+        .from('tournament-files')
+        .getPublicUrl(`player-photos/${fileName}`);
       
       return publicUrl;
       
