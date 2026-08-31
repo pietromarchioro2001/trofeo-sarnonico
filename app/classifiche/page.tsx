@@ -105,15 +105,20 @@ export default function ClassifichePage() {
     }
   }, [searchParams]);
 
-  // Fetch dati da Supabase
-    // Fetch dati da Supabase (VERSIONE CORRETTA SENZA RELAZIONI ANNIDATE)
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       const supabase = createClient();
 
       try {
-        // 1. CLASSIFICA GIRONI (Calcolata dalle partite finite)
+        // 1. CLASSIFICA GIRONI - Prendi TUTTE le squadre dal database
+        const { data: allTeams, error: teamsError } = await supabase
+          .from('teams')
+          .select('id, name, logo_url, girone');
+
+        if (teamsError) throw teamsError;
+
+        // Prendi le partite finite per calcolare le stats
         const { data: matchesData, error: matchesError } = await supabase
           .from('matches')
           .select('home_team_id, away_team_id, home_score, away_score, status')
@@ -121,29 +126,10 @@ export default function ClassifichePage() {
 
         if (matchesError) throw matchesError;
 
-        // Raccogli tutti gli ID delle squadre unici
-        const teamIds = Array.from(
-          new Set(
-            (matchesData || [])
-              .flatMap(m => [m.home_team_id, m.away_team_id])
-              .filter(Boolean)
-          )
-        );
-
-        let teamsData: any[] = [];
-        if (teamIds.length > 0) {
-          const { data: teams, error: teamsError } = await supabase
-            .from('teams')
-            .select('id, name, logo_url, girone')
-            .in('id', teamIds);
-          if (teamsError) throw teamsError;
-          teamsData = teams || [];
-        }
-
         const statsMap = new Map<string, TeamStats>();
 
-        // Inizializza la mappa con i dati delle squadre
-        teamsData.forEach(t => {
+        // Inizializza TUTTE le squadre con 0 punti
+        (allTeams || []).forEach(t => {
           statsMap.set(t.id, { 
             id: t.id, 
             name: t.name, 
@@ -153,6 +139,7 @@ export default function ClassifichePage() {
           });
         });
 
+        // Aggiorna le stats solo per le squadre che hanno giocato
         matchesData?.forEach((m: any) => {
           const homeStats = statsMap.get(m.home_team_id);
           const awayStats = statsMap.get(m.away_team_id);
@@ -192,7 +179,7 @@ export default function ClassifichePage() {
           gironeB: allStats.filter(t => t.girone === 'B').sort(sortFn),
         });
 
-        // 2. FASE FINALE
+        // 2. FASE FINALE (rimane uguale)
         const { data: phaseMatchesData, error: phaseError } = await supabase
           .from('matches')
           .select('id, match_key, phase, status, home_score, away_score, home_team_id, away_team_id')
@@ -231,37 +218,36 @@ export default function ClassifichePage() {
         }));
         setPhaseMatches(mappedPhaseMatches);
 
-        // 3. MARCATORI
-        const { data: scorersData, error: scorersError } = await supabase
+        // 3. MARCATORI - Prendi TUTTI i giocatori, non solo quelli con gol > 0
+        const { data: allPlayers, error: playersError } = await supabase
           .from('players')
           .select('id, first_name, last_name, goals, team_id')
-          .gt('goals', 0)
           .order('goals', { ascending: false })
-          .limit(20);
+          .limit(50);
 
-        if (scorersError) throw scorersError;
+        if (playersError) throw playersError;
 
-        const scorerTeamIds = Array.from(new Set((scorersData || []).map(p => p.team_id).filter(Boolean)));
-        let scorerTeamsData: any[] = [];
-        if (scorerTeamIds.length > 0) {
+        const playerTeamIds = Array.from(new Set((allPlayers || []).map(p => p.team_id).filter(Boolean)));
+        let playerTeamsData: any[] = [];
+        if (playerTeamIds.length > 0) {
           const { data: teams, error: teamsError } = await supabase
             .from('teams')
             .select('id, name, logo_url')
-            .in('id', scorerTeamIds);
+            .in('id', playerTeamIds);
           if (teamsError) throw teamsError;
-          scorerTeamsData = teams || [];
+          playerTeamsData = teams || [];
         }
 
-        const mappedScorers: PlayerData[] = (scorersData || []).map((p: any) => ({
+        const mappedPlayers: PlayerData[] = (allPlayers || []).map((p: any) => ({
           id: p.id,
           first_name: p.first_name,
           last_name: p.last_name,
           goals: p.goals,
-          team: scorerTeamsData.find((t: any) => t.id === p.team_id) || null,
+          team: playerTeamsData.find((t: any) => t.id === p.team_id) || null,
         }));
-        setTopScorers(mappedScorers);
+        setTopScorers(mappedPlayers);
 
-        // 4. COPPA CHIOSCO
+        // 4. COPPA CHIOSCO (rimane uguale)
         const { data: metersData, error: metersError } = await supabase
           .from('bar_meters')
           .select('total_meters, team_id')
@@ -295,6 +281,51 @@ export default function ClassifichePage() {
 
     fetchData();
   }, []);
+
+      
+
+// ... (il resto del codice rimane uguale fino alla sezione MARCATORI)
+
+        {/* === MARCATORI === */}
+        {activeTab === 'marcatori' && (
+          <div className="px-3 sm:px-4">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="flex items-center px-3 py-2 bg-gray-50 border-b border-gray-200 text-[10px] font-bold text-gray-600 uppercase">
+                <div className="w-8 text-center flex-shrink-0">POS</div>
+                <div className="flex-1 pl-2">GIOCATORE</div>
+                <div className="w-20 text-center flex-shrink-0">SQUADRA</div>
+                <div className="w-10 text-center flex-shrink-0">GOL</div>
+              </div>
+              <div className="divide-y divide-gray-100">
+                {topScorers.length === 0 ? (
+                  <div className="px-3 py-4 text-center text-gray-500 text-sm">Giocatori non presenti</div>
+                ) : (
+                  topScorers.map((player, index) => (
+                    <div key={player.id} className="flex items-center px-3 py-2.5">
+                      <div className="w-8 text-center flex-shrink-0">
+                        {index === 0 ? <MedalIcon type="gold" /> : index === 1 ? <MedalIcon type="silver" /> : index === 2 ? <MedalIcon type="bronze" /> : <span className="font-bold text-xs text-gray-700">{index + 1}</span>}
+                      </div>
+                      <div className="flex-1 pl-2 flex items-center gap-2 min-w-0">
+                        <div className="w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                           {player.team?.logo_url ? (
+                             <Image src={player.team.logo_url} alt={player.team.name} width={20} height={20} className="object-cover" />
+                           ) : <span className="text-[5px] text-gray-400">L</span>}
+                        </div>
+                        <span className="font-bold text-[11px] text-[#000000] uppercase truncate">{player.first_name} {player.last_name}</span>
+                      </div>
+                      <div className="w-20 text-center flex-shrink-0">
+                        <span className="text-[10px] text-gray-600 uppercase">{player.team?.name}</span>
+                      </div>
+                      <div className="w-10 text-center flex-shrink-0">
+                        <span className="font-black text-sm text-[#581C24]">{player.goals}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
   if (loading) {
     return (
@@ -366,7 +397,7 @@ export default function ClassifichePage() {
                     </div>
                     <div className="divide-y divide-gray-100">
                       {teams.length === 0 ? (
-                        <div className="px-3 py-4 text-center text-gray-500 text-sm">Nessuna partita giocata</div>
+                        <div className="px-3 py-4 text-center text-gray-500 text-sm">Squadre non presenti</div>
                       ) : (
                         teams.map((team, index) => (
                           <div key={team.id} className="flex items-center px-3 py-2">
@@ -580,7 +611,7 @@ export default function ClassifichePage() {
               </div>
               <div className="divide-y divide-gray-100">
                 {topScorers.length === 0 ? (
-                  <div className="px-3 py-4 text-center text-gray-500 text-sm">Nessun marcatore</div>
+                  <div className="px-3 py-4 text-center text-gray-500 text-sm">Giocatori non presenti</div>
                 ) : (
                   topScorers.map((player, index) => (
                     <div key={player.id} className="flex items-center px-3 py-2.5">
