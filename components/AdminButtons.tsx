@@ -1154,6 +1154,67 @@ export const AdminContactsEditor: React.FC<AdminContactsEditorProps> = ({ contac
   );
 };
 
+// ============================================================
+// Admin Delete Match Button
+// ============================================================
+interface AdminDeleteMatchButtonProps {
+  matchId: string;
+  onDeleteSuccess?: () => void;
+}
+
+export const AdminDeleteMatchButton: React.FC<AdminDeleteMatchButtonProps> = ({ matchId, onDeleteSuccess }) => {
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Previene la navigazione al click sulla card
+    
+    const isConfirmed = window.confirm(
+      '⚠️ Sei sicuro di voler eliminare questa partita?\n\nQuesta azione è irreversibile.'
+    );
+    
+    if (!isConfirmed) return;
+
+    setIsDeleting(true);
+    const supabase = createClient();
+
+    try {
+      const { error } = await supabase
+        .from('matches')
+        .delete()
+        .eq('id', matchId);
+
+      if (error) throw error;
+
+      alert('✅ Partita eliminata con successo');
+      if (onDeleteSuccess) onDeleteSuccess(); // Notifica la pagina padre di aggiornarsi
+      
+    } catch (err) {
+      console.error('Errore eliminazione partita:', err);
+      alert('Errore nell\'eliminazione della partita');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleDelete}
+      disabled={isDeleting}
+      className="ml-2 p-1.5 text-red-600 hover:bg-red-50 rounded-full transition-colors disabled:opacity-50 flex items-center justify-center"
+      title="Elimina partita"
+    >
+      {isDeleting ? (
+        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      ) : (
+        <Trash2 className="w-4 h-4" />
+      )}
+    </button>
+  );
+};
+
 interface AdminSaveAlboDoroProps {
   onSave: (data: AlboDoroData) => void;
   currentYear: number;

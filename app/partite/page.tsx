@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { AdminPartiteButton } from '@/components/AdminButtons';
+import { AdminPartiteButton, AdminDeleteMatchButton } from '@/components/AdminButtons';
 import { useAuth } from '@/lib/AuthContext';
 import { createClient } from '@/lib/supabase/client';
 
@@ -238,6 +238,14 @@ export default function PartitePage() {
                     }`}>
                       {match.phase === 'GIRONI' ? `GIRONE ${match.home_team?.girone || 'A'}` : match.phase}
                     </span>
+
+                    {/* ✅ PULSANTE ELIMINA - Solo per staff */}
+                    {isStaffMode && (
+                      <AdminDeleteMatchButton 
+                        matchId={match.id} 
+                        onDeleteSuccess={() => setRefreshKey(k => k + 1)} 
+                      />
+                    )}
                   </div>
 
                   {/* Squadre e risultato */}
