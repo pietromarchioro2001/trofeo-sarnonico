@@ -82,14 +82,14 @@ export default function HomePage() {
   }, []);
 
   // Fetch dati iniziali
-    // Fetch dati iniziali (VERSIONE CORRETTA SENZA RELAZIONI ANNIDATE)
   useEffect(() => {
     const fetchHomeData = async () => {
       setLoading(true);
       const supabase = createClient();
+      const today = new Date().toISOString().split('T')[0]; // Data di oggi 'YYYY-MM-DD'
 
       try {
-        // 1. ULTIMA PARTITA (Live o ultima finita) - Query separata
+        // 1. ULTIMA PARTITA (Live o ultima finita)
         const { data: lastMatchArray } = await supabase
           .from('matches')
           .select('id, status, match_date, match_time, home_score, away_score, home_team_id, away_team_id')
@@ -111,11 +111,12 @@ export default function HomePage() {
           setLastMatch({ ...match, home_team: homeTeam as TeamData, away_team: awayTeam as TeamData });
         }
 
-        // 2. PROSSIMA PARTITA - Query separata
+        // 2. PROSSIMA PARTITA (SOLO DATE FUTURE O ODIERNE)
         const { data: nextMatchArray } = await supabase
           .from('matches')
           .select('id, status, match_date, match_time, home_score, away_score, home_team_id, away_team_id')
           .eq('status', 'PROGRAMMATA')
+          .gte('match_date', today) // ✅ FILTRO CRUCIALE: solo partite da oggi in poi
           .order('match_date', { ascending: true })
           .order('match_time', { ascending: true })
           .limit(1);
@@ -171,12 +172,12 @@ export default function HomePage() {
           setStandingsB(sorted.filter(t => t.girone === 'B').slice(0, 4));
         }
 
-        // 4. TOP SCORERS - Prendi tutti i giocatori, anche con 0 gol
+        // 4. TOP SCORERS
         const { data: scorersArray } = await supabase
           .from('players')
           .select('id, first_name, last_name, goals, team_id')
           .order('goals', { ascending: false })
-          .limit(3); // Aumenta a 5 per averne abbastanza
+          .limit(3);
 
         if (scorersArray && scorersArray.length > 0) {
           const teamIds = scorersArray.map(s => s.team_id).filter(Boolean);
@@ -239,7 +240,6 @@ export default function HomePage() {
   };
 
   const isLive = lastMatch?.status === 'LIVE';
-  const showCountdown = !!nextMatch && !lastMatch;
 
   if (loading) {
     return (
@@ -303,8 +303,8 @@ export default function HomePage() {
       {/* CONTENUTO PRINCIPALE */}
       <div className="flex-1 max-w-md mx-auto px-3 sm:px-4 -mt-6 relative z-10 w-full flex flex-col gap-[3vh] pb-28">
         
-        {/* CARD PARTITA LIVE / ULTIMO RISULTATO */}
-        {showCountdown ? (
+        {/* 1. COUNTDOWN (se c'è una prossima partita) */}
+        {nextMatch && (
           <div className="bg-gray-300 rounded-xl p-4 shadow-lg">
             <div className="text-center">
               <p className="text-gray-700 font-bold text-xs uppercase mb-3">Inizio Torneo tra</p>
@@ -315,11 +315,14 @@ export default function HomePage() {
                 <span>{countdown.seconds}s</span>
               </div>
               <p className="text-gray-600 text-[10px] mt-2 font-bold uppercase">
-                {nextMatch?.home_team.name} vs {nextMatch?.away_team.name}
+                {nextMatch.home_team.name} vs {nextMatch.away_team.name}
               </p>
             </div>
           </div>
-        ) : lastMatch ? (
+        )}
+
+        {/* 2. ULTIMA PARTITA / LIVE (se esiste) */}
+        {lastMatch && (
           <Link href={`/partite/${lastMatch.id}`} className="block">
             <div className={`${isLive ? 'bg-[#581C24] text-white' : 'bg-white text-[#581C24] border-2 border-[#581C24]'} rounded-xl p-3 shadow-lg hover:shadow-xl transition-shadow`}>
               <div className="flex items-center justify-between mb-2">
@@ -352,10 +355,10 @@ export default function HomePage() {
               </div>
             </div>
           </Link>
-        ) : null}
+        )}
 
-        {/* PROSSIMA PARTITA */}
-        {nextMatch && !showCountdown && (
+        {/* 3. PROSSIMA PARTITA (Card dettagliata, se esiste) */}
+        {nextMatch && (
           <Link href={`/partite/${nextMatch.id}`} className="block">
             <div className="bg-white rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between mb-5">
