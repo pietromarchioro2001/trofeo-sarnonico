@@ -522,37 +522,64 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     const supabase = createClient();
     const teamId = teamSide === 'home' ? match.home_team.id : match.away_team.id;
 
-    // ✅ Converti i valori nel formato corretto per il database
+    // Mappatura dei valori
     const eventTypeMap: Record<string, string> = {
       'goal': 'GOAL',
       'yellow': 'YELLOW_CARD',
       'red': 'RED_CARD'
     };
 
-    const { error } = await supabase.from('match_events').insert({
+    const dbEventType = eventTypeMap[eventType] || eventType;
+
+    // 1. Inserisci l'evento
+    const { error: eventError } = await supabase.from('match_events').insert({
       match_id: match.id,
       player_id: playerId,
-      event_type: eventTypeMap[eventType] || eventType, // ✅ Conversione
+      event_type: dbEventType,
       minute: minute,
       team_id: teamId
     });
 
-    if (error) {
-      console.error('Errore aggiunta evento:', error);
+    if (eventError) {
+      console.error('Errore aggiunta evento:', eventError);
       alert('Errore nel salvataggio dell\'evento');
       return;
     }
 
-    // Aggiorna anche i gol del giocatore se è un gol
+    // 2. ✅ SE È UN GOL, AGGIORNA IL PUNTEGGIO
+    if (eventType === 'goal') {
+      const currentScore = teamSide === 'home' ? match.home_score : match.away_score;
+      const newScore = (currentScore || 0) + 1;
+
+      const { error: scoreError } = await supabase
+        .from('matches')
+        .update({
+          [teamSide === 'home' ? 'home_score' : 'away_score']: newScore
+        })
+        .eq('id', match.id);
+
+      if (scoreError) {
+        console.error('Errore aggiornamento punteggio:', scoreError);
+      } else {
+        // Aggiorna lo stato locale immediatamente
+        setMatch(prev => prev ? {
+          ...prev,
+          [teamSide === 'home' ? 'home_score' : 'away_score']: newScore
+        } : null);
+      }
+    }
+
+    // 3. Aggiorna anche i gol del giocatore
     if (eventType === 'goal') {
       await supabase.rpc('increment_player_goals', { player_id: playerId });
     }
 
+    // 4. Aggiorna la lista eventi localmente
     const player = [...homePlayers, ...awayPlayers].find(p => p.id === playerId);
     const newEvent: EventData = {
       id: Date.now().toString(),
       minute,
-      event_type: eventTypeMap[eventType] || eventType,
+      event_type: dbEventType,
       player_id: playerId,
       team_id: teamId,
       player: player ? { first_name: player.first_name, last_name: player.last_name } : null
