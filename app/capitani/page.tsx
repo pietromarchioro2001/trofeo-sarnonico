@@ -7,11 +7,21 @@ import Image from 'next/image';
 import { ArrowLeft, Save } from 'lucide-react';
 
 // Mappa codici → squadre (qui aggiungerai i codici reali per ogni squadra)
+
 const TEAM_CODES: Record<string, { teamId: string; teamName: string }> = {
-  '1234': { teamId: '12', teamName: 'SARNONICO' },
-  // '5678': { teamId: '2', teamName: 'ROMALLO' },
-  // '9012': { teamId: '1', teamName: 'TAIO' },
-  // ... altri codici
+  '1234': { 
+    teamId: '957613ee-a3b5-46b8-8561-6ac34881c209', // UUID reale di SARNONICO
+    teamName: 'SARNONICO' 
+  },
+  '5678': { 
+    teamId: 'c97a8fad-65b9-4411-96cf-ab6273dcb6d9', // UUID reale di ROMALLO
+    teamName: 'ROMALLO' 
+  },
+  '9012': { 
+    teamId: 'dc56426d-fb25-4afe-a3de-163cfc65f76d', // UUID reale di TAIO
+    teamName: 'TAIO' 
+  },
+  // ... aggiungi tutte le squadre con i loro UUID reali
 };
 
 export default function CapitaniPage() {
