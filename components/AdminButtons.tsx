@@ -225,7 +225,7 @@ export const AdminMatchControls: React.FC<AdminMatchControlsProps> = ({ matchSta
   );
 };
 
-export const AdminPartiteButton = () => {
+export const AdminPartiteButton = ({ onMatchCreated }: { onMatchCreated?: () => void }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<'A' | 'B'>('A');
   const [homeTeam, setHomeTeam] = useState('');
@@ -250,7 +250,7 @@ export const AdminPartiteButton = () => {
 
   const handleSave = async () => {
     if (!homeTeam || !awayTeam || !matchDate || !matchTime) { setError('⚠️ Compila tutti i campi!'); return; }
-    if (homeTeam === awayTeam) { setError('️ Le squadre devono essere diverse!'); return; }
+    if (homeTeam === awayTeam) { setError('⚠️ Le squadre devono essere diverse!'); return; }
     
     const supabase = createClient();
     const { error } = await supabase.from('matches').insert({
@@ -270,6 +270,9 @@ export const AdminPartiteButton = () => {
     alert('✅ Partita creata con successo!');
     setIsOpen(false);
     setHomeTeam(''); setAwayTeam(''); setMatchDate(''); setMatchTime(''); setError('');
+    
+    // ✅ 2. Aggiungi questa riga alla fine di handleSave
+    if (onMatchCreated) onMatchCreated();
   };
 
   const handleClose = () => { setIsOpen(false); setHomeTeam(''); setAwayTeam(''); setMatchDate(''); setMatchTime(''); setError(''); };

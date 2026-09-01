@@ -433,9 +433,6 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
                 </svg>
                 Pannello Capitano - {teamData.name}
               </p>
-              <p className="text-xs text-[#581C24]/80">
-                Puoi aggiungere o modificare i giocatori della tua squadra.
-              </p>
             </div>
           )}
         </div>

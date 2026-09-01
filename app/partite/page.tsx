@@ -35,6 +35,9 @@ export default function PartitePage() {
   const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   
+  // ✅ 1. AGGIUNTO: Stato "interruttore" per forzare il ricaricamento
+  const [refreshKey, setRefreshKey] = useState(0);
+  
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const dateButtonRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
 
@@ -131,7 +134,9 @@ export default function PartitePage() {
     };
 
     fetchMatches();
-  }, []);
+  // ✅ 2. MODIFICATO: Aggiunto refreshKey alle dipendenze. 
+  // Ora il fetch si riesegue ogni volta che refreshKey cambia.
+  }, [refreshKey]); 
 
   // Filtra le partite per la data selezionata
   const filteredMatches = matches.filter(match => {
@@ -167,7 +172,8 @@ export default function PartitePage() {
         
         {isStaffMode && (
           <div className="absolute top-20 left-0 z-30 px-4">
-            <AdminPartiteButton />
+            {/* ✅ 3. MODIFICATO: Passiamo la funzione che incrementa refreshKey al salvataggio */}
+            <AdminPartiteButton onMatchCreated={() => setRefreshKey(k => k + 1)} />
           </div>
         )}
         
