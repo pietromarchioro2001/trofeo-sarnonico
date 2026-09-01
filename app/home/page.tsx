@@ -252,6 +252,7 @@ export default function HomePage() {
   };
 
   const isLive = lastMatch?.status === 'LIVE';
+  const showCountdown = !!nextMatch && !lastMatch;
 
   if (loading) {
     return (
