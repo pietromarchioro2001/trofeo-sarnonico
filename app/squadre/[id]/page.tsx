@@ -14,6 +14,28 @@ import {
   type PlayerData 
 } from '@/components/AdminButtons';
 
+const EventIcon = ({ type, size = 16 }: { type: string; size?: number }) => {
+  if (type === 'GOAL') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className="text-[#581C24]">
+        <circle cx="12" cy="12" r="10" fill="#1a1a1a"/>
+        <circle cx="12" cy="12" r="3" fill="white"/>
+        <path d="M12 2 L13 7 L12 12 L11 7 Z" fill="white"/>
+        <path d="M22 12 L17 13 L12 12 L17 11 Z" fill="white"/>
+        <path d="M12 22 L11 17 L12 12 L13 17 Z" fill="white"/>
+        <path d="M2 12 L7 11 L12 12 L7 13 Z" fill="white"/>
+      </svg>
+    );
+  }
+  if (type === 'YELLOW_CARD') {
+    return <div className="bg-yellow-400 rounded-sm border border-yellow-600" style={{ width: size * 0.75, height: size }} />;
+  }
+  if (type === 'RED_CARD') {
+    return <div className="bg-red-600 rounded-sm border border-red-800" style={{ width: size * 0.75, height: size }} />;
+  }
+  return null;
+};
+
 export default function TeamDetailPage({ params }: { params: { id: string } }) {
   const { isStaffMode } = useAuth();
   const [selectedPlayer, setSelectedPlayer] = useState<any | null>(null);
