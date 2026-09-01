@@ -360,12 +360,17 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         }));
         setEvents(typedEvents);
 
-        // 6. MVP
-        const { data: candidatesData } = await supabase
+        // 6. MVP - Usa .maybeSingle() invece di .single()
+        const { data: candidatesData, error: candidatesError } = await supabase
           .from('mvp_candidates')
           .select('candidate_1_id, candidate_2_id, candidate_3_id, voting_closed')
           .eq('match_id', matchId)
-          .single();
+          .maybeSingle(); // ✅ Cambiato da .single() a .maybeSingle()
+
+        // Ignora l'errore "nessun risultato trovato" (codice PGRST116)
+        if (candidatesError && candidatesError.code !== 'PGRST116') {
+          console.error('Errore MVP:', candidatesError);
+        }
 
         if (candidatesData) {
           setIsVotingClosed(candidatesData.voting_closed);
