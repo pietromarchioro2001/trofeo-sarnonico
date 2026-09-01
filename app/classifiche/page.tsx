@@ -530,10 +530,15 @@ export default function ClassifichePage() {
 
               {phaseSubTab === 'finale' && (
                 <div className="relative max-w-[220px] mx-auto pt-8 pb-32">
-                  <div className="absolute -left-12 top-24 w-6 h-px bg-gray-300" />
-                  <div className="absolute -left-6 top-24 w-px h-[165px] bg-gray-300" />
-                  <div className="absolute -left-12 top-[260px] w-6 h-px bg-gray-300" />
-                  <div className="absolute -left-6 top-[180px] w-6 h-px bg-gray-300" />
+                  {/* ✅ Mostra le linee SOLO se ci sono partite nella fase finale */}
+                  {phaseMatches.some(m => m.phase === 'FINALE' || m.phase === 'FINALE_3_4') && (
+                    <>
+                      <div className="absolute -left-12 top-24 w-6 h-px bg-gray-300" />
+                      <div className="absolute -left-6 top-24 w-px h-[165px] bg-gray-300" />
+                      <div className="absolute -left-12 top-[260px] w-6 h-px bg-gray-300" />
+                      <div className="absolute -left-6 top-[180px] w-6 h-px bg-gray-300" />
+                    </>
+                  )}
 
                   {phaseMatches.filter(m => m.phase === 'FINALE').map((match) => (
                     <Link key={match.id} href={`/partite/${match.id}`} className="block relative translate-y-[110px]">
