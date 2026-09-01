@@ -209,9 +209,14 @@ export default function HomePage() {
   // Countdown per prossima partita
   useEffect(() => {
     if (!nextMatch?.match_date) return;
-    const timer = setInterval(() => {
+    
+    // ✅ Estrai i valori PRIMA della funzione interna (così TypeScript è contento)
+    const [year, month, day] = nextMatch.match_date.split('-').map(Number);
+    const [hours, minutes] = (nextMatch.match_time || '00:00').split(':').map(Number);
+    
+    const updateCountdown = () => {
       const now = new Date();
-      const target = new Date(`${nextMatch.match_date}T${nextMatch.match_time || '00:00:00'}`);
+      const target = new Date(year, month - 1, day, hours, minutes, 0);
       const diff = target.getTime() - now.getTime();
       
       if (diff > 0) {
@@ -221,8 +226,14 @@ export default function HomePage() {
           minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
           seconds: Math.floor((diff % (1000 * 60)) / 1000),
         });
+      } else {
+        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
       }
-    }, 1000);
+    };
+    
+    updateCountdown(); // Chiama subito
+    const timer = setInterval(updateCountdown, 1000);
+    
     return () => clearInterval(timer);
   }, [nextMatch]);
 
