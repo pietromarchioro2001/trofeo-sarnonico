@@ -700,53 +700,55 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         {activeTab === 'diretta' ? (
           <>
             {/* MVP */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-4">
-                {isStaffMode && match && (
-                  <AdminMVPSelector 
-                    matchId={match.id}
-                    homeTeamId={match.home_team.id}
-                    awayTeamId={match.away_team.id}
-                    onSave={handleSaveMvpCandidates} 
-                  />
-                )}
-                <h2 className="text-[#581C24] font-bold text-base uppercase tracking-wider text-center flex-1">MVP della Partita</h2>
-               {isStaffMode && !isVotingClosed && mvpPlayers.length > 0 && match && (
-                  <AdminStopVoting 
-                    matchId={match.id}
-                    onStop={handleStopVoting} 
-                  />
-                )}
-              </div>
+            {(isStaffMode || mvpPlayers.length > 0) && (
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  {isStaffMode && match && (
+                    <AdminMVPSelector 
+                      matchId={match.id}
+                      homeTeamId={match.home_team.id}
+                      awayTeamId={match.away_team.id}
+                      onSave={handleSaveMvpCandidates} 
+                    />
+                  )}
+                  <h2 className="text-[#581C24] font-bold text-base uppercase tracking-wider text-center flex-1">MVP della Partita</h2>
+                  {isStaffMode && !isVotingClosed && mvpPlayers.length > 0 && match && (
+                    <AdminStopVoting 
+                      matchId={match.id}
+                      onStop={handleStopVoting} 
+                    />
+                  )}
+                </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                {mvpPlayers.length === 0 ? (
-                  <div className="col-span-3 text-center py-4 text-gray-500 text-sm">Nessun candidato selezionato</div>
-                ) : (
-                  mvpPlayers.map((player) => {
-                    const hasWon = winnerId === player.id;
-                    const hasVoted = votedPlayerId === player.id;
-                    return (
-                      <div key={player.id} className={`rounded-xl p-3 flex flex-col items-center gap-2 relative transition-all ${hasWon ? 'bg-gradient-to-b from-[#FFD700]/30 to-[#FFD700]/10 border-2 border-[#FFD700] shadow-lg scale-105' : hasVoted ? 'bg-[#581C24] text-white border-2 border-[#581C24] shadow-lg' : 'bg-white border border-gray-100 shadow-sm'}`}>
-                        {hasWon && <span className="absolute -top-2.5 bg-[#FFD700] text-[#581C24] text-[8px] font-black px-2 py-0.5 rounded-full shadow-sm border border-[#C9B037]">VINCITORE</span>}
-                        <div className={`w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${hasVoted ? 'bg-white/20' : 'bg-gray-200'}`}>
-                          {player.photo ? <Image src={player.photo} alt={player.name} width={56} height={56} className="object-cover" /> : <span className={`text-[10px] ${hasVoted ? 'text-white/70' : 'text-gray-400'}`}>FOTO</span>}
+                <div className="grid grid-cols-3 gap-3">
+                  {mvpPlayers.length === 0 ? (
+                    <div className="col-span-3 text-center py-4 text-gray-500 text-sm">Nessun candidato selezionato</div>
+                  ) : (
+                    mvpPlayers.map((player) => {
+                      const hasWon = winnerId === player.id;
+                      const hasVoted = votedPlayerId === player.id;
+                      return (
+                        <div key={player.id} className={`rounded-xl p-3 flex flex-col items-center gap-2 relative transition-all ${hasWon ? 'bg-gradient-to-b from-[#FFD700]/30 to-[#FFD700]/10 border-2 border-[#FFD700] shadow-lg scale-105' : hasVoted ? 'bg-[#581C24] text-white border-2 border-[#581C24] shadow-lg' : 'bg-white border border-gray-100 shadow-sm'}`}>
+                          {hasWon && <span className="absolute -top-2.5 bg-[#FFD700] text-[#581C24] text-[8px] font-black px-2 py-0.5 rounded-full shadow-sm border border-[#C9B037]">VINCITORE</span>}
+                          <div className={`w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${hasVoted ? 'bg-white/20' : 'bg-gray-200'}`}>
+                            {player.photo ? <Image src={player.photo} alt={player.name} width={56} height={56} className="object-cover" /> : <span className={`text-[10px] ${hasVoted ? 'text-white/70' : 'text-gray-400'}`}>FOTO</span>}
+                          </div>
+                          <div className="text-center w-full">
+                            <p className={`font-bold text-xs truncate w-full ${hasVoted ? 'text-white' : 'text-[#581C24]'}`}>{player.name}</p>
+                            <p className={`text-[10px] font-black mt-1 ${hasVoted ? 'text-white' : 'text-[#581C24]'}`}>{player.votes} {player.votes === 1 ? 'voto' : 'voti'}</p>
+                          </div>
+                          <button onClick={() => handleVote(player.id)} disabled={isVotingClosed || hasVoted} className={`w-full text-[10px] font-bold px-3 py-1.5 rounded-md transition-colors flex items-center justify-center gap-1 ${hasVoted ? 'bg-white text-[#581C24] cursor-default' : isVotingClosed ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-[#581C24] text-white hover:bg-[#581C24]/90'}`}>
+                            {hasVoted ? <>✓ VOTATO</> : <><Vote size={10} /> VOTA</>}
+                          </button>
                         </div>
-                        <div className="text-center w-full">
-                          <p className={`font-bold text-xs truncate w-full ${hasVoted ? 'text-white' : 'text-[#581C24]'}`}>{player.name}</p>
-                          <p className={`text-[10px] font-black mt-1 ${hasVoted ? 'text-white' : 'text-[#581C24]'}`}>{player.votes} {player.votes === 1 ? 'voto' : 'voti'}</p>
-                        </div>
-                        <button onClick={() => handleVote(player.id)} disabled={isVotingClosed || hasVoted} className={`w-full text-[10px] font-bold px-3 py-1.5 rounded-md transition-colors flex items-center justify-center gap-1 ${hasVoted ? 'bg-white text-[#581C24] cursor-default' : isVotingClosed ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-[#581C24] text-white hover:bg-[#581C24]/90'}`}>
-                          {hasVoted ? <>✓ VOTATO</> : <><Vote size={10} /> VOTA</>}
-                        </button>
-                      </div>
-                    );
-                  })
-                )}
+                      );
+                    })
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* CRONACA */}
+            {/* CRONACA - Titolo sempre visibile */}
             <div>
               <div className="flex items-center justify-between mb-4">
                 {isStaffMode && match.status !== 'FINITA' && (
@@ -763,6 +765,10 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                       onAddEvent={(e) => handleAddEvent('away', e.type, e.playerId, e.minute)} 
                     />
                   </>
+                )}
+                {/* Titolo visibile per tutti (anche senza eventi) */}
+                {!isStaffMode && (
+                  <h2 className="text-[#581C24] font-bold text-base uppercase tracking-wider text-center w-full">Cronaca</h2>
                 )}
               </div>
 
