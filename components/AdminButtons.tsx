@@ -52,6 +52,19 @@ export interface ContattiData {
   whatsapp?: string;
 }
 
+// Aggiungi questo dopo le altre interfacce esistenti
+export interface EventData {
+  id: string;
+  minute: number | null;
+  event_type: string;
+  player_id: string | null;
+  team_id: string | null;
+  player: {
+    first_name: string;
+    last_name: string;
+  } | null;
+}
+
 // ==================== TIPI DATI ESISTENTI ====================
 interface PenaltyKick {
   team: 'home' | 'away';
@@ -1212,6 +1225,216 @@ export const AdminDeleteMatchButton: React.FC<AdminDeleteMatchButtonProps> = ({ 
         <Trash2 className="w-4 h-4" />
       )}
     </button>
+  );
+};
+
+// ============================================================
+// Admin Edit Event
+// ============================================================
+export interface AdminEditEventProps {
+  event: EventData;
+  matchId: string;
+  homeTeamId: string;
+  awayTeamId: string;
+  currentHomeScore: number;
+  currentAwayScore: number;
+  onUpdate: () => void;
+  onClose: () => void;
+}
+
+export const AdminEditEvent: React.FC<AdminEditEventProps> = ({ 
+  event, matchId, homeTeamId, awayTeamId, currentHomeScore, currentAwayScore, onUpdate, onClose 
+}) => {
+  const [eventType, setEventType] = useState(
+    event.event_type === 'GOAL' ? 'goal' : event.event_type === 'YELLOW_CARD' ? 'yellow' : 'red'
+  );
+  const [selectedPlayer, setSelectedPlayer] = useState(event.player_id || '');
+  const [minute, setMinute] = useState(event.minute?.toString() || '');
+  const [players, setPlayers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchPlayers = async () => {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('players')
+        .select('id, first_name, last_name, jersey_number, team_id, goals, yellow_cards, red_cards')
+        .in('team_id', [homeTeamId, awayTeamId])
+        .order('jersey_number', { ascending: true, nullsFirst: false });
+      if (data) setPlayers(data);
+    };
+    fetchPlayers();
+  }, [homeTeamId, awayTeamId]);
+
+  const handleSave = async () => {
+    if (!eventType || !selectedPlayer || !minute) {
+      setError('⚠️ Compila tutti i campi!');
+      return;
+    }
+    setLoading(true);
+    const supabase = createClient();
+    const dbEventType = eventType === 'goal' ? 'GOAL' : eventType === 'yellow' ? 'YELLOW_CARD' : 'RED_CARD';
+    const oldType = event.event_type;
+    
+    try {
+      const selectedPlayerObj = players.find(p => p.id === selectedPlayer);
+      const newTeamId = selectedPlayerObj?.team_id || event.team_id;
+
+      // 1. Calcola differenze per il giocatore
+      const playerUpdates: any = {};
+      if (oldType === 'GOAL' && dbEventType !== 'GOAL') playerUpdates.goals = -1;
+      if (oldType === 'YELLOW_CARD' && dbEventType !== 'YELLOW_CARD') playerUpdates.yellow_cards = -1;
+      if (oldType === 'RED_CARD' && dbEventType !== 'RED_CARD') playerUpdates.red_cards = -1;
+
+      if (dbEventType === 'GOAL' && oldType !== 'GOAL') playerUpdates.goals = (playerUpdates.goals || 0) + 1;
+      if (dbEventType === 'YELLOW_CARD' && oldType !== 'YELLOW_CARD') playerUpdates.yellow_cards = (playerUpdates.yellow_cards || 0) + 1;
+      if (dbEventType === 'RED_CARD' && oldType !== 'RED_CARD') playerUpdates.red_cards = (playerUpdates.red_cards || 0) + 1;
+
+      // 2. Calcola differenze per il punteggio
+      let scoreDiff = 0;
+      if (oldType === 'GOAL' && dbEventType !== 'GOAL') scoreDiff = -1;
+      if (dbEventType === 'GOAL' && oldType !== 'GOAL') scoreDiff = 1;
+
+      // 3. Applica aggiornamenti giocatore
+      if (Object.keys(playerUpdates).length > 0 && event.player_id) {
+        const { data: currentPlayer } = await supabase.from('players').select('goals, yellow_cards, red_cards').eq('id', event.player_id).single();
+        if (currentPlayer) {
+          const newGoals = Math.max(0, (currentPlayer.goals || 0) + (playerUpdates.goals || 0));
+          const newYellow = Math.max(0, (currentPlayer.yellow_cards || 0) + (playerUpdates.yellow_cards || 0));
+          const newRed = Math.max(0, (currentPlayer.red_cards || 0) + (playerUpdates.red_cards || 0));
+          
+          await supabase.from('players').update({
+            goals: newGoals,
+            yellow_cards: newYellow,
+            red_cards: newRed
+          }).eq('id', event.player_id);
+        }
+      }
+
+      // 4. Applica aggiornamenti punteggio
+      if (scoreDiff !== 0) {
+        const isHome = event.team_id === homeTeamId;
+        const currentScore = isHome ? currentHomeScore : currentAwayScore;
+        const newScore = Math.max(0, currentScore + scoreDiff);
+        
+        await supabase.from('matches').update({
+          [isHome ? 'home_score' : 'away_score']: newScore
+        }).eq('id', matchId);
+      }
+
+      // 5. Aggiorna l'evento
+      const { error: eventError } = await supabase.from('match_events').update({
+        event_type: dbEventType,
+        player_id: selectedPlayer,
+        minute: parseInt(minute),
+        team_id: newTeamId
+      }).eq('id', event.id);
+
+      if (eventError) throw eventError;
+
+      onUpdate();
+      onClose();
+    } catch (err) {
+      console.error(err);
+      setError('Errore nel salvataggio');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm('⚠️ Eliminare questo evento? Verranno aggiornati risultati e statistiche.')) return;
+    setLoading(true);
+    const supabase = createClient();
+    const oldType = event.event_type;
+
+    try {
+      // 1. Revert giocatore
+      if (event.player_id) {
+        const { data: currentPlayer } = await supabase.from('players').select('goals, yellow_cards, red_cards').eq('id', event.player_id).single();
+        if (currentPlayer) {
+          const updates: any = {};
+          if (oldType === 'GOAL') updates.goals = Math.max(0, (currentPlayer.goals || 0) - 1);
+          if (oldType === 'YELLOW_CARD') updates.yellow_cards = Math.max(0, (currentPlayer.yellow_cards || 0) - 1);
+          if (oldType === 'RED_CARD') updates.red_cards = Math.max(0, (currentPlayer.red_cards || 0) - 1);
+          
+          if (Object.keys(updates).length > 0) {
+            await supabase.from('players').update(updates).eq('id', event.player_id);
+          }
+        }
+      }
+
+      // 2. Revert punteggio
+      if (oldType === 'GOAL') {
+        const isHome = event.team_id === homeTeamId;
+        const currentScore = isHome ? currentHomeScore : currentAwayScore;
+        await supabase.from('matches').update({
+          [isHome ? 'home_score' : 'away_score']: Math.max(0, currentScore - 1)
+        }).eq('id', matchId);
+      }
+
+      // 3. Elimina evento
+      await supabase.from('match_events').delete().eq('id', event.id);
+
+      onUpdate();
+      onClose();
+    } catch (err) {
+      console.error(err);
+      alert('Errore nell\'eliminazione');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="bg-[#581C24] p-3 flex items-center justify-between">
+          <h2 className="text-base font-black text-white uppercase tracking-wider">Modifica Evento</h2>
+          <div className="flex items-center gap-2">
+            <button onClick={handleDelete} disabled={loading} className="text-red-300 hover:text-red-100 p-1 rounded-full hover:bg-red-600/50 transition-colors" title="Elimina evento">
+              <Trash2 size={20} />
+            </button>
+            <button onClick={onClose} className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/20 transition-colors">
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+        <div className="p-4 space-y-3">
+          <div>
+            <label className="block text-xs font-bold text-gray-600 uppercase mb-2">Tipo Evento</label>
+            <select value={eventType} onChange={(e) => setEventType(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm font-bold">
+              <option value="goal">⚽ GOL</option>
+              <option value="yellow">🟨 AMMONIZIONE</option>
+              <option value="red">🟥 ESPULSIONE</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-600 uppercase mb-2">Giocatore</label>
+            <select value={selectedPlayer} onChange={(e) => setSelectedPlayer(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm font-bold">
+              <option value="">Seleziona...</option>
+              {players.map((player) => (
+                <option key={player.id} value={player.id}>
+                  {player.jersey_number ? `${player.jersey_number}. ` : ''}{player.first_name} {player.last_name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-600 uppercase mb-2">Minuto</label>
+            <input type="number" min="1" max="120" value={minute} onChange={(e) => setMinute(e.target.value)} placeholder="Es: 45" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm" />
+          </div>
+          {error && <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs font-bold text-center">{error}</div>}
+        </div>
+        <div className="p-3 border-t border-gray-200 flex gap-2">
+          <button onClick={onClose} className="flex-1 px-3 py-2 border border-gray-300 text-gray-700 font-bold rounded-lg hover:bg-gray-50 transition-colors text-xs">Annulla</button>
+          <button onClick={handleSave} disabled={loading} className="flex-1 px-3 py-2 bg-[#581C24] text-white font-bold rounded-lg hover:bg-[#581C24]/90 transition-colors text-xs shadow-md disabled:opacity-50">
+            {loading ? 'Salvataggio...' : 'SALVA'}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
 

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, Vote, X } from 'lucide-react';
-import { AdminMVPSelector, AdminStopVoting, AdminAddEvent } from '@/components/AdminButtons';
+import { AdminMVPSelector, AdminStopVoting, AdminAddEvent, AdminEditEvent } from '@/components/AdminButtons';
 import { useAuth } from '@/lib/AuthContext';
 import { createClient } from '@/lib/supabase/client';
 
@@ -231,6 +231,8 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
     </div>
   );
 };
+
+const [editingEvent, setEditingEvent] = useState<EventData | null>(null);
 
 // ==================== HELPER ====================
 const formatDate = (dateStr: string | null) => {
@@ -574,17 +576,8 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       await supabase.rpc('increment_player_goals', { player_id: playerId });
     }
 
-    // 4. Aggiorna la lista eventi localmente
-    const player = [...homePlayers, ...awayPlayers].find(p => p.id === playerId);
-    const newEvent: EventData = {
-      id: Date.now().toString(),
-      minute,
-      event_type: dbEventType,
-      player_id: playerId,
-      team_id: teamId,
-      player: player ? { first_name: player.first_name, last_name: player.last_name } : null
-    };
-    setEvents(prev => [...prev, newEvent].sort((a, b) => (a.minute || 0) - (b.minute || 0)));
+    //  RIMOSSO: Non aggiornare manualmente gli eventi, ci pensa il Realtime!
+    // Il canale eventsChannel rileverà l'INSERT e aggiornerà automaticamente lo stato
   };
 
   const handleSaveMvpCandidates = async (playerIds: string[]) => {
@@ -912,8 +905,13 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                       const playerName = event.player
                         ? `${event.player.first_name?.[0] || ''}. ${event.player.last_name || ''}`
                         : 'Sconosciuto';
+                      
                       return (
-                        <div key={event.id} className="flex items-center gap-2">
+                        <div 
+                          key={event.id} 
+                          className={`flex items-center gap-2 ${isStaffMode ? 'cursor-pointer hover:bg-gray-50 rounded-lg px-2 py-1 -mx-2 transition-colors' : ''}`}
+                          onClick={() => isStaffMode && setEditingEvent(event)}
+                        >
                           {isHome ? (
                             <>
                               <div className="flex items-center gap-2 flex-1 justify-end">
@@ -1032,6 +1030,20 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
             </div>
           </div>
         </div>
+      )}
+
+      {/* POPUP MODIFICA EVENTO */}
+      {isStaffMode && editingEvent && match && (
+        <AdminEditEvent
+          event={editingEvent}
+          matchId={match.id}
+          homeTeamId={match.home_team.id}
+          awayTeamId={match.away_team.id}
+          currentHomeScore={match.home_score || 0}
+          currentAwayScore={match.away_score || 0}
+          onUpdate={() => setEditingEvent(null)}
+          onClose={() => setEditingEvent(null)}
+        />
       )}
 
       {/* POPUP RIGORI */}
