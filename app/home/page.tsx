@@ -407,8 +407,28 @@ export default function HomePage() {
 
         {/* GRIGLIA CLASSIFICHE E MARCATORI */}
         <div className="grid grid-cols-2 gap-2 w-full">
-          {/* CLASSIFICA LAMPO */}
-          <div className="bg-white rounded-xl p-2 shadow-sm border border-gray-100">
+          {/* CLASSIFICA LAMPO CON SWIPE */}
+          <div 
+            className="bg-white rounded-xl p-2 shadow-sm border border-gray-100 touch-pan-y"
+            onTouchStart={(e) => {
+              const touch = e.touches[0];
+              (e.currentTarget as HTMLElement).dataset.startX = touch.clientX.toString();
+            }}
+            onTouchEnd={(e) => {
+              const touch = e.changedTouches[0];
+              const startX = parseFloat((e.currentTarget as HTMLElement).dataset.startX || '0');
+              const diff = touch.clientX - startX;
+              
+              // Swipe di almeno 50px
+              if (Math.abs(diff) > 50) {
+                if (diff > 0 && activeGroup === 'B') {
+                  setActiveGroup('A'); // Swipe destra → Girone A
+                } else if (diff < 0 && activeGroup === 'A') {
+                  setActiveGroup('B'); // Swipe sinistra → Girone B
+                }
+              }
+            }}
+          >
             <div className="flex items-center justify-between mb-2.5">
               <div className="flex items-center gap-1 min-w-0">
                 <Trophy size={12} className="text-[#D4AF37] flex-shrink-0" strokeWidth={2.5} />
