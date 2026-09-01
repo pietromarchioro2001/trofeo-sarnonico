@@ -206,36 +206,37 @@ export default function HomePage() {
     fetchHomeData();
   }, []);
 
-  // Countdown per prossima partita
-  useEffect(() => {
-    if (!nextMatch?.match_date) return;
-    
-    // ✅ Estrai i valori PRIMA della funzione interna (così TypeScript è contento)
-    const [year, month, day] = nextMatch.match_date.split('-').map(Number);
-    const [hours, minutes] = (nextMatch.match_time || '00:00').split(':').map(Number);
-    
-    const updateCountdown = () => {
-      const now = new Date();
-      const target = new Date(year, month - 1, day, hours, minutes, 0);
-      const diff = target.getTime() - now.getTime();
+    // Countdown per prossima partita
+    useEffect(() => {
+      if (!nextMatch?.match_date) return;
       
-      if (diff > 0) {
-        setCountdown({
-          days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-          minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
-          seconds: Math.floor((diff % (1000 * 60)) / 1000),
-        });
-      } else {
-        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-      }
-    };
-    
-    updateCountdown(); // Chiama subito
-    const timer = setInterval(updateCountdown, 1000);
-    
-    return () => clearInterval(timer);
-  }, [nextMatch]);
+      // ✅ Estrai solo la parte YYYY-MM-DD (funziona sia con spazio che con 'T')
+      const dateStr = nextMatch.match_date.split(/[ T]/)[0];
+      const [year, month, day] = dateStr.split('-').map(Number);
+      const [hours, minutes] = (nextMatch.match_time || '00:00').split(':').map(Number);
+      
+      const updateCountdown = () => {
+        const now = new Date();
+        const target = new Date(year, month - 1, day, hours, minutes, 0);
+        const diff = target.getTime() - now.getTime();
+        
+        if (diff > 0) {
+          setCountdown({
+            days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+            hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+            minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
+            seconds: Math.floor((diff % (1000 * 60)) / 1000),
+          });
+        } else {
+          setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        }
+      };
+      
+      updateCountdown(); // Chiama subito
+      const timer = setInterval(updateCountdown, 1000);
+      
+      return () => clearInterval(timer);
+    }, [nextMatch]);
 
   // Logout
   const handleLogout = () => {
