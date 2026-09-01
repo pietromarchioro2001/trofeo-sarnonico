@@ -205,22 +205,12 @@ export default function HomePage() {
     fetchHomeData();
   }, []);
 
-  // ✅ COSTANTE DI TEST - Metti 1 per simulare +1 anno, 0 per tornare alla realtà
-  const TEST_YEAR_OFFSET = 1;
-
   // Countdown per prossima partita
   useEffect(() => {
     if (!nextMatch?.match_date) return;
-    
-    const updateCountdown = () => {
+    const timer = setInterval(() => {
       const now = new Date();
       const target = new Date(`${nextMatch.match_date}T${nextMatch.match_time || '00:00:00'}`);
-      
-      // ✅ AGGIUNGI L'OFFSET DI TEST ALLA DATA TARGET
-      if (TEST_YEAR_OFFSET > 0) {
-        target.setFullYear(target.getFullYear() + TEST_YEAR_OFFSET);
-      }
-      
       const diff = target.getTime() - now.getTime();
       
       if (diff > 0) {
@@ -230,15 +220,8 @@ export default function HomePage() {
           minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
           seconds: Math.floor((diff % (1000 * 60)) / 1000),
         });
-      } else {
-        // Se comunque è passato, mostra 0
-        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
       }
-    };
-    
-    updateCountdown(); // Chiama subito
-    const timer = setInterval(updateCountdown, 1000);
-    
+    }, 1000);
     return () => clearInterval(timer);
   }, [nextMatch]);
 
