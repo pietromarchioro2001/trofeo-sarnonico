@@ -41,6 +41,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
       const teamId = params.id;
 
       try {
+        // 1. Dati squadra
         const { data: team, error: teamError } = await supabase
           .from('teams')
           .select('id, name, girone, logo_url, team_photo_url')
@@ -49,6 +50,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
 
         if (teamError) throw teamError;
 
+        // 2. Dati giocatori
         const { data: players, error: playersError } = await supabase
           .from('players')
           .select('id, first_name, last_name, jersey_number, birth_date, photo_url, goals, yellow_cards, red_cards, mvp_wins')
@@ -57,6 +59,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
 
         if (playersError) throw playersError;
 
+        // 3. Statistiche partite
         const { data: matches, error: matchesError } = await supabase
           .from('matches')
           .select('home_team_id, away_team_id, home_score, away_score')
@@ -87,6 +90,15 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
           stats.dr = stats.gf - stats.gs;
         }
 
+        // 4. ✅ CONTROLLO BLOCCO TORNEO (Spostato DENTRO la funzione async)
+        const { count: finalPhaseCount } = await supabase
+          .from('matches')
+          .select('*', { count: 'exact', head: true })
+          .in('phase', ['QUARTI', 'SEMIFINALI', 'FINALE', 'FINALE_3_4']);
+
+        const isTournamentLocked = (finalPhaseCount || 0) > 0;
+
+        // 5. Mappa giocatori
         const mappedPlayers = (players || []).map((p: any) => ({
           id: p.id,
           number: p.jersey_number || '-',
@@ -101,6 +113,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
           mvp: p.mvp_wins || 0,
         }));
 
+        // 6. Salva dati
         setTeamData({
           id: team.id,
           name: team.name,
@@ -109,7 +122,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
           teamPhoto: team.team_photo_url || '',
           stats: stats,
           players: mappedPlayers,
-          isTournamentLocked: isTournamentLocked,
+          isTournamentLocked: isTournamentLocked, // <-- Ora funziona correttamente
         });
 
       } catch (err) {
@@ -145,38 +158,18 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
 
   const handleLogoUpload = async (file: File) => {
     if (!file || !teamData) return;
-    
     setLoading(true);
     const supabase = createClient();
-    
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}_logo_${teamData.name.replace(/\s/g, '_')}.${fileExt}`;
-      
-      // CAMBIAMENTO: usa tournament-files/team-logos invece di team-logos
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('tournament-files')
-        .upload(`team-logos/${fileName}`, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
-      
+      const { error: uploadError } = await supabase.storage.from('tournament-files').upload(`team-logos/${fileName}`, file, { cacheControl: '3600', upsert: true });
       if (uploadError) throw uploadError;
-      
-      const { data: { publicUrl } } = supabase.storage
-        .from('tournament-files')
-        .getPublicUrl(`team-logos/${fileName}`);
-      
-      const { error: updateError } = await supabase
-        .from('teams')
-        .update({ logo_url: publicUrl })
-        .eq('id', params.id);
-      
+      const { data: { publicUrl } } = supabase.storage.from('tournament-files').getPublicUrl(`team-logos/${fileName}`);
+      const { error: updateError } = await supabase.from('teams').update({ logo_url: publicUrl }).eq('id', params.id);
       if (updateError) throw updateError;
-      
       setTeamData((prev: any) => ({ ...prev, logo: publicUrl }));
       alert('✅ Logo caricato con successo!');
-      
     } catch (err) {
       console.error('Errore upload logo:', err);
       alert('Errore nel caricamento del logo');
@@ -185,47 +178,20 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     }
   };
 
-  const { count: finalPhaseCount } = await supabase
-  .from('matches')
-  .select('*', { count: 'exact', head: true })
-  .in('phase', ['QUARTI', 'SEMIFINALI', 'FINALE', 'FINALE_3_4']);
-
-  const isTournamentLocked = (finalPhaseCount || 0) > 0;
-
   const handleTeamPhotoUpload = async (file: File) => {
     if (!file || !teamData) return;
-    
     setLoading(true);
     const supabase = createClient();
-    
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}_photo_${teamData.name.replace(/\s/g, '_')}.${fileExt}`;
-      
-      // CAMBIAMENTO: usa tournament-files/team-photos
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('tournament-files')
-        .upload(`team-photos/${fileName}`, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
-      
+      const { error: uploadError } = await supabase.storage.from('tournament-files').upload(`team-photos/${fileName}`, file, { cacheControl: '3600', upsert: true });
       if (uploadError) throw uploadError;
-      
-      const { data: { publicUrl } } = supabase.storage
-        .from('tournament-files')
-        .getPublicUrl(`team-photos/${fileName}`);
-      
-      const { error: updateError } = await supabase
-        .from('teams')
-        .update({ team_photo_url: publicUrl })
-        .eq('id', params.id);
-      
+      const { data: { publicUrl } } = supabase.storage.from('tournament-files').getPublicUrl(`team-photos/${fileName}`);
+      const { error: updateError } = await supabase.from('teams').update({ team_photo_url: publicUrl }).eq('id', params.id);
       if (updateError) throw updateError;
-      
       setTeamData((prev: any) => ({ ...prev, teamPhoto: publicUrl }));
       alert('✅ Foto squadra caricata con successo!');
-      
     } catch (err) {
       console.error('Errore upload foto:', err);
       alert('Errore nel caricamento della foto');
@@ -233,53 +199,16 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
       setLoading(false);
     }
   };
-  
-  const handlePlayerPhotoUpload = async (file: File): Promise<string | null> => {
-    if (!file) return null;
-    
-    const supabase = createClient();
-    
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}_player.${fileExt}`;
-      
-      // CAMBIAMENTO: usa tournament-files/player-photos
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('tournament-files')
-        .upload(`player-photos/${fileName}`, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
-      
-      if (uploadError) throw uploadError;
-      
-      const { data: { publicUrl } } = supabase.storage
-        .from('tournament-files')
-        .getPublicUrl(`player-photos/${fileName}`);
-      
-      return publicUrl;
-      
-    } catch (err) {
-      console.error('Errore upload foto giocatore:', err);
-      alert('Errore nel caricamento della foto');
-      return null;
-    }
-  };
 
   // Aggiungi Giocatore
   const handleAddPlayer = async (newPlayer: PlayerData) => {
     setLoading(true);
     const supabase = createClient();
-    
     let photoUrl: string | undefined = newPlayer.photo;
-    
-    // Se la foto è un blob URL, caricala su Storage
     if (newPlayer.photo && newPlayer.photo.startsWith('blob:')) {
-      // Devi recuperare il file dal blob - semplificazione: chiedi di ricaricare
       alert('⚠️ Per caricare la foto, seleziona nuovamente il file');
       photoUrl = undefined;
     }
-    
     const playerData = {
       team_id: params.id,
       first_name: newPlayer.firstName.trim(),
@@ -291,9 +220,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
 
     try {
       const { data, error } = await supabase.from('players').insert(playerData).select().single();
-
       if (error) throw error;
-
       const mappedPlayer = {
         id: data.id,
         number: data.jersey_number || '-',
@@ -304,10 +231,8 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
         photo: data.photo_url || '',
         goals: 0, yellow: 0, red: 0, mvp: 0,
       };
-
       setTeamData((prev: any) => ({ ...prev, players: [...prev.players, mappedPlayer] }));
       alert('✅ Giocatore aggiunto con successo!');
-      
     } catch (err) {
       console.error('Errore aggiunta giocatore:', err);
       alert('Errore nel salvataggio del giocatore');
@@ -321,53 +246,41 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     if (!editingPlayer) return;
     setLoading(true);
     const supabase = createClient();
-    
     const currentPlayer = teamData.players.find((p: any) => p.id === editingPlayer.id);
-    if (!currentPlayer) {
-      setLoading(false);
-      return;
-    }
+    if (!currentPlayer) { setLoading(false); return; }
 
     let photoUrl = updatedData.photo || currentPlayer.photo;
-    
-    // Se la foto è un blob URL, caricala su Storage
     if (updatedData.photo && updatedData.photo.startsWith('blob:')) {
       alert('⚠️ Per aggiornare la foto, seleziona nuovamente il file');
       photoUrl = currentPlayer.photo;
     }
 
     try {
-      const { error } = await supabase
-        .from('players')
-        .update({
-          first_name: updatedData.firstName.trim(),
-          last_name: updatedData.lastName.trim(),
-          jersey_number: updatedData.number === '-' ? null : updatedData.number,
-          birth_date: updatedData.birthDate || null,
-          photo_url: photoUrl,
-        })
-        .eq('id', currentPlayer.id);
+      const { error } = await supabase.from('players').update({
+        first_name: updatedData.firstName.trim(),
+        last_name: updatedData.lastName.trim(),
+        jersey_number: updatedData.number === '-' ? null : updatedData.number,
+        birth_date: updatedData.birthDate || null,
+        photo_url: photoUrl,
+      }).eq('id', currentPlayer.id);
 
       if (error) throw error;
 
       setTeamData((prev: any) => ({
         ...prev,
         players: prev.players.map((p: any) => 
-          p.id === currentPlayer.id
-            ? { 
-                ...p, 
-                firstName: updatedData.firstName.trim(),
-                lastName: updatedData.lastName.trim(),
-                number: updatedData.number,
-                birthDate: updatedData.birthDate,
-                photo: photoUrl,
-                name: `${updatedData.firstName.trim().toUpperCase()} ${updatedData.lastName.trim().toUpperCase()}`
-              }
-            : p
+          p.id === currentPlayer.id ? { 
+            ...p, 
+            firstName: updatedData.firstName.trim(),
+            lastName: updatedData.lastName.trim(),
+            number: updatedData.number,
+            birthDate: updatedData.birthDate,
+            photo: photoUrl,
+            name: `${updatedData.firstName.trim().toUpperCase()} ${updatedData.lastName.trim().toUpperCase()}`
+          } : p
         )
       }));
       alert('✅ Giocatore aggiornato con successo!');
-      
     } catch (err) {
       console.error('Errore aggiornamento giocatore:', err);
       alert('Errore nell\'aggiornamento del giocatore');
@@ -380,39 +293,19 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
 
   const handleDeletePlayer = async () => {
     if (!editingPlayer) return;
-    
-    const isConfirmed = window.confirm(
-      `️ Eliminare definitivamente ${editingPlayer.firstName} ${editingPlayer.lastName}?\n\nQuesta azione è irreversibile.`
-    );
-    
+    const isConfirmed = window.confirm(`⚠️ Eliminare definitivamente ${editingPlayer.firstName} ${editingPlayer.lastName}?\n\nQuesta azione è irreversibile.`);
     if (!isConfirmed) return;
 
     setLoading(true);
     const supabase = createClient();
-    
     const currentPlayer = teamData.players.find((p: any) => p.id === editingPlayer.id);
-    
-    if (!currentPlayer || !currentPlayer.id) {
-      alert('Giocatore non trovato');
-      setLoading(false);
-      return;
-    }
+    if (!currentPlayer || !currentPlayer.id) { alert('Giocatore non trovato'); setLoading(false); return; }
 
     try {
-      const { error } = await supabase
-        .from('players')
-        .delete()
-        .eq('id', currentPlayer.id);
-
+      const { error } = await supabase.from('players').delete().eq('id', currentPlayer.id);
       if (error) throw error;
-
-      setTeamData((prev: any) => ({
-        ...prev,
-        players: prev.players.filter((p: any) => p.id !== currentPlayer.id)
-      }));
-
+      setTeamData((prev: any) => ({ ...prev, players: prev.players.filter((p: any) => p.id !== currentPlayer.id) }));
       alert('✅ Giocatore eliminato con successo');
-      
     } catch (err) {
       console.error('Errore:', err);
       alert('Errore nell\'eliminazione');
@@ -439,7 +332,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     }
   };
 
-  // Il capitano ha i permessi SOLO se è la sua squadra E il torneo NON è bloccato
+  // ✅ Il capitano ha i permessi SOLO se è la sua squadra E il torneo NON è bloccato
   const isMyTeam = isCaptain && captainTeamId === params.id && !teamData?.isTournamentLocked;
 
   if (loading) {
@@ -517,7 +410,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
         )}
       </div>
 
-      {/* AREA CAPITANO / BLOCCO ROSA */}
+      {/* ✅ AREA CAPITANO / BLOCCO ROSA AGGIORNATA */}
       {isCaptain && captainTeamId === params.id && (
         <div className="px-4 mb-6">
           {teamData?.isTournamentLocked ? (
@@ -551,13 +444,10 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
       {/* STATISTICHE SQUADRA */}
       <div className="bg-gray-50 rounded-xl p-4 mb-6">
         <div className="flex items-center justify-between">
-          {/* PT - Grande */}
           <div className="flex-1 text-center border-r border-gray-200 pr-4">
             <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">PT</p>
             <p className="text-4xl font-black text-[#581C24]">{teamData.stats.pt || 0}</p>
           </div>
-          
-          {/* Altre statistiche - Più piccole */}
           <div className="flex-1 grid grid-cols-3 gap-2 pl-4">
             <div className="text-center">
               <p className="text-[8px] font-bold text-gray-500 uppercase mb-0.5">V</p>
