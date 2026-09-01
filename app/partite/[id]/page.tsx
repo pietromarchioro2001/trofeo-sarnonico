@@ -522,10 +522,17 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     const supabase = createClient();
     const teamId = teamSide === 'home' ? match.home_team.id : match.away_team.id;
 
+    // ✅ Converti i valori nel formato corretto per il database
+    const eventTypeMap: Record<string, string> = {
+      'goal': 'GOAL',
+      'yellow': 'YELLOW_CARD',
+      'red': 'RED_CARD'
+    };
+
     const { error } = await supabase.from('match_events').insert({
       match_id: match.id,
       player_id: playerId,
-      event_type: eventType,
+      event_type: eventTypeMap[eventType] || eventType, // ✅ Conversione
       minute: minute,
       team_id: teamId
     });
@@ -536,11 +543,16 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       return;
     }
 
+    // Aggiorna anche i gol del giocatore se è un gol
+    if (eventType === 'goal') {
+      await supabase.rpc('increment_player_goals', { player_id: playerId });
+    }
+
     const player = [...homePlayers, ...awayPlayers].find(p => p.id === playerId);
     const newEvent: EventData = {
       id: Date.now().toString(),
       minute,
-      event_type: eventType,
+      event_type: eventTypeMap[eventType] || eventType,
       player_id: playerId,
       team_id: teamId,
       player: player ? { first_name: player.first_name, last_name: player.last_name } : null
