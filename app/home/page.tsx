@@ -313,11 +313,11 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* CONTENUTO PRINCIPALE */}
+            {/* CONTENUTO PRINCIPALE */}
       <div className="flex-1 max-w-md mx-auto px-3 sm:px-4 -mt-6 relative z-10 w-full flex flex-col gap-[3vh] pb-28">
         
-        {/* 1. COUNTDOWN (se c'è una prossima partita) */}
-        {nextMatch && (
+        {/* ✅ 1. COUNTDOWN (MOSTRA SOLO SE NON C'È LASTMATCH) */}
+        {showCountdown && (
           <div className="bg-gray-300 rounded-xl p-4 shadow-lg">
             <div className="text-center">
               <p className="text-gray-700 font-bold text-xs uppercase mb-3">Inizio Torneo tra</p>
@@ -328,7 +328,7 @@ export default function HomePage() {
                 <span>{countdown.seconds}s</span>
               </div>
               <p className="text-gray-600 text-[10px] mt-2 font-bold uppercase">
-                {nextMatch.home_team.name} vs {nextMatch.away_team.name}
+                {nextMatch?.home_team.name} vs {nextMatch?.away_team.name}
               </p>
             </div>
           </div>
