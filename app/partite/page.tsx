@@ -138,6 +138,34 @@ export default function PartitePage() {
   // Ora il fetch si riesegue ogni volta che refreshKey cambia.
   }, [refreshKey]); 
 
+    // ==========================================
+  // ✅ REALTIME: Aggiornamenti live su Partite
+  // ==========================================
+  useEffect(() => {
+    const supabase = createClient();
+
+    // Ascolta cambiamenti sulle partite
+    const matchesChannel = supabase
+      .channel('partite-matches')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'matches',
+        },
+        () => {
+          console.log('🔄 Partita aggiornata, ricarico lista...');
+          setRefreshKey(k => k + 1);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(matchesChannel);
+    };
+  }, []);
+
   // Filtra le partite per la data selezionata
   const filteredMatches = matches.filter(match => {
     const d = parseDate(match.match_date);

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Trophy, CalendarDays, Clock, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -81,162 +81,204 @@ export default function HomePage() {
     }
   }, []);
 
-  // Fetch dati iniziali
-  useEffect(() => {
-    const fetchHomeData = async () => {
-      setLoading(true);
-      const supabase = createClient();
-      const today = new Date().toISOString().split('T')[0]; // Data di oggi 'YYYY-MM-DD'
+  // ✅ 1. FUNZIONE FETCH SPOSTATA FUORI DAGLI USEEFFECT (con useCallback)
+  const fetchHomeData = useCallback(async () => {
+    setLoading(true);
+    const supabase = createClient();
+    const today = new Date().toISOString().split('T')[0];
 
-      try {
-        // 1. ULTIMA PARTITA (Live o ultima finita)
-        const { data: lastMatchArray } = await supabase
-          .from('matches')
-          .select('id, status, match_date, match_time, home_score, away_score, home_team_id, away_team_id')
-          .or('status.eq.LIVE,status.eq.FINITA')
-          .order('match_date', { ascending: false })
-          .order('match_time', { ascending: false })
-          .limit(1);
-        
-        if (lastMatchArray && lastMatchArray.length > 0) {
-          const match = lastMatchArray[0];
-          const { data: teamsData } = await supabase
-            .from('teams')
-            .select('id, name, logo_url')
-            .in('id', [match.home_team_id, match.away_team_id]);
-          
-          const homeTeam = teamsData?.find(t => t.id === match.home_team_id) || null;
-          const awayTeam = teamsData?.find(t => t.id === match.away_team_id) || null;
-          
-          setLastMatch({ ...match, home_team: homeTeam as TeamData, away_team: awayTeam as TeamData });
-        }
-
-        // 2. PROSSIMA PARTITA (SOLO DATE FUTURE O ODIERNE)
-        const { data: nextMatchArray } = await supabase
-          .from('matches')
-          .select('id, status, match_date, match_time, home_score, away_score, home_team_id, away_team_id')
-          .eq('status', 'PROGRAMMATA')
-          .gte('match_date', today) // ✅ FILTRO CRUCIALE: solo partite da oggi in poi
-          .order('match_date', { ascending: true })
-          .order('match_time', { ascending: true })
-          .limit(1);
-        
-        if (nextMatchArray && nextMatchArray.length > 0) {
-          const match = nextMatchArray[0];
-          const { data: teamsData } = await supabase
-            .from('teams')
-            .select('id, name, logo_url')
-            .in('id', [match.home_team_id, match.away_team_id]);
-          
-          const homeTeam = teamsData?.find(t => t.id === match.home_team_id) || null;
-          const awayTeam = teamsData?.find(t => t.id === match.away_team_id) || null;
-          
-          setNextMatch({ ...match, home_team: homeTeam as TeamData, away_team: awayTeam as TeamData });
-        }
-
-        // 3. CLASSIFICHE (Calcolate al volo dalle partite finite)
-        const { data: allMatches } = await supabase
-          .from('matches')
-          .select('home_team_id, away_team_id, home_score, away_score, status')
-          .eq('status', 'FINITA');
-
-        const { data: teams } = await supabase
+    try {
+      // 1. ULTIMA PARTITA (Live o ultima finita)
+      const { data: lastMatchArray } = await supabase
+        .from('matches')
+        .select('id, status, match_date, match_time, home_score, away_score, home_team_id, away_team_id')
+        .or('status.eq.LIVE,status.eq.FINITA')
+        .order('match_date', { ascending: false })
+        .order('match_time', { ascending: false })
+        .limit(1);
+      
+      if (lastMatchArray && lastMatchArray.length > 0) {
+        const match = lastMatchArray[0];
+        const { data: teamsData } = await supabase
           .from('teams')
-          .select('id, name, logo_url, girone');
+          .select('id, name, logo_url')
+          .in('id', [match.home_team_id, match.away_team_id]);
+        
+        const homeTeam = teamsData?.find(t => t.id === match.home_team_id) || null;
+        const awayTeam = teamsData?.find(t => t.id === match.away_team_id) || null;
+        
+        setLastMatch({ ...match, home_team: homeTeam as TeamData, away_team: awayTeam as TeamData });
+      }
 
-        if (allMatches && teams) {
-          const statsMap = new Map<string, StandingTeam>();
-          
-          teams.forEach(t => {
-            statsMap.set(t.id, { ...t, pt: 0, gf: 0, gs: 0 });
-          });
+      // 2. PROSSIMA PARTITA (SOLO DATE FUTURE O ODIERNE)
+      const { data: nextMatchArray } = await supabase
+        .from('matches')
+        .select('id, status, match_date, match_time, home_score, away_score, home_team_id, away_team_id')
+        .eq('status', 'PROGRAMMATA')
+        .gte('match_date', today)
+        .order('match_date', { ascending: true })
+        .order('match_time', { ascending: true })
+        .limit(1);
+      
+      if (nextMatchArray && nextMatchArray.length > 0) {
+        const match = nextMatchArray[0];
+        const { data: teamsData } = await supabase
+          .from('teams')
+          .select('id, name, logo_url')
+          .in('id', [match.home_team_id, match.away_team_id]);
+        
+        const homeTeam = teamsData?.find(t => t.id === match.home_team_id) || null;
+        const awayTeam = teamsData?.find(t => t.id === match.away_team_id) || null;
+        
+        setNextMatch({ ...match, home_team: homeTeam as TeamData, away_team: awayTeam as TeamData });
+      }
 
-          allMatches.forEach(m => {
-            const h = statsMap.get(m.home_team_id);
-            const a = statsMap.get(m.away_team_id);
-            if (!h || !a) return;
+      // 3. CLASSIFICHE (Calcolate al volo dalle partite finite)
+      const { data: allMatches } = await supabase
+        .from('matches')
+        .select('home_team_id, away_team_id, home_score, away_score, status')
+        .eq('status', 'FINITA');
 
-            const hs = m.home_score || 0;
-            const as_ = m.away_score || 0;
+      const { data: teams } = await supabase
+        .from('teams')
+        .select('id, name, logo_url, girone');
 
-            h.gf += hs; h.gs += as_;
-            a.gf += as_; a.gs += hs;
+      if (allMatches && teams) {
+        const statsMap = new Map<string, StandingTeam>();
+        
+        teams.forEach(t => {
+          statsMap.set(t.id, { ...t, pt: 0, gf: 0, gs: 0 });
+        });
 
-            if (hs > as_) { h.pt += 3; }
-            else if (as_ > hs) { a.pt += 3; }
-            else { h.pt += 1; a.pt += 1; }
-          });
+        allMatches.forEach(m => {
+          const h = statsMap.get(m.home_team_id);
+          const a = statsMap.get(m.away_team_id);
+          if (!h || !a) return;
 
-          const sorted = Array.from(statsMap.values()).sort((a, b) => b.pt - a.pt || (b.gf - b.gs) - (a.gf - a.gs));
-          setStandingsA(sorted.filter(t => t.girone === 'A').slice(0, 4));
-          setStandingsB(sorted.filter(t => t.girone === 'B').slice(0, 4));
-        }
+          const hs = m.home_score || 0;
+          const as_ = m.away_score || 0;
 
-        // 4. TOP SCORERS
-        const { data: scorersArray } = await supabase
-          .from('players')
-          .select('id, first_name, last_name, goals, team_id')
-          .order('goals', { ascending: false })
-          .limit(3);
+          h.gf += hs; h.gs += as_;
+          a.gf += as_; a.gs += hs;
 
-        if (scorersArray && scorersArray.length > 0) {
-          const teamIds = scorersArray.map(s => s.team_id).filter(Boolean);
-          const { data: teamsData } = await supabase
-            .from('teams')
-            .select('id, name, logo_url')
-            .in('id', teamIds);
+          if (hs > as_) { h.pt += 3; }
+          else if (as_ > hs) { a.pt += 3; }
+          else { h.pt += 1; a.pt += 1; }
+        });
 
-          const mappedScorers: TopScorer[] = scorersArray.map(s => ({
-            id: s.id,
-            first_name: s.first_name,
-            last_name: s.last_name,
-            goals: s.goals,
-            team: teamsData?.find(t => t.id === s.team_id) || null
-          }));
-          setTopScorers(mappedScorers);
-        }
+        const sorted = Array.from(statsMap.values()).sort((a, b) => b.pt - a.pt || (b.gf - b.gs) - (a.gf - a.gs));
+        setStandingsA(sorted.filter(t => t.girone === 'A').slice(0, 4));
+        setStandingsB(sorted.filter(t => t.girone === 'B').slice(0, 4));
+      }
 
-      } catch (err) {
-        console.error('Errore fetch home:', err);
-      } finally {
-        setLoading(false);
+      // 4. TOP SCORERS
+      const { data: scorersArray } = await supabase
+        .from('players')
+        .select('id, first_name, last_name, goals, team_id')
+        .order('goals', { ascending: false })
+        .limit(3);
+
+      if (scorersArray && scorersArray.length > 0) {
+        const teamIds = scorersArray.map(s => s.team_id).filter(Boolean);
+        const { data: teamsData } = await supabase
+          .from('teams')
+          .select('id, name, logo_url')
+          .in('id', teamIds);
+
+        const mappedScorers: TopScorer[] = scorersArray.map(s => ({
+          id: s.id,
+          first_name: s.first_name,
+          last_name: s.last_name,
+          goals: s.goals,
+          team: teamsData?.find(t => t.id === s.team_id) || null
+        }));
+        setTopScorers(mappedScorers);
+      }
+
+    } catch (err) {
+      console.error('Errore fetch home:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []); // Array vuoto perché usa solo setter di stato
+
+  // ✅ 2. Fetch iniziale (chiama la funzione definita sopra)
+  useEffect(() => {
+    fetchHomeData();
+  }, [fetchHomeData]);
+
+  // 3. Countdown per prossima partita
+  useEffect(() => {
+    if (!nextMatch?.match_date) return;
+    
+    const dateStr = nextMatch.match_date.split(/[ T]/)[0];
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const [hours, minutes] = (nextMatch.match_time || '00:00').split(':').map(Number);
+    
+    const updateCountdown = () => {
+      const now = new Date();
+      const target = new Date(year, month - 1, day, hours, minutes, 0);
+      const diff = target.getTime() - now.getTime();
+      
+      if (diff > 0) {
+        setCountdown({
+          days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+          minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
+          seconds: Math.floor((diff % (1000 * 60)) / 1000),
+        });
+      } else {
+        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
       }
     };
+    
+    updateCountdown();
+    const timer = setInterval(updateCountdown, 1000);
+    
+    return () => clearInterval(timer);
+  }, [nextMatch]);
 
-    fetchHomeData();
-  }, []);
+  // ✅ 4. REALTIME: Aggiornamenti live su Home (ORA FUNZIONA!)
+  useEffect(() => {
+    const supabase = createClient();
 
-    // Countdown per prossima partita
-    useEffect(() => {
-      if (!nextMatch?.match_date) return;
-      
-      // ✅ Estrai solo la parte YYYY-MM-DD (funziona sia con spazio che con 'T')
-      const dateStr = nextMatch.match_date.split(/[ T]/)[0];
-      const [year, month, day] = dateStr.split('-').map(Number);
-      const [hours, minutes] = (nextMatch.match_time || '00:00').split(':').map(Number);
-      
-      const updateCountdown = () => {
-        const now = new Date();
-        const target = new Date(year, month - 1, day, hours, minutes, 0);
-        const diff = target.getTime() - now.getTime();
-        
-        if (diff > 0) {
-          setCountdown({
-            days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-            hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-            minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
-            seconds: Math.floor((diff % (1000 * 60)) / 1000),
-          });
-        } else {
-          setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+    const matchesChannel = supabase
+      .channel('home-matches')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'matches',
+        },
+        () => {
+          console.log('🔄 Partita aggiornata, ricarico home...');
+          fetchHomeData(); // ✅ Ora può chiamarla perché è nello scope del componente
         }
-      };
-      
-      updateCountdown(); // Chiama subito
-      const timer = setInterval(updateCountdown, 1000);
-      
-      return () => clearInterval(timer);
-    }, [nextMatch]);
+      )
+      .subscribe();
+
+    const playersChannel = supabase
+      .channel('home-players')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'players',
+        },
+        () => {
+          console.log('⚽ Giocatore aggiornato, ricarico marcatori...');
+          fetchHomeData(); // ✅ Ora può chiamarla
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(matchesChannel);
+      supabase.removeChannel(playersChannel);
+    };
+  }, [fetchHomeData]);
 
   // Logout
   const handleLogout = () => {
@@ -313,10 +355,10 @@ export default function HomePage() {
         </div>
       </div>
 
-            {/* CONTENUTO PRINCIPALE */}
+      {/* CONTENUTO PRINCIPALE */}
       <div className="flex-1 max-w-md mx-auto px-3 sm:px-4 -mt-6 relative z-10 w-full flex flex-col gap-[3vh] pb-28">
         
-        {/* ✅ 1. COUNTDOWN (MOSTRA SOLO SE NON C'È LASTMATCH) */}
+        {/* 1. COUNTDOWN (MOSTRA SOLO SE NON C'È LASTMATCH) */}
         {showCountdown && (
           <div className="bg-gray-300 rounded-xl p-4 shadow-lg">
             <div className="text-center">
@@ -420,12 +462,11 @@ export default function HomePage() {
               const startX = parseFloat((e.currentTarget as HTMLElement).dataset.startX || '0');
               const diff = touch.clientX - startX;
               
-              // Swipe di almeno 50px
               if (Math.abs(diff) > 50) {
                 if (diff > 0 && activeGroup === 'B') {
-                  setActiveGroup('A'); // Swipe destra → Girone A
+                  setActiveGroup('A');
                 } else if (diff < 0 && activeGroup === 'A') {
-                  setActiveGroup('B'); // Swipe sinistra → Girone B
+                  setActiveGroup('B');
                 }
               }
             }}

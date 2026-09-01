@@ -425,6 +425,97 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     if (params.id) fetchData();
   }, [params.id]);
 
+    // ==========================================
+  // ✅ REALTIME: Ascolta gli aggiornamenti live
+  // ==========================================
+  useEffect(() => {
+    const supabase = createClient();
+    const matchId = params.id;
+
+    // 1. Ascolta cambiamenti sulla partita (stato, punteggio, etc.)
+    const matchChannel = supabase
+      .channel(`match-${matchId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Ascolta INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'matches',
+          filter: `id=eq.${matchId}`,
+        },
+        (payload) => {
+          console.log('Cambiamento partita:', payload);
+          setMatch((prev) => (prev ? { ...prev, ...payload.new } : null));
+        }
+      )
+      .subscribe();
+
+    // 2. Ascolta nuovi eventi (gol, cartellini)
+    const eventsChannel = supabase
+      .channel(`events-${matchId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'match_events',
+          filter: `match_id=eq.${matchId}`,
+        },
+        async () => {
+          console.log('Nuovo evento!');
+          // Ricarica tutti gli eventi per avere i dati completi
+          const { data: newEvents } = await supabase
+            .from('match_events')
+            .select('id, minute, event_type, player_id, team_id, player:players(first_name, last_name)')
+            .eq('match_id', matchId)
+            .order('minute', { ascending: true });
+
+          if (newEvents) {
+            const typedEvents: EventData[] = newEvents.map((e: any) => ({
+              id: e.id,
+              minute: e.minute,
+              event_type: e.event_type,
+              player_id: e.player_id,
+              team_id: e.team_id,
+              player: e.player && !Array.isArray(e.player) ? {
+                first_name: e.player.first_name,
+                last_name: e.player.last_name
+              } : null
+            }));
+            setEvents(typedEvents);
+          }
+        }
+      )
+      .subscribe();
+
+    // 3. Ascolta aggiornamenti statistiche giocatori
+    const playersChannel = supabase
+      .channel(`players-${matchId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'players',
+        },
+        (payload) => {
+          console.log('Giocatore aggiornato:', payload);
+          const updatedPlayer = payload.new as MatchPlayerData;
+          
+          setHomePlayers(prev => prev.map(p => p.id === updatedPlayer.id ? updatedPlayer : p));
+          setAwayPlayers(prev => prev.map(p => p.id === updatedPlayer.id ? updatedPlayer : p));
+        }
+      )
+      .subscribe();
+
+    // Cleanup quando esci dalla pagina
+    return () => {
+      supabase.removeChannel(matchChannel);
+      supabase.removeChannel(eventsChannel);
+      supabase.removeChannel(playersChannel);
+    };
+  }, [params.id]);
+
   // --- HANDLERS ---
   const handleAddEvent = async (teamSide: 'home' | 'away', eventType: string, playerId: string, minute: number) => {
     if (!match) return;
