@@ -298,11 +298,23 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           
         if (matchError) throw matchError;
 
+        // ✅ AGGIUNGI QUESTO BLOCCO DI CONTROLLO DI SICUREZZA
+        if (!matchData) {
+          return (
+            <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center flex-col gap-4">
+              <p className="text-[#581C24] font-bold uppercase text-xl">Partita non trovata</p>
+              <Link href="/partite" className="text-sm text-gray-600 hover:text-[#581C24] font-bold underline">
+                ← Torna alla lista partite
+              </Link>
+            </div>
+          );
+        }
+
         // 2. Prendi i dati delle squadre separatamente
         const { data: teamsData, error: teamsError } = await supabase
           .from('teams')
           .select('id, name, logo_url')
-          .in('id', [matchData.home_team_id, matchData.away_team_id]);
+          .in('id', [matchData.home_team_id, matchData.away_team_id]); 
           
         if (teamsError) throw teamsError;
 
