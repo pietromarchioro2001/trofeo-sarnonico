@@ -45,7 +45,7 @@ interface EventPlayerData {
   last_name: string;
 }
 
-interface EventData {
+export interface EventData {
   id: string;
   minute: number | null;
   event_type: string;
@@ -232,8 +232,6 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
   );
 };
 
-const [editingEvent, setEditingEvent] = useState<EventData | null>(null);
-
 // ==================== HELPER ====================
 const formatDate = (dateStr: string | null) => {
   if (!dateStr) return '';
@@ -274,7 +272,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   const [events, setEvents] = useState<EventData[]>([]);
   const [mvpPlayers, setMvpPlayers] = useState<MvpPlayerData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false); // ✅ NUOVO: stato per partita non trovata
+  const [notFound, setNotFound] = useState(false);
 
   // Stati UI
   const [activeTab, setActiveTab] = useState<'diretta' | 'giocatori' | 'media'>('diretta');
@@ -283,17 +281,19 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   const [winnerId, setWinnerId] = useState<string | null>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<MatchPlayerData | null>(null);
   const [showPenaltyPopup, setShowPenaltyPopup] = useState(false);
+  
+  // ✅ QUESTO DEVE ESSERE DENTRO IL COMPONENTE
+  const [editingEvent, setEditingEvent] = useState<EventData | null>(null);
 
   // Fetch dati iniziali
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      setNotFound(false); // ✅ Resetta lo stato notFound
+      setNotFound(false);
       const supabase = createClient();
       const matchId = params.id;
 
       try {
-        // 1. Prendi i dati della partita SENZA relazioni annidate
         const { data: matchData, error: matchError } = await supabase
           .from('matches')
           .select('id, home_score, away_score, status, phase, match_date, match_time, home_team_id, away_team_id')
@@ -302,14 +302,12 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           
         if (matchError) throw matchError;
 
-        // ✅ CONTROLLO: se la partita non esiste, mostra messaggio
         if (!matchData) {
           setNotFound(true);
           setLoading(false);
           return;
         }
 
-        // 2. Prendi i dati delle squadre separatamente
         const { data: teamsData, error: teamsError } = await supabase
           .from('teams')
           .select('id, name, logo_url')
@@ -317,7 +315,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           
         if (teamsError) throw teamsError;
 
-        // 3. Unisci i dati manualmente per creare l'oggetto MatchData completo
         const homeTeam = teamsData?.find(t => t.id === matchData.home_team_id) || null;
         const awayTeam = teamsData?.find(t => t.id === matchData.away_team_id) || null;
         
@@ -329,7 +326,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         
         setMatch(typedMatch);
 
-        // 4. Players con null check
         const { data: playersData, error: playersError } = await supabase
           .from('players')
           .select('id, first_name, last_name, jersey_number, photo_url, goals, yellow_cards, red_cards, mvp_wins, team_id')
@@ -341,7 +337,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         setHomePlayers(typedPlayers.filter(p => p.team_id === typedMatch.home_team.id));
         setAwayPlayers(typedPlayers.filter(p => p.team_id === typedMatch.away_team.id));
 
-        // 5. Events con gestione corretta del player nullable
         const { data: eventsData, error: eventsError } = await supabase
           .from('match_events')
           .select('id, minute, event_type, player_id, team_id, player:players(first_name, last_name)')
@@ -362,14 +357,12 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         }));
         setEvents(typedEvents);
 
-        // 6. MVP - Usa .maybeSingle() invece di .single()
         const { data: candidatesData, error: candidatesError } = await supabase
           .from('mvp_candidates')
           .select('candidate_1_id, candidate_2_id, candidate_3_id, voting_closed')
           .eq('match_id', matchId)
-          .maybeSingle(); // ✅ Cambiato da .single() a .maybeSingle()
+          .maybeSingle();
 
-        // Ignora l'errore "nessun risultato trovato" (codice PGRST116)
         if (candidatesError && candidatesError.code !== 'PGRST116') {
           console.error('Errore MVP:', candidatesError);
         }
@@ -427,32 +420,29 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     if (params.id) fetchData();
   }, [params.id]);
 
-    // ==========================================
+  // ==========================================
   // ✅ REALTIME: Ascolta gli aggiornamenti live
   // ==========================================
   useEffect(() => {
     const supabase = createClient();
     const matchId = params.id;
 
-    // 1. Ascolta cambiamenti sulla partita (stato, punteggio, etc.)
     const matchChannel = supabase
       .channel(`match-${matchId}`)
       .on(
         'postgres_changes',
         {
-          event: '*', // Ascolta INSERT, UPDATE, DELETE
+          event: '*',
           schema: 'public',
           table: 'matches',
           filter: `id=eq.${matchId}`,
         },
         (payload) => {
-          console.log('Cambiamento partita:', payload);
           setMatch((prev) => (prev ? { ...prev, ...payload.new } : null));
         }
       )
       .subscribe();
 
-    // 2. Ascolta nuovi eventi (gol, cartellini)
     const eventsChannel = supabase
       .channel(`events-${matchId}`)
       .on(
@@ -464,8 +454,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           filter: `match_id=eq.${matchId}`,
         },
         async () => {
-          console.log('Nuovo evento!');
-          // Ricarica tutti gli eventi per avere i dati completi
           const { data: newEvents } = await supabase
             .from('match_events')
             .select('id, minute, event_type, player_id, team_id, player:players(first_name, last_name)')
@@ -490,7 +478,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       )
       .subscribe();
 
-    // 3. Ascolta aggiornamenti statistiche giocatori
     const playersChannel = supabase
       .channel(`players-${matchId}`)
       .on(
@@ -501,16 +488,13 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           table: 'players',
         },
         (payload) => {
-          console.log('Giocatore aggiornato:', payload);
           const updatedPlayer = payload.new as MatchPlayerData;
-          
           setHomePlayers(prev => prev.map(p => p.id === updatedPlayer.id ? updatedPlayer : p));
           setAwayPlayers(prev => prev.map(p => p.id === updatedPlayer.id ? updatedPlayer : p));
         }
       )
       .subscribe();
 
-    // Cleanup quando esci dalla pagina
     return () => {
       supabase.removeChannel(matchChannel);
       supabase.removeChannel(eventsChannel);
@@ -524,7 +508,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     const supabase = createClient();
     const teamId = teamSide === 'home' ? match.home_team.id : match.away_team.id;
 
-    // Mappatura dei valori
     const eventTypeMap: Record<string, string> = {
       'goal': 'GOAL',
       'yellow': 'YELLOW_CARD',
@@ -533,7 +516,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
 
     const dbEventType = eventTypeMap[eventType] || eventType;
 
-    // 1. Inserisci l'evento
     const { error: eventError } = await supabase.from('match_events').insert({
       match_id: match.id,
       player_id: playerId,
@@ -548,7 +530,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       return;
     }
 
-    // 2. ✅ SE È UN GOL, AGGIORNA IL PUNTEGGIO
     if (eventType === 'goal') {
       const currentScore = teamSide === 'home' ? match.home_score : match.away_score;
       const newScore = (currentScore || 0) + 1;
@@ -563,7 +544,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       if (scoreError) {
         console.error('Errore aggiornamento punteggio:', scoreError);
       } else {
-        // Aggiorna lo stato locale immediatamente
         setMatch(prev => prev ? {
           ...prev,
           [teamSide === 'home' ? 'home_score' : 'away_score']: newScore
@@ -571,13 +551,9 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       }
     }
 
-    // 3. Aggiorna anche i gol del giocatore
     if (eventType === 'goal') {
       await supabase.rpc('increment_player_goals', { player_id: playerId });
     }
-
-    //  RIMOSSO: Non aggiornare manualmente gli eventi, ci pensa il Realtime!
-    // Il canale eventsChannel rileverà l'INSERT e aggiornerà automaticamente lo stato
   };
 
   const handleSaveMvpCandidates = async (playerIds: string[]) => {
@@ -718,7 +694,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     }
   };
 
-  // ✅ SEPARA IL CONTROLLO DI LOADING DA QUELLO DI NOT FOUND
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center">
@@ -730,7 +705,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     );
   }
 
-  // ✅ MOSTRA MESSAGGIO SE LA PARTITA NON ESISTE
   if (notFound || !match) {
     return (
       <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center flex-col gap-4">
@@ -871,7 +845,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
               </div>
             )}
 
-            {/* CRONACA - Titolo sempre visibile */}
+            {/* CRONACA */}
             <div>
               <div className="flex items-center justify-between mb-4">
                 {isStaffMode && match.status !== 'FINITA' && (
@@ -889,7 +863,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                     />
                   </>
                 )}
-                {/* Titolo visibile per tutti (anche senza eventi) */}
                 {!isStaffMode && (
                   <h2 className="text-[#581C24] font-bold text-base uppercase tracking-wider text-center w-full">Cronaca</h2>
                 )}
@@ -1032,7 +1005,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         </div>
       )}
 
-      {/* POPUP MODIFICA EVENTO */}
+      {/* ✅ POPUP MODIFICA EVENTO (DENTRO IL COMPONENTE) */}
       {isStaffMode && editingEvent && match && (
         <AdminEditEvent
           event={editingEvent}
