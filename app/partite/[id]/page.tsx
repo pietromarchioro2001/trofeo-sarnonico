@@ -272,6 +272,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   const [events, setEvents] = useState<EventData[]>([]);
   const [mvpPlayers, setMvpPlayers] = useState<MvpPlayerData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false); // ✅ NUOVO: stato per partita non trovata
 
   // Stati UI
   const [activeTab, setActiveTab] = useState<'diretta' | 'giocatori' | 'media'>('diretta');
@@ -285,6 +286,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      setNotFound(false); // ✅ Resetta lo stato notFound
       const supabase = createClient();
       const matchId = params.id;
 
@@ -298,23 +300,18 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           
         if (matchError) throw matchError;
 
-        // ✅ AGGIUNGI QUESTO BLOCCO DI CONTROLLO DI SICUREZZA
+        // ✅ CONTROLLO: se la partita non esiste, mostra messaggio
         if (!matchData) {
-          return (
-            <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center flex-col gap-4">
-              <p className="text-[#581C24] font-bold uppercase text-xl">Partita non trovata</p>
-              <Link href="/partite" className="text-sm text-gray-600 hover:text-[#581C24] font-bold underline">
-                ← Torna alla lista partite
-              </Link>
-            </div>
-          );
+          setNotFound(true);
+          setLoading(false);
+          return;
         }
 
         // 2. Prendi i dati delle squadre separatamente
         const { data: teamsData, error: teamsError } = await supabase
           .from('teams')
           .select('id, name, logo_url')
-          .in('id', [matchData.home_team_id, matchData.away_team_id]); 
+          .in('id', [matchData.home_team_id, matchData.away_team_id]);
           
         if (teamsError) throw teamsError;
 
@@ -350,7 +347,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           .order('minute', { ascending: true });
         if (eventsError) throw eventsError;
 
-        // ✅ CAST CORRETTO: gestisce player che può essere null o array vuoto
         const typedEvents: EventData[] = (eventsData || []).map((e: any) => ({
           id: e.id,
           minute: e.minute,
@@ -498,7 +494,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     );
     setWinnerId(winner.id);
 
-    // Aggiorna match con MVP (ignora errore se colonna non esiste)
     try {
       await supabase
         .from('matches')
@@ -595,13 +590,26 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     }
   };
 
-  if (loading || !match) {
+  // ✅ SEPARA IL CONTROLLO DI LOADING DA QUELLO DI NOT FOUND
+  if (loading) {
     return (
       <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-[#581C24] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-[#581C24] font-bold uppercase">Caricamento partita...</p>
         </div>
+      </div>
+    );
+  }
+
+  // ✅ MOSTRA MESSAGGIO SE LA PARTITA NON ESISTE
+  if (notFound || !match) {
+    return (
+      <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center flex-col gap-4">
+        <p className="text-[#581C24] font-bold uppercase text-xl">Partita non trovata</p>
+        <Link href="/partite" className="text-sm text-gray-600 hover:text-[#581C24] font-bold underline">
+          ← Torna alla lista partite
+        </Link>
       </div>
     );
   }
@@ -743,7 +751,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                       teamSide="home" 
                       onAddEvent={(e) => handleAddEvent('home', e.type, e.playerId, e.minute)} 
                     />
-                    {/* ... */}
+                    <h2 className="text-[#581C24] font-bold text-base uppercase tracking-wider text-center flex-1">Cronaca</h2>
                     <AdminAddEvent 
                       matchId={match.id}
                       teamSide="away" 
@@ -751,8 +759,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                     />
                   </>
                 )}
-                <h2 className="text-[#581C24] font-bold text-base uppercase tracking-wider text-center flex-1">Cronaca</h2>
-                {isStaffMode && match.status !== 'FINITA' && <AdminAddEvent matchId={match.id} teamSide="away" onAddEvent={(e) => handleAddEvent('away', e.type, e.playerId, e.minute)} />}
               </div>
 
               <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
