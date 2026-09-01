@@ -272,7 +272,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   const [events, setEvents] = useState<EventData[]>([]);
   const [mvpPlayers, setMvpPlayers] = useState<MvpPlayerData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
+  const [notFound, setNotFound] = useState(false); // ✅ NUOVO: stato per partita non trovata
 
   // Stati UI
   const [activeTab, setActiveTab] = useState<'diretta' | 'giocatori' | 'media'>('diretta');
@@ -286,7 +286,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      setNotFound(false);
+      setNotFound(false); // ✅ Resetta lo stato notFound
       const supabase = createClient();
       const matchId = params.id;
 
@@ -300,6 +300,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           
         if (matchError) throw matchError;
 
+        // ✅ CONTROLLO: se la partita non esiste, mostra messaggio
         if (!matchData) {
           setNotFound(true);
           setLoading(false);
@@ -314,7 +315,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           
         if (teamsError) throw teamsError;
 
-        // 3. Unisci i dati manualmente
+        // 3. Unisci i dati manualmente per creare l'oggetto MatchData completo
         const homeTeam = teamsData?.find(t => t.id === matchData.home_team_id) || null;
         const awayTeam = teamsData?.find(t => t.id === matchData.away_team_id) || null;
         
@@ -326,7 +327,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         
         setMatch(typedMatch);
 
-        // 4. Players
+        // 4. Players con null check
         const { data: playersData, error: playersError } = await supabase
           .from('players')
           .select('id, first_name, last_name, jersey_number, photo_url, goals, yellow_cards, red_cards, mvp_wins, team_id')
@@ -338,7 +339,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         setHomePlayers(typedPlayers.filter(p => p.team_id === typedMatch.home_team.id));
         setAwayPlayers(typedPlayers.filter(p => p.team_id === typedMatch.away_team.id));
 
-        // 5. Events
+        // 5. Events con gestione corretta del player nullable
         const { data: eventsData, error: eventsError } = await supabase
           .from('match_events')
           .select('id, minute, event_type, player_id, team_id, player:players(first_name, last_name)')
@@ -359,13 +360,14 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         }));
         setEvents(typedEvents);
 
-        // 6. MVP
+        // 6. MVP - Usa .maybeSingle() invece di .single()
         const { data: candidatesData, error: candidatesError } = await supabase
           .from('mvp_candidates')
           .select('candidate_1_id, candidate_2_id, candidate_3_id, voting_closed')
           .eq('match_id', matchId)
-          .maybeSingle();
+          .maybeSingle(); // ✅ Cambiato da .single() a .maybeSingle()
 
+        // Ignora l'errore "nessun risultato trovato" (codice PGRST116)
         if (candidatesError && candidatesError.code !== 'PGRST116') {
           console.error('Errore MVP:', candidatesError);
         }
@@ -593,6 +595,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     }
   };
 
+  // ✅ SEPARA IL CONTROLLO DI LOADING DA QUELLO DI NOT FOUND
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center">
@@ -604,6 +607,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     );
   }
 
+  // ✅ MOSTRA MESSAGGIO SE LA PARTITA NON ESISTE
   if (notFound || !match) {
     return (
       <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center flex-col gap-4">
@@ -744,7 +748,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
               </div>
             )}
 
-            {/* CRONACA */}
+            {/* CRONACA - Titolo sempre visibile */}
             <div>
               <div className="flex items-center justify-between mb-4">
                 {isStaffMode && match.status !== 'FINITA' && (
@@ -762,6 +766,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                     />
                   </>
                 )}
+                {/* Titolo visibile per tutti (anche senza eventi) */}
                 {!isStaffMode && (
                   <h2 className="text-[#581C24] font-bold text-base uppercase tracking-wider text-center w-full">Cronaca</h2>
                 )}
@@ -849,7 +854,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         )}
       </div>
 
-      {/* ✅ POPUP DETTAGLI GIOCATORE (MODIFICATO) */}
+      {/* POPUP DETTAGLI GIOCATORE */}
       {selectedPlayer && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setSelectedPlayer(null)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden relative" onClick={(e) => e.stopPropagation()}>
@@ -874,32 +879,25 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
               </div>
             </div>
             <div className="p-6 space-y-4">
-              {/* GOL: mostra sempre il numero (anche 0) */}
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-[#581C24]/10 rounded-full flex items-center justify-center flex-shrink-0"><EventIcon type="GOAL" size={20} /></div>
                 <div className="flex-1"><p className="text-[#581C24] font-bold uppercase text-sm">GOL</p></div>
-                <p className="text-2xl font-black text-[#581C24]">{selectedPlayer.goals ?? 0}</p>
+                <p className="text-2xl font-black text-[#581C24]">{selectedPlayer.goals}</p>
               </div>
-              
-              {/* MVP: mostra '-' se è 0 */}
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-[#581C24]/10 rounded-full flex items-center justify-center flex-shrink-0"><svg className="w-5 h-5 text-[#581C24]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>
                 <div className="flex-1"><p className="text-[#581C24] font-bold uppercase text-sm">MVP</p></div>
-                <p className="text-2xl font-black text-[#581C24]">{selectedPlayer.mvp_wins > 0 ? selectedPlayer.mvp_wins : '-'}</p>
+                <p className="text-2xl font-black text-[#581C24]">{selectedPlayer.mvp_wins}</p>
               </div>
-              
-              {/* AMMONIZIONI: mostra '-' se è 0 */}
               <div className="flex items-center gap-3">
                 <div className="w-6 h-8 bg-yellow-400 rounded-sm flex-shrink-0 border border-yellow-600" />
                 <div className="flex-1"><p className="text-[#581C24] font-bold uppercase text-sm">AMMONIZIONI</p></div>
-                <p className="text-2xl font-black text-[#581C24]">{selectedPlayer.yellow_cards > 0 ? selectedPlayer.yellow_cards : '-'}</p>
+                <p className="text-2xl font-black text-[#581C24]">{selectedPlayer.yellow_cards}</p>
               </div>
-              
-              {/* ESPULSIONI: mostra '-' se è 0 */}
               <div className="flex items-center gap-3">
                 <div className="w-6 h-8 bg-red-600 rounded-sm flex-shrink-0 border border-red-800" />
                 <div className="flex-1"><p className="text-[#581C24] font-bold uppercase text-sm">ESPULSIONI</p></div>
-                <p className="text-2xl font-black text-[#581C24]">{selectedPlayer.red_cards > 0 ? selectedPlayer.red_cards : '-'}</p>
+                <p className="text-2xl font-black text-[#581C24]">{selectedPlayer.red_cards}</p>
               </div>
             </div>
           </div>
