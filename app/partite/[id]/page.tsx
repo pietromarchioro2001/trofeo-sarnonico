@@ -294,7 +294,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           .from('matches')
           .select('id, home_score, away_score, status, phase, match_date, match_time, home_team_id, away_team_id')
           .eq('id', matchId)
-          .single();
+          .maybeSingle(); 
           
         if (matchError) throw matchError;
 
