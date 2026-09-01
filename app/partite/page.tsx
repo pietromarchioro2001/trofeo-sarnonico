@@ -211,7 +211,7 @@ export default function PartitePage() {
                 <div className={`rounded-xl p-3.5 shadow-sm border transition-all hover:shadow-md ${
                   isLive ? 'bg-[#581C24] border-[#581C24] shadow-[0_0_20px_rgba(88,28,36,0.3)]' : 'bg-white border-gray-100'
                 }`}>
-                  {/* Header card - MODIFICATO */}
+                  {/* Header card */}
                   <div className="flex items-center justify-between mb-2.5">
                     {isLive && (
                       <span className="bg-red-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
@@ -219,22 +219,18 @@ export default function PartitePage() {
                       </span>
                     )}
                     {!isLive && !isScheduled && (
-                      <span className={`${isLive ? 'text-white' : 'text-black'} text-sm font-bold`}>Risultato</span>
+                      <span className={`text-sm font-bold ${isLive ? 'text-white' : 'text-black'}`}>Risultato</span>
                     )}
                     {isScheduled && <span className="text-gray-500 text-sm font-bold">In programma</span>}
                     
-                    {/* Orario al centro */}
-                    <span className={`text-[10px] font-bold ${isLive ? 'text-white/90' : 'text-gray-500'}`}>
-                      {match.match_time || '--:--'}
-                    </span>
+                    {/* Spazio vuoto al centro per bilanciare */}
+                    <div className="flex-1" />
                     
                     {/* Girone a destra */}
                     <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
                       isLive ? 'bg-white/20 text-white' : 'bg-gray-100 text-[#581C24]'
                     }`}>
-                      {match.phase === 'GIRONI' 
-                        ? `GIRONE ${match.home_team?.girone || 'A'}` 
-                        : match.phase}
+                      {match.phase === 'GIRONI' ? `GIRONE ${match.home_team?.girone || 'A'}` : match.phase}
                     </span>
                   </div>
 
@@ -254,8 +250,13 @@ export default function PartitePage() {
                       </span>
                     </div>
 
-                    {/* Risultato */}
-                    <div className="px-3.5">
+                    {/* Orario + Risultato allineati */}
+                    <div className="px-3.5 flex flex-col items-center justify-center gap-1">
+                      {/* Orario spostato qui */}
+                      <span className={`text-[10px] font-bold ${isLive ? 'text-white/90' : 'text-gray-500'}`}>
+                        {match.match_time || '--:--'}
+                      </span>
+                      {/* Risultato */}
                       <div className={`text-2xl font-black tracking-wider ${
                         isLive ? 'text-white animate-pulse' : isScheduled ? 'text-gray-400' : 'text-black'
                       }`}>
