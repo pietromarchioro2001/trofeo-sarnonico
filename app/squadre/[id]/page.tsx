@@ -109,6 +109,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
           teamPhoto: team.team_photo_url || '',
           stats: stats,
           players: mappedPlayers,
+          isTournamentLocked: isTournamentLocked,
         });
 
       } catch (err) {
@@ -183,6 +184,13 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
       setLoading(false);
     }
   };
+
+  const { count: finalPhaseCount } = await supabase
+  .from('matches')
+  .select('*', { count: 'exact', head: true })
+  .in('phase', ['QUARTI', 'SEMIFINALI', 'FINALE', 'FINALE_3_4']);
+
+  const isTournamentLocked = (finalPhaseCount || 0) > 0;
 
   const handleTeamPhotoUpload = async (file: File) => {
     if (!file || !teamData) return;
@@ -431,7 +439,8 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     }
   };
 
-  const isMyTeam = isCaptain && captainTeamId === params.id;
+  // Il capitano ha i permessi SOLO se è la sua squadra E il torneo NON è bloccato
+  const isMyTeam = isCaptain && captainTeamId === params.id && !teamData?.isTournamentLocked;
 
   if (loading) {
     return (
@@ -508,17 +517,34 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
         )}
       </div>
 
-      {/* AREA CAPITANO */}
-      {isMyTeam && (
+      {/* AREA CAPITANO / BLOCCO ROSA */}
+      {isCaptain && captainTeamId === params.id && (
         <div className="px-4 mb-6">
-          <div className="bg-[#FFD700]/10 border-2 border-[#FFD700] rounded-xl p-4 shadow-sm">
-            <p className="text-xs font-bold text-[#581C24] uppercase mb-3 flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-              Pannello Capitano - {teamData.name}
-            </p>
-          </div>
+          {teamData?.isTournamentLocked ? (
+            <div className="bg-gray-100 border-2 border-gray-300 rounded-xl p-4 shadow-sm">
+              <p className="text-xs font-bold text-gray-600 uppercase mb-1 flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                Rosa Bloccata - Fase Finale
+              </p>
+              <p className="text-xs text-gray-500">
+                Le modifiche alla rosa sono disattivate. Per eventuali cambiamenti, contatta direttamente lo staff del torneo.
+              </p>
+            </div>
+          ) : (
+            <div className="bg-[#FFD700]/10 border-2 border-[#FFD700] rounded-xl p-4 shadow-sm">
+              <p className="text-xs font-bold text-[#581C24] uppercase mb-3 flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                Pannello Capitano - {teamData.name}
+              </p>
+              <p className="text-xs text-[#581C24]/80">
+                Puoi aggiungere o modificare i giocatori della tua squadra.
+              </p>
+            </div>
+          )}
         </div>
       )}
 
