@@ -11,7 +11,7 @@ const BAR_PASSWORD = 'BAR2026';
 
 // ✅ COMPONENTE CALICI DI BIRRA CHE BRINDANO (design migliorato)
 const ClinkingBeerMugs = () => (
-  <div className="flex justify-center items-center gap-3 mt-6">
+  <div className="flex justify-center items-center gap-16 mt-6">
     {/* Wrapper per calice sinistro */}
     <div className="animate-clink-left-mug">
       <svg 
