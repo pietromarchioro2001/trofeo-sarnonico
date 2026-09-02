@@ -22,8 +22,8 @@ interface MatchSummary {
   match_time: string | null;
   home_score: number | null;
   away_score: number | null;
-  home_team: TeamData;
-  away_team: TeamData;
+  home_team: TeamData | null;
+  away_team: TeamData | null;
 }
 
 interface StandingTeam {
@@ -60,36 +60,32 @@ export default function HomePage() {
   const { isStaffMode, disableStaffMode } = useAuth();
   const router = useRouter();
   
-  // Stati UI
   const [isCaptain, setIsCaptain] = useState(false);
   const [activeGroup, setActiveGroup] = useState<'A' | 'B'>('A');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   
-  // Stati Dati
   const [lastMatch, setLastMatch] = useState<MatchSummary | null>(null);
   const [nextMatch, setNextMatch] = useState<MatchSummary | null>(null);
-  const [recentMatches, setRecentMatches] = useState<MatchSummary[]>([]); // ✅ NUOVO
+  const [recentMatches, setRecentMatches] = useState<MatchSummary[]>([]);
   const [standingsA, setStandingsA] = useState<StandingTeam[]>([]);
   const [standingsB, setStandingsB] = useState<StandingTeam[]>([]);
   const [topScorers, setTopScorers] = useState<TopScorer[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Leggi stato capitano
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setIsCaptain(localStorage.getItem('isCaptain') === 'true');
     }
   }, []);
 
-  // ✅ 1. FUNZIONE FETCH SPOSTATA FUORI DAGLI USEEFFECT (con useCallback)
   const fetchHomeData = useCallback(async () => {
     setLoading(true);
     const supabase = createClient();
     const today = new Date().toISOString().split('T')[0];
 
     try {
-      // 1. ULTIMA PARTITA (Live o ultima finita)
+      // 1. ULTIMA PARTITA
       const { data: lastMatchArray } = await supabase
         .from('matches')
         .select('id, status, match_date, match_time, home_score, away_score, home_team_id, away_team_id')
@@ -111,7 +107,7 @@ export default function HomePage() {
         setLastMatch({ ...match, home_team: homeTeam as TeamData, away_team: awayTeam as TeamData });
       }
 
-      // 2. PROSSIMA PARTITA (SOLO DATE FUTURE O ODIERNE)
+      // 2. PROSSIMA PARTITA
       const { data: nextMatchArray } = await supabase
         .from('matches')
         .select('id, status, match_date, match_time, home_score, away_score, home_team_id, away_team_id')
@@ -134,7 +130,7 @@ export default function HomePage() {
         setNextMatch({ ...match, home_team: homeTeam as TeamData, away_team: awayTeam as TeamData });
       }
 
-      // ✅ 3. ULTIME PARTITE (ultime 3 finite)
+      // 3. ULTIME PARTITE
       const { data: recentMatchesData } = await supabase
         .from('matches')
         .select('id, status, match_date, match_time, home_score, away_score, home_team_id, away_team_id')
@@ -151,7 +147,12 @@ export default function HomePage() {
           .in('id', teamIds);
         
         const mappedMatches: MatchSummary[] = recentMatchesData.map(match => ({
-          ...match,
+          id: match.id,
+          status: match.status,
+          match_date: match.match_date,
+          match_time: match.match_time,
+          home_score: match.home_score,
+          away_score: match.away_score,
           home_team: teamsData?.find(t => t.id === match.home_team_id) || null,
           away_team: teamsData?.find(t => t.id === match.away_team_id) || null,
         }));
@@ -159,7 +160,7 @@ export default function HomePage() {
         setRecentMatches(mappedMatches);
       }
 
-      // 4. CLASSIFICHE (Calcolate al volo dalle partite finite)
+      // 4. CLASSIFICHE
       const { data: allMatches } = await supabase
         .from('matches')
         .select('home_team_id, away_team_id, home_score, away_score, status')
@@ -228,12 +229,10 @@ export default function HomePage() {
     }
   }, []);
 
-  // ✅ 2. Fetch iniziale (chiama la funzione definita sopra)
   useEffect(() => {
     fetchHomeData();
   }, [fetchHomeData]);
 
-  // 3. Countdown per prossima partita
   useEffect(() => {
     if (!nextMatch?.match_date) return;
     
@@ -264,7 +263,6 @@ export default function HomePage() {
     return () => clearInterval(timer);
   }, [nextMatch]);
 
-  // ✅ 4. REALTIME: Aggiornamenti live su Home
   useEffect(() => {
     const supabase = createClient();
 
@@ -304,7 +302,6 @@ export default function HomePage() {
     };
   }, [fetchHomeData]);
 
-  // Logout
   const handleLogout = () => {
     disableStaffMode();
     localStorage.removeItem('isCaptain');
@@ -333,7 +330,6 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[#F5F5F7] pb-24 overflow-x-hidden relative">
-      {/* MENU LATERALE */}
       {isMenuOpen && (
         <>
           <div className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm" onClick={() => setIsMenuOpen(false)} />
@@ -356,7 +352,6 @@ export default function HomePage() {
         </>
       )}
 
-      {/* HEADER */}
       <div className="relative h-40 sm:h-48 w-full overflow-hidden flex-shrink-0">
         <Image src="/campo-sarnonico.jpg" alt="Campo" fill className="object-cover" priority />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-transparent" />
@@ -379,10 +374,8 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* CONTENUTO PRINCIPALE */}
       <div className="flex-1 max-w-md mx-auto px-3 sm:px-4 -mt-6 relative z-10 w-full flex flex-col gap-[3vh] pb-28">
         
-        {/* 1. COUNTDOWN (MOSTRA SOLO SE NON C'È LASTMATCH) */}
         {showCountdown && (
           <div className="bg-gray-300 rounded-xl p-4 shadow-lg">
             <div className="text-center">
@@ -394,13 +387,12 @@ export default function HomePage() {
                 <span>{countdown.seconds}s</span>
               </div>
               <p className="text-gray-600 text-[10px] mt-2 font-bold uppercase">
-                {nextMatch?.home_team.name} vs {nextMatch?.away_team.name}
+                {nextMatch?.home_team?.name} vs {nextMatch?.away_team?.name}
               </p>
             </div>
           </div>
         )}
 
-        {/* 2. ULTIMA PARTITA / LIVE (se esiste) */}
         {lastMatch && (
           <Link href={`/partite/${lastMatch.id}`} className="block">
             <div className={`${isLive ? 'bg-[#581C24] text-white' : 'bg-white text-[#581C24] border-2 border-[#581C24]'} rounded-xl p-3 shadow-lg hover:shadow-xl transition-shadow`}>
@@ -418,25 +410,32 @@ export default function HomePage() {
               <div className="flex items-center justify-between">
                 <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
                   <div className={`w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isLive ? 'bg-white/10' : 'bg-[#581C24]/10'}`}>
-                    {lastMatch.home_team.logo_url ? <Image src={lastMatch.home_team.logo_url} alt={lastMatch.home_team.name} width={56} height={56} className="object-cover" /> : <span className={`text-[10px] ${isLive ? 'text-white' : 'text-[#581C24]'}`}>LOGO</span>}
+                    {lastMatch?.home_team?.logo_url ? (
+                      <Image src={lastMatch.home_team.logo_url} alt={lastMatch.home_team.name} width={56} height={56} className="object-cover" />
+                    ) : (
+                      <span className={`text-[10px] ${isLive ? 'text-white' : 'text-[#581C24]'}`}>LOGO</span>
+                    )}
                   </div>
-                  <span className="font-bold text-sm text-center truncate w-full">{lastMatch.home_team.name}</span>
+                  <span className="font-bold text-sm text-center truncate w-full">{lastMatch?.home_team?.name}</span>
                 </div>
                 <div className={`text-3xl font-bold tracking-wider font-oswald flex-shrink-0 px-3 ${isLive ? 'text-white' : 'text-[#581C24]'}`}>
                   {lastMatch.home_score ?? '-'} - {lastMatch.away_score ?? '-'}
                 </div>
                 <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
                   <div className={`w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isLive ? 'bg-white/10' : 'bg-[#581C24]/10'}`}>
-                    {lastMatch.away_team.logo_url ? <Image src={lastMatch.away_team.logo_url} alt={lastMatch.away_team.name} width={56} height={56} className="object-cover" /> : <span className={`text-[10px] ${isLive ? 'text-white' : 'text-[#581C24]'}`}>LOGO</span>}
+                    {lastMatch?.away_team?.logo_url ? (
+                      <Image src={lastMatch.away_team.logo_url} alt={lastMatch.away_team.name} width={56} height={56} className="object-cover" />
+                    ) : (
+                      <span className={`text-[10px] ${isLive ? 'text-white' : 'text-[#581C24]'}`}>LOGO</span>
+                    )}
                   </div>
-                  <span className="font-bold text-sm text-center truncate w-full">{lastMatch.away_team.name}</span>
+                  <span className="font-bold text-sm text-center truncate w-full">{lastMatch?.away_team?.name}</span>
                 </div>
               </div>
             </div>
           </Link>
         )}
 
-        {/* 3. PROSSIMA PARTITA (Card dettagliata, se esiste) */}
         {nextMatch && (
           <Link href={`/partite/${nextMatch.id}`} className="block">
             <div className="bg-white rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow">
@@ -456,23 +455,31 @@ export default function HomePage() {
               <div className="flex items-center justify-center gap-4">
                 <div className="flex flex-col items-center gap-1">
                   <div className="w-11 h-11 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                    {nextMatch.home_team.logo_url ? <Image src={nextMatch.home_team.logo_url} alt={nextMatch.home_team.name} width={44} height={44} className="object-cover" /> : <span className="text-[9px]">LOGO</span>}
+                    {nextMatch?.home_team?.logo_url ? (
+                      <Image src={nextMatch.home_team.logo_url} alt={nextMatch.home_team.name} width={44} height={44} className="object-cover" />
+                    ) : (
+                      <span className="text-[9px]">LOGO</span>
+                    )}
                   </div>
-                  <span className="font-bold text-xs text-center">{nextMatch.home_team.name}</span>
+                  <span className="font-bold text-xs text-center">{nextMatch?.home_team?.name}</span>
                 </div>
                 <div className="flex flex-col items-center justify-center"><span className="text-[#D4AF37] font-bold text-xl">VS</span></div>
                 <div className="flex flex-col items-center gap-1">
                   <div className="w-11 h-11 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                    {nextMatch.away_team.logo_url ? <Image src={nextMatch.away_team.logo_url} alt={nextMatch.away_team.name} width={44} height={44} className="object-cover" /> : <span className="text-[9px]">LOGO</span>}
+                    {nextMatch?.away_team?.logo_url ? (
+                      <Image src={nextMatch.away_team.logo_url} alt={nextMatch.away_team.name} width={44} height={44} className="object-cover" />
+                    ) : (
+                      <span className="text-[9px]">LOGO</span>
+                    )}
                   </div>
-                  <span className="font-bold text-xs text-center">{nextMatch.away_team.name}</span>
+                  <span className="font-bold text-xs text-center">{nextMatch?.away_team?.name}</span>
                 </div>
               </div>
             </div>
           </Link>
         )}
 
-        {/* ✅ 4. ULTIME PARTITE (nuova sezione) */}
+        {/* ✅ ULTIME PARTITE - 3 CARD PICCOLE */}
         {recentMatches.length > 0 && (
           <div>
             <h3 className="text-[#581C24] font-bold text-sm uppercase tracking-wide mb-3">Ultime Partite</h3>
@@ -483,13 +490,13 @@ export default function HomePage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 flex-1">
                         <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                          {match.home_team.logo_url ? (
+                          {match?.home_team?.logo_url ? (
                             <Image src={match.home_team.logo_url} alt={match.home_team.name} width={32} height={32} className="object-cover" />
                           ) : (
                             <span className="text-[6px] text-gray-400">L</span>
                           )}
                         </div>
-                        <span className="font-bold text-xs text-[#000000] uppercase truncate">{match.home_team.name}</span>
+                        <span className="font-bold text-xs text-[#000000] uppercase truncate">{match?.home_team?.name}</span>
                       </div>
                       <div className="flex items-center gap-2 px-3">
                         <span className="font-black text-sm text-[#581C24]">{match.home_score ?? '-'}</span>
@@ -497,20 +504,15 @@ export default function HomePage() {
                         <span className="font-black text-sm text-[#581C24]">{match.away_score ?? '-'}</span>
                       </div>
                       <div className="flex items-center gap-2 flex-1 justify-end">
-                        <span className="font-bold text-xs text-[#000000] uppercase truncate">{match.away_team.name}</span>
+                        <span className="font-bold text-xs text-[#000000] uppercase truncate">{match?.away_team?.name}</span>
                         <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                          {match.away_team.logo_url ? (
+                          {match?.away_team?.logo_url ? (
                             <Image src={match.away_team.logo_url} alt={match.away_team.name} width={32} height={32} className="object-cover" />
                           ) : (
                             <span className="text-[6px] text-gray-400">L</span>
                           )}
                         </div>
                       </div>
-                    </div>
-                    <div className="text-center mt-2">
-                      <span className="text-[9px] text-gray-500">
-                        {new Date(match.match_date!).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })} • {match.match_time}
-                      </span>
                     </div>
                   </div>
                 </Link>
@@ -519,9 +521,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* GRIGLIA CLASSIFICHE E MARCATORI */}
         <div className="grid grid-cols-2 gap-2 w-full">
-          {/* CLASSIFICA LAMPO CON SWIPE */}
           <div 
             className="bg-white rounded-xl p-2 shadow-sm border border-gray-100 touch-pan-y"
             onTouchStart={(e) => {
@@ -572,7 +572,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* TOP MARCATORI */}
           <div className="bg-white rounded-xl p-2 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between mb-2.5">
               <div className="flex items-center gap-1 min-w-0">
