@@ -9,36 +9,45 @@ import { createClient } from '@/lib/supabase/client';
 
 const BAR_PASSWORD = 'BAR2026';
 
-// ✅ COMPONENTE CALICI CHE BRINDANO
-const ClinkingGlasses = () => (
-  <svg width="120" height="100" viewBox="0 0 120 100" className="mx-auto">
+// ✅ COMPONENTE CALICI DI BIRRA CHE BRINDANO
+const ClinkingBeerMugs = () => (
+  <div className="flex justify-center items-center gap-1 mb-3">
     {/* Calice sinistro */}
-    <g className="animate-clink-left">
-      <path d="M 20 10 L 20 50 Q 20 60 30 60 L 40 60 Q 50 60 50 50 L 50 10 Z" fill="#FFD700" stroke="#B8860B" strokeWidth="2" />
-      <path d="M 35 60 L 35 80 L 30 90 L 40 90 L 35 80 L 35 60" fill="#FFD700" stroke="#B8860B" strokeWidth="2" />
-      <ellipse cx="35" cy="10" rx="15" ry="3" fill="#FFF8DC" stroke="#B8860B" strokeWidth="1" />
+    <svg 
+      width="60" 
+      height="70" 
+      viewBox="0 0 60 70" 
+      className="animate-clink-left-mug origin-bottom"
+    >
+      {/* Corpo del boccale */}
+      <rect x="10" y="20" width="35" height="40" rx="3" fill="#FFD700" stroke="#B8860B" strokeWidth="2" />
+      {/* Manico */}
+      <path d="M 45 30 Q 55 30 55 45 Q 55 60 45 60" fill="none" stroke="#FFD700" strokeWidth="3" />
       {/* Schiuma */}
-      <ellipse cx="35" cy="15" rx="13" ry="2" fill="white" opacity="0.8" />
-    </g>
-    
+      <ellipse cx="27.5" cy="20" rx="18" ry="5" fill="white" opacity="0.9" />
+      <ellipse cx="25" cy="18" rx="5" ry="3" fill="white" opacity="0.8" />
+      <ellipse cx="32" cy="17" rx="4" ry="2.5" fill="white" opacity="0.8" />
+      <ellipse cx="20" cy="19" rx="3" ry="2" fill="white" opacity="0.7" />
+    </svg>
+
     {/* Calice destro */}
-    <g className="animate-clink-right">
-      <path d="M 70 10 L 70 50 Q 70 60 80 60 L 90 60 Q 100 60 100 50 L 100 10 Z" fill="#FFD700" stroke="#B8860B" strokeWidth="2" />
-      <path d="M 85 60 L 85 80 L 80 90 L 90 90 L 85 80 L 85 60" fill="#FFD700" stroke="#B8860B" strokeWidth="2" />
-      <ellipse cx="85" cy="10" rx="15" ry="3" fill="#FFF8DC" stroke="#B8860B" strokeWidth="1" />
+    <svg 
+      width="60" 
+      height="70" 
+      viewBox="0 0 60 70" 
+      className="animate-clink-right-mug origin-bottom"
+    >
+      {/* Corpo del boccale */}
+      <rect x="10" y="20" width="35" height="40" rx="3" fill="#FFD700" stroke="#B8860B" strokeWidth="2" />
+      {/* Manico */}
+      <path d="M 45 30 Q 55 30 55 45 Q 55 60 45 60" fill="none" stroke="#FFD700" strokeWidth="3" />
       {/* Schiuma */}
-      <ellipse cx="85" cy="15" rx="13" ry="2" fill="white" opacity="0.8" />
-    </g>
-    
-    {/* Stelle scintillanti */}
-    <g className="animate-sparkle">
-      <circle cx="60" cy="30" r="2" fill="white" />
-      <circle cx="55" cy="35" r="1.5" fill="white" />
-      <circle cx="65" cy="35" r="1.5" fill="white" />
-      <circle cx="58" cy="25" r="1" fill="white" />
-      <circle cx="62" cy="25" r="1" fill="white" />
-    </g>
-  </svg>
+      <ellipse cx="27.5" cy="20" rx="18" ry="5" fill="white" opacity="0.9" />
+      <ellipse cx="25" cy="18" rx="5" ry="3" fill="white" opacity="0.8" />
+      <ellipse cx="32" cy="17" rx="4" ry="2.5" fill="white" opacity="0.8" />
+      <ellipse cx="20" cy="19" rx="3" ry="2" fill="white" opacity="0.7" />
+    </svg>
+  </div>
 );
 
 export default function BarPage() {
@@ -342,7 +351,7 @@ export default function BarPage() {
                 {/* ✅ Titolo NUOVO METRO! (più in alto) */}
                 <div className="text-center mb-2">
                   <p className="text-5xl sm:text-6xl font-black text-[#FFD700] uppercase drop-shadow-lg">
-                    NUOVO METRO!
+                    +1 METRO
                   </p>
                 </div>
 
@@ -371,6 +380,10 @@ export default function BarPage() {
                   {celebrationTeam}
                 </p>
               </div>
+
+              {/* ✅ Calici che brindano */}
+              <ClinkingBeerMugs />
+
             </div>
           </div>
         )}
