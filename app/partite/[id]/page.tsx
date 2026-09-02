@@ -649,28 +649,28 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     const supabase = createClient();
     const currentDeviceId = getDeviceId();
 
-    // 1. Rimuovi il voto precedente di questo dispositivo (se esiste)
-    await supabase
-      .from('mvp_votes')
-      .delete()
-      .eq('match_id', match.id)
-      .eq('voter_id', currentDeviceId);
-
-    // 2. Inserisci il nuovo voto
+    // Usa upsert per sovrascrivere il voto esistente dello stesso dispositivo
     const { error } = await supabase
       .from('mvp_votes')
-      .insert({ match_id: match.id, player_id: playerId, voter_id: currentDeviceId });
+      .upsert(
+        { 
+          match_id: match.id, 
+          player_id: playerId, 
+          voter_id: currentDeviceId 
+        },
+        { onConflict: 'match_id,voter_id' } // Indica al DB quale vincolo usare per decidere se aggiornare
+      );
       
     if (error) {
       console.error('Errore voto:', error);
-      alert('Errore nel salvataggio del voto');
+      alert('Errore nel salvataggio del voto: ' + error.message);
       return;
     }
 
-    // 3. Aggiorna lo stato locale immediatamente
+    // Aggiorna lo stato locale immediatamente
     setVotedPlayerId(playerId);
     
-    // 4. Aggiorna i conteggi per le percentuali
+    // Aggiorna i conteggi per le percentuali
     const { data: votesData } = await supabase
       .from('mvp_votes')
       .select('player_id')
