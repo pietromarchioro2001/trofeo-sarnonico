@@ -9,79 +9,105 @@ import { createClient } from '@/lib/supabase/client';
 
 const BAR_PASSWORD = 'BAR2026';
 
-// ✅ COMPONENTE CALICI DI BIRRA CHE BRINDANO (più grandi e stilizzati)
+// ✅ COMPONENTE CALICI DI BIRRA CHE BRINDANO (design migliorato)
 const ClinkingBeerMugs = () => (
-  <div className="flex justify-center items-center gap-2 mt-4">
+  <div className="flex justify-center items-center gap-3 mt-6">
     {/* Calice sinistro - SPECCHIATO (manico a sinistra) */}
     <svg 
-      width="100" 
-      height="110" 
-      viewBox="0 0 100 110" 
+      width="120" 
+      height="130" 
+      viewBox="0 0 120 130" 
       className="animate-clink-left-mug origin-bottom"
     >
-      {/* Ombra */}
-      <ellipse cx="55" cy="105" rx="35" ry="5" fill="rgba(0,0,0,0.2)" />
-      
-      {/* Manico a SINISTRA */}
-      <path d="M 25 45 Q 5 45 5 65 Q 5 85 25 85" fill="none" stroke="#FFD700" strokeWidth="6" strokeLinecap="round" />
-      <path d="M 25 45 Q 8 45 8 65 Q 8 85 25 85" fill="none" stroke="#FFA500" strokeWidth="2" />
-      
-      {/* Corpo del boccale */}
-      <rect x="25" y="35" width="60" height="60" rx="5" fill="url(#beerGradientLeft)" stroke="#B8860B" strokeWidth="3" />
-      
-      {/* Riflesso sul vetro */}
-      <rect x="67" y="40" width="8" height="50" rx="2" fill="rgba(255,255,255,0.3)" />
-      
-      {/* Schiuma */}
-      <path d="M 25 35 Q 35 20 45 35 Q 55 18 65 35 Q 75 20 85 35" fill="white" stroke="#F0F0F0" strokeWidth="1" />
-      <circle cx="35" cy="28" r="4" fill="white" opacity="0.9" />
-      <circle cx="50" cy="25" r="5" fill="white" opacity="0.85" />
-      <circle cx="65" cy="27" r="4" fill="white" opacity="0.9" />
-      <circle cx="75" cy="30" r="3" fill="white" opacity="0.8" />
-      
-      {/* Gradiente birra */}
+      {/* Definizioni gradienti */}
       <defs>
-        <linearGradient id="beerGradientLeft" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" style={{stopColor:'#FFD700', stopOpacity:0.9}} />
-          <stop offset="100%" style={{stopColor:'#FFA500', stopOpacity:0.95}} />
+        <linearGradient id="beerLeft" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style={{stopColor:'#FFD700', stopOpacity:0.95}} />
+          <stop offset="100%" style={{stopColor:'#FF8C00', stopOpacity:0.98}} />
+        </linearGradient>
+        <linearGradient id="foamLeft" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style={{stopColor:'#FFFFFF', stopOpacity:1}} />
+          <stop offset="100%" style={{stopColor:'#FFF8DC', stopOpacity:0.9}} />
         </linearGradient>
       </defs>
+      
+      {/* Ombra */}
+      <ellipse cx="65" cy="125" rx="40" ry="6" fill="rgba(0,0,0,0.3)" />
+      
+      {/* Manico a SINISTRA - più grande e curvo */}
+      <path d="M 30 50 Q 8 50 8 75 Q 8 100 30 100" fill="none" stroke="#FFD700" strokeWidth="8" strokeLinecap="round" />
+      <path d="M 30 50 Q 12 50 12 75 Q 12 100 30 100" fill="none" stroke="#FFA500" strokeWidth="2" />
+      
+      {/* Corpo del boccale - forma trapezoidale */}
+      <path d="M 35 45 L 105 45 L 100 110 L 40 110 Z" fill="url(#beerLeft)" stroke="#B8860B" strokeWidth="3" />
+      
+      {/* Riflesso verticale sul vetro */}
+      <rect x="75" y="50" width="10" height="55" rx="3" fill="rgba(255,255,255,0.4)" />
+      
+      {/* Schiuma che trabocca */}
+      <path d="M 35 45 Q 40 30 50 42 Q 55 25 65 40 Q 75 28 85 42 Q 95 30 105 45" fill="url(#foamLeft)" stroke="#F5F5F5" strokeWidth="1" />
+      
+      {/* Bolle nella schiuma */}
+      <circle cx="45" cy="38" r="5" fill="white" opacity="0.9" />
+      <circle cx="60" cy="33" r="6" fill="white" opacity="0.85" />
+      <circle cx="75" cy="36" r="5" fill="white" opacity="0.9" />
+      <circle cx="90" cy="40" r="4" fill="white" opacity="0.8" />
+      <circle cx="52" cy="30" r="3" fill="white" opacity="0.7" />
+      <circle cx="82" cy="32" r="3.5" fill="white" opacity="0.75" />
+      
+      {/* Bolle nella birra */}
+      <circle cx="55" cy="70" r="2" fill="rgba(255,255,255,0.6)" />
+      <circle cx="70" cy="85" r="2.5" fill="rgba(255,255,255,0.5)" />
+      <circle cx="62" cy="95" r="2" fill="rgba(255,255,255,0.6)" />
     </svg>
 
     {/* Calice destro */}
     <svg 
-      width="100" 
-      height="110" 
-      viewBox="0 0 100 110" 
+      width="120" 
+      height="130" 
+      viewBox="0 0 120 130" 
       className="animate-clink-right-mug origin-bottom"
     >
-      {/* Ombra */}
-      <ellipse cx="45" cy="105" rx="35" ry="5" fill="rgba(0,0,0,0.2)" />
-      
-      {/* Manico a DESTRA */}
-      <path d="M 75 45 Q 95 45 95 65 Q 95 85 75 85" fill="none" stroke="#FFD700" strokeWidth="6" strokeLinecap="round" />
-      <path d="M 75 45 Q 92 45 92 65 Q 92 85 75 85" fill="none" stroke="#FFA500" strokeWidth="2" />
-      
-      {/* Corpo del boccale */}
-      <rect x="15" y="35" width="60" height="60" rx="5" fill="url(#beerGradientRight)" stroke="#B8860B" strokeWidth="3" />
-      
-      {/* Riflesso sul vetro */}
-      <rect x="25" y="40" width="8" height="50" rx="2" fill="rgba(255,255,255,0.3)" />
-      
-      {/* Schiuma */}
-      <path d="M 15 35 Q 25 20 35 35 Q 45 18 55 35 Q 65 20 75 35" fill="white" stroke="#F0F0F0" strokeWidth="1" />
-      <circle cx="25" cy="28" r="4" fill="white" opacity="0.9" />
-      <circle cx="40" cy="25" r="5" fill="white" opacity="0.85" />
-      <circle cx="55" cy="27" r="4" fill="white" opacity="0.9" />
-      <circle cx="65" cy="30" r="3" fill="white" opacity="0.8" />
-      
-      {/* Gradiente birra */}
+      {/* Definizioni gradienti */}
       <defs>
-        <linearGradient id="beerGradientRight" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" style={{stopColor:'#FFD700', stopOpacity:0.9}} />
-          <stop offset="100%" style={{stopColor:'#FFA500', stopOpacity:0.95}} />
+        <linearGradient id="beerRight" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style={{stopColor:'#FFD700', stopOpacity:0.95}} />
+          <stop offset="100%" style={{stopColor:'#FF8C00', stopOpacity:0.98}} />
+        </linearGradient>
+        <linearGradient id="foamRight" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style={{stopColor:'#FFFFFF', stopOpacity:1}} />
+          <stop offset="100%" style={{stopColor:'#FFF8DC', stopOpacity:0.9}} />
         </linearGradient>
       </defs>
+      
+      {/* Ombra */}
+      <ellipse cx="55" cy="125" rx="40" ry="6" fill="rgba(0,0,0,0.3)" />
+      
+      {/* Manico a DESTRA - più grande e curvo */}
+      <path d="M 90 50 Q 112 50 112 75 Q 112 100 90 100" fill="none" stroke="#FFD700" strokeWidth="8" strokeLinecap="round" />
+      <path d="M 90 50 Q 108 50 108 75 Q 108 100 90 100" fill="none" stroke="#FFA500" strokeWidth="2" />
+      
+      {/* Corpo del boccale - forma trapezoidale */}
+      <path d="M 85 45 L 15 45 L 20 110 L 80 110 Z" fill="url(#beerRight)" stroke="#B8860B" strokeWidth="3" />
+      
+      {/* Riflesso verticale sul vetro */}
+      <rect x="35" y="50" width="10" height="55" rx="3" fill="rgba(255,255,255,0.4)" />
+      
+      {/* Schiuma che trabocca */}
+      <path d="M 85 45 Q 80 30 70 42 Q 65 25 55 40 Q 45 28 35 42 Q 25 30 15 45" fill="url(#foamRight)" stroke="#F5F5F5" strokeWidth="1" />
+      
+      {/* Bolle nella schiuma */}
+      <circle cx="75" cy="38" r="5" fill="white" opacity="0.9" />
+      <circle cx="60" cy="33" r="6" fill="white" opacity="0.85" />
+      <circle cx="45" cy="36" r="5" fill="white" opacity="0.9" />
+      <circle cx="30" cy="40" r="4" fill="white" opacity="0.8" />
+      <circle cx="68" cy="30" r="3" fill="white" opacity="0.7" />
+      <circle cx="38" cy="32" r="3.5" fill="white" opacity="0.75" />
+      
+      {/* Bolle nella birra */}
+      <circle cx="65" cy="70" r="2" fill="rgba(255,255,255,0.6)" />
+      <circle cx="50" cy="85" r="2.5" fill="rgba(255,255,255,0.5)" />
+      <circle cx="58" cy="95" r="2" fill="rgba(255,255,255,0.6)" />
     </svg>
   </div>
 );

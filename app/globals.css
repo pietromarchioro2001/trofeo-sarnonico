@@ -42,27 +42,49 @@ body {
   scrollbar-width: none;
 }
 
-/* Animazione calici che brindano - UNA SOLA VOLTA (più lenta) */
+/* Animazione calici che brindano - TRASLAZIONE + ROTAZIONE */
 @keyframes clink-left-mug {
-  0% { transform: translateX(0) rotate(0deg); }
-  40% { transform: translateX(25px) rotate(-25deg); }
-  60% { transform: translateX(25px) rotate(-25deg); }
-  100% { transform: translateX(0) rotate(0deg); }
+  0% { 
+    transform: translateX(0) rotate(0deg); 
+  }
+  30% { 
+    transform: translateX(35px) rotate(0deg); /* Traslazione verso destra */
+  }
+  50% { 
+    transform: translateX(35px) rotate(-30deg); /* Rotazione al brindisi */
+  }
+  70% { 
+    transform: translateX(35px) rotate(-30deg); /* Mantieni posizione */
+  }
+  100% { 
+    transform: translateX(0) rotate(0deg); /* Ritorno */
+  }
 }
 
 @keyframes clink-right-mug {
-  0% { transform: translateX(0) rotate(0deg); }
-  40% { transform: translateX(-25px) rotate(25deg); }
-  60% { transform: translateX(-25px) rotate(25deg); }
-  100% { transform: translateX(0) rotate(0deg); }
+  0% { 
+    transform: translateX(0) rotate(0deg); 
+  }
+  30% { 
+    transform: translateX(-35px) rotate(0deg); /* Traslazione verso sinistra */
+  }
+  50% { 
+    transform: translateX(-35px) rotate(30deg); /* Rotazione al brindisi */
+  }
+  70% { 
+    transform: translateX(-35px) rotate(30deg); /* Mantieni posizione */
+  }
+  100% { 
+    transform: translateX(0) rotate(0deg); /* Ritorno */
+  }
 }
 
 .animate-clink-left-mug {
-  animation: clink-left-mug 2.5s ease-in-out 1; /* 2.5s invece di 1.5s */
+  animation: clink-left-mug 3s ease-in-out 1; /* 3 secondi totali */
 }
 
 .animate-clink-right-mug {
-  animation: clink-right-mug 2.5s ease-in-out 1; /* 2.5s invece di 1.5s */
+  animation: clink-right-mug 3s ease-in-out 1; /* 3 secondi totali */
 }
 
 /* Bollicine di birra di sfondo */
