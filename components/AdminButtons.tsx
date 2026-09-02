@@ -486,15 +486,14 @@ export const AdminStopVoting: React.FC<AdminStopVotingProps> = ({ onStop, matchI
 };
 
 // ============================================================
-// AdminAddEvent REALE
+// AdminAddEvent REALE (CORRETTO - fa tutto lui)
 // ============================================================
 interface AdminAddEventProps { 
   teamSide: 'home' | 'away'; 
   matchId: string;
-  onAddEvent: (event: { type: string; playerId: string; minute: number; teamSide: 'home' | 'away' }) => void; 
 }
 
-export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, matchId, onAddEvent }) => {
+export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, matchId }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [eventType, setEventType] = useState('');
   const [selectedPlayer, setSelectedPlayer] = useState('');
@@ -510,7 +509,7 @@ export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, matchId,
         const { data: match } = await supabase.from('matches').select('home_team_id, away_team_id').eq('id', matchId).single();
         if (match) {
           const teamId = teamSide === 'home' ? match.home_team_id : match.away_team_id;
-          const { data } = await supabase.from('players').select('id, first_name, last_name, jersey_number').eq('team_id', teamId).order('jersey_number', { ascending: true, nullsFirst: false });
+          const { data } = await supabase.from('players').select('id, first_name, last_name, jersey_number, goals, yellow_cards, red_cards').eq('team_id', teamId).order('jersey_number', { ascending: true, nullsFirst: false });
           if (data) setPlayers(data);
         }
       };
@@ -523,20 +522,25 @@ export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, matchId,
     setLoading(true);
     try {
       const supabase = createClient();
-      const { data: match } = await supabase.from('matches').select('home_team_id, away_team_id').eq('id', matchId).single();
+      
+      // Prendi dati partita e team
+      const { data: match } = await supabase.from('matches').select('home_team_id, away_team_id, home_score, away_score').eq('id', matchId).single();
       if (!match) throw new Error('Partita non trovata');
 
       const teamId = teamSide === 'home' ? match.home_team_id : match.away_team_id;
+      const dbEventType = eventType === 'goal' ? 'GOAL' : eventType === 'yellow' ? 'YELLOW_CARD' : 'RED_CARD';
       
+      // 1. INSERT EVENTO (una sola volta!)
       const { error: eventError } = await supabase.from('match_events').insert({
         match_id: matchId,
         player_id: selectedPlayer,
-        event_type: eventType === 'goal' ? 'GOAL' : eventType === 'yellow' ? 'YELLOW_CARD' : 'RED_CARD',
+        event_type: dbEventType,
         minute: parseInt(minute),
         team_id: teamId
       });
       if (eventError) throw eventError;
 
+      // 2. AGGIORNA GOALS/CARTELLINI DEL GIOCATORE
       const player = players.find(p => p.id === selectedPlayer);
       if (player) {
         const updates: any = {};
@@ -546,8 +550,21 @@ export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, matchId,
         await supabase.from('players').update(updates).eq('id', selectedPlayer);
       }
 
-      onAddEvent({ type: eventType, playerId: selectedPlayer, minute: parseInt(minute), teamSide });
-      setIsOpen(false); setEventType(''); setSelectedPlayer(''); setMinute(''); setError('');
+      // 3. AGGIORNA PUNTEGGIO (se gol)
+      if (eventType === 'goal') {
+        const currentScore = teamSide === 'home' ? match.home_score : match.away_score;
+        const newScore = (currentScore || 0) + 1;
+        await supabase.from('matches').update({
+          [teamSide === 'home' ? 'home_score' : 'away_score']: newScore
+        }).eq('id', matchId);
+      }
+
+      // ✅ CHIUDI POPUP SENZA CHIAMARE onAddEvent (il realtime aggiorna tutto)
+      setIsOpen(false); 
+      setEventType(''); 
+      setSelectedPlayer(''); 
+      setMinute(''); 
+      setError('');
     } catch (err) {
       console.error(err);
       setError('Errore nel salvataggio');

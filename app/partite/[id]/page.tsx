@@ -501,60 +501,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     };
   }, [params.id]);
 
-  // --- HANDLERS ---
-  const handleAddEvent = async (teamSide: 'home' | 'away', eventType: string, playerId: string, minute: number) => {
-    if (!match) return;
-    const supabase = createClient();
-    const teamId = teamSide === 'home' ? match.home_team.id : match.away_team.id;
-
-    const eventTypeMap: Record<string, string> = {
-      'goal': 'GOAL',
-      'yellow': 'YELLOW_CARD',
-      'red': 'RED_CARD'
-    };
-
-    const dbEventType = eventTypeMap[eventType] || eventType;
-
-    const { error: eventError } = await supabase.from('match_events').insert({
-      match_id: match.id,
-      player_id: playerId,
-      event_type: dbEventType,
-      minute: minute,
-      team_id: teamId
-    });
-
-    if (eventError) {
-      console.error('Errore aggiunta evento:', eventError);
-      alert('Errore nel salvataggio dell\'evento');
-      return;
-    }
-
-    if (eventType === 'goal') {
-      const currentScore = teamSide === 'home' ? match.home_score : match.away_score;
-      const newScore = (currentScore || 0) + 1;
-
-      const { error: scoreError } = await supabase
-        .from('matches')
-        .update({
-          [teamSide === 'home' ? 'home_score' : 'away_score']: newScore
-        })
-        .eq('id', match.id);
-
-      if (scoreError) {
-        console.error('Errore aggiornamento punteggio:', scoreError);
-      } else {
-        setMatch(prev => prev ? {
-          ...prev,
-          [teamSide === 'home' ? 'home_score' : 'away_score']: newScore
-        } : null);
-      }
-    }
-
-    if (eventType === 'goal') {
-      await supabase.rpc('increment_player_goals', { player_id: playerId });
-    }
-  };
-
   const handleSaveMvpCandidates = async (playerIds: string[]) => {
     if (!match) return;
     const supabase = createClient();
@@ -851,14 +797,12 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                   <>
                     <AdminAddEvent 
                       matchId={match.id}
-                      teamSide="home" 
-                      onAddEvent={(e) => handleAddEvent('home', e.type, e.playerId, e.minute)} 
+                      teamSide="home"
                     />
                     <h2 className="text-[#581C24] font-bold text-base uppercase tracking-wider text-center flex-1">Cronaca</h2>
                     <AdminAddEvent 
                       matchId={match.id}
-                      teamSide="away" 
-                      onAddEvent={(e) => handleAddEvent('away', e.type, e.playerId, e.minute)} 
+                      teamSide="away"
                     />
                   </>
                 )}
