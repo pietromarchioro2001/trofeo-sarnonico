@@ -239,7 +239,6 @@ const formatDate = (dateStr: string | null) => {
   return d.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' }).replace('.', '');
 };
 
-// ✅ NUOVA ICONA PALLONE: Identica a quella della Home (Marcatori)
 const EventIcon = ({ type, size = 16 }: { type: string; size?: number }) => {
   if (type === 'GOAL') {
     return (
@@ -261,6 +260,21 @@ const EventIcon = ({ type, size = 16 }: { type: string; size?: number }) => {
     return <div className="bg-red-600 rounded-sm border border-red-800 shadow-sm" style={{ width: size * 0.75, height: size }} />;
   }
   return null;
+};
+
+// ✅ HELPER: Genera o recupera un ID dispositivo univoco (formato UUID per compatibilità DB)
+const getDeviceId = () => {
+  if (typeof window === 'undefined') return '';
+  let id = localStorage.getItem('trofeo_device_id');
+  if (!id) {
+    id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+    localStorage.setItem('trofeo_device_id', id);
+  }
+  return id;
 };
 
 // ==================== COMPONENTE PRINCIPALE ====================
@@ -292,6 +306,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       setNotFound(false);
       const supabase = createClient();
       const matchId = params.id;
+      const currentDeviceId = getDeviceId(); // ✅ Ottieni ID dispositivo
 
       try {
         const { data: matchData, error: matchError } = await supabase
@@ -383,12 +398,18 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
 
             const { data: votesData } = await supabase
               .from('mvp_votes')
-              .select('player_id')
+              .select('player_id, voter_id') // ✅ Recupera anche voter_id
               .eq('match_id', matchId);
 
             const voteCounts: Record<string, number> = {};
+            let myVote: string | null = null;
+
             (votesData || []).forEach((v: any) => {
               voteCounts[v.player_id] = (voteCounts[v.player_id] || 0) + 1;
+              // ✅ Controlla se questo dispositivo ha già votato
+              if (v.voter_id === currentDeviceId) {
+                myVote = v.player_id;
+              }
             });
 
             if (candidatePlayers && candidatePlayers.length > 0) {
@@ -400,6 +421,11 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                 votes: voteCounts[p.id] || 0
               }));
               setMvpPlayers(mappedMvp);
+
+              // ✅ Ripristina la spunta se il dispositivo aveva già votato
+              if (myVote) {
+                setVotedPlayerId(myVote);
+              }
 
               if (candidatesData.voting_closed && mappedMvp.length > 0) {
                 const winner = mappedMvp.reduce((prev, current) =>
@@ -513,7 +539,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*', // Ascolta INSERT e DELETE per gestire le sovrascritture
           schema: 'public',
           table: 'mvp_votes',
           filter: `match_id=eq.${match.id}`,
@@ -521,18 +547,28 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         async () => {
           const { data: votesData } = await supabase
             .from('mvp_votes')
-            .select('player_id')
+            .select('player_id, voter_id')
             .eq('match_id', match.id);
           
           const voteCounts: Record<string, number> = {};
+          const currentDeviceId = getDeviceId();
+          let myVote: string | null = null;
+
           (votesData || []).forEach((v: any) => {
             voteCounts[v.player_id] = (voteCounts[v.player_id] || 0) + 1;
+            if (v.voter_id === currentDeviceId) {
+              myVote = v.player_id;
+            }
           });
           
           setMvpPlayers(prev => prev.map(p => ({
             ...p,
             votes: voteCounts[p.id] || 0
           })));
+
+          if (myVote) {
+            setVotedPlayerId(myVote);
+          }
         }
       )
       .subscribe();
@@ -607,22 +643,48 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     }
   };
 
+  // ✅ GESTIONE VOTO CON SOVRASCRITTURA
   const handleVote = async (playerId: string) => {
-    if (isVotingClosed || votedPlayerId || !match) return;
+    if (isVotingClosed || !match) return;
     const supabase = createClient();
+    const currentDeviceId = getDeviceId();
 
+    // 1. Rimuovi il voto precedente di questo dispositivo (se esiste)
+    await supabase
+      .from('mvp_votes')
+      .delete()
+      .eq('match_id', match.id)
+      .eq('voter_id', currentDeviceId);
+
+    // 2. Inserisci il nuovo voto
     const { error } = await supabase
       .from('mvp_votes')
-      .insert({ match_id: match.id, player_id: playerId, voter_id: null });
+      .insert({ match_id: match.id, player_id: playerId, voter_id: currentDeviceId });
+      
     if (error) {
       console.error('Errore voto:', error);
+      alert('Errore nel salvataggio del voto');
       return;
     }
 
+    // 3. Aggiorna lo stato locale immediatamente
     setVotedPlayerId(playerId);
-    setMvpPlayers(prev => prev.map(p =>
-      p.id === playerId ? { ...p, votes: p.votes + 1 } : p
-    ));
+    
+    // 4. Aggiorna i conteggi per le percentuali
+    const { data: votesData } = await supabase
+      .from('mvp_votes')
+      .select('player_id')
+      .eq('match_id', match.id);
+      
+    const voteCounts: Record<string, number> = {};
+    (votesData || []).forEach((v: any) => {
+      voteCounts[v.player_id] = (voteCounts[v.player_id] || 0) + 1;
+    });
+    
+    setMvpPlayers(prev => prev.map(p => ({
+      ...p,
+      votes: voteCounts[p.id] || 0
+    })));
   };
 
   const handleStartMatch = async () => {
@@ -705,7 +767,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   const isLiveStatus = match.status === 'LIVE' || match.status === 'SUPP' || match.status === 'RIGORI';
   const isFinalPhase = match.phase !== 'GIRONI';
 
-  // ✅ Calcolo totale voti MVP per le percentuali (definito PRIMA del return)
+  // ✅ Calcolo totale voti MVP per le percentuali
   const totalMvpVotes = mvpPlayers.reduce((sum, p) => sum + p.votes, 0);
 
   return (
@@ -822,7 +884,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                           <div className="text-center w-full">
                             <p className={`font-bold text-xs truncate w-full ${hasVoted ? 'text-white' : 'text-[#581C24]'}`}>{player.name}</p>
                             
-                            {/* ✅ Calcolo e visualizzazione percentuale (ora totalMvpVotes è definito) */}
                             {totalMvpVotes > 0 ? (
                               <>
                                 <p className={`text-[10px] font-black mt-1 ${hasVoted ? 'text-white' : 'text-[#581C24]'}`}>
@@ -930,7 +991,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                       <span className="font-bold text-xs text-gray-400 w-6 group-hover:text-[#581C24] transition-colors">{player.jersey_number || '-'}</span>
                       <span className="font-medium text-xs flex-1 truncate group-hover:text-[#581C24] transition-colors">{player.first_name?.[0] || ''}. {player.last_name}</span>
                       
-                      {/* ✅ SEZIONE STICKER CON MOLTIPLICATORE */}
                       <div className="flex items-center gap-1.5 flex-shrink-0">
                         {player.goals > 0 && (
                           <div className="flex items-center gap-0.5">
@@ -966,7 +1026,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                       <span className="font-bold text-xs text-gray-400 w-6 group-hover:text-[#581C24] transition-colors">{player.jersey_number || '-'}</span>
                       <span className="font-medium text-xs flex-1 truncate group-hover:text-[#581C24] transition-colors">{player.first_name?.[0] || ''}. {player.last_name}</span>
                       
-                      {/* ✅ SEZIONE STICKER CON MOLTIPLICATORE */}
                       <div className="flex items-center gap-1.5 flex-shrink-0">
                         {player.goals > 0 && (
                           <div className="flex items-center gap-0.5">
