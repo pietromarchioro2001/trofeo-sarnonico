@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -25,7 +25,6 @@ interface TeamStats extends Team {
   dr: number;
 }
 
-// Tipo per i dati partita da Supabase (con relazioni corrette)
 interface MatchData {
   id: string;
   match_key: string | null;
@@ -45,7 +44,6 @@ interface MatchData {
   } | null;
 }
 
-// Tipo per i marcatori
 interface PlayerData {
   id: string;
   first_name: string;
@@ -57,7 +55,6 @@ interface PlayerData {
   } | null;
 }
 
-// Tipo per Coppa Chiosco
 interface BarMeterData {
   total_meters: number;
   team: {
@@ -66,7 +63,6 @@ interface BarMeterData {
   } | null;
 }
 
-// Icona medaglia
 const MedalIcon = ({ type }: { type: 'gold' | 'silver' | 'bronze' }) => {
   const colors = {
     gold: { bg: '#F9E4A8', border: '#C9B037', text: '#8B7508' },
@@ -95,9 +91,9 @@ export default function ClassifichePage() {
   const [phaseMatches, setPhaseMatches] = useState<MatchData[]>([]);
   const [topScorers, setTopScorers] = useState<PlayerData[]>([]);
   const [barMeters, setBarMeters] = useState<BarMeterData[]>([]);
+  const [liveMatchesMap, setLiveMatchesMap] = useState<Map<string, { matchId: string; score: string }>>(new Map());
   const [loading, setLoading] = useState(true);
 
-  // Gestione tab da URL
   useEffect(() => {
     const tab = searchParams.get('tab');
     if (tab === 'marcatori') {
@@ -105,227 +101,187 @@ export default function ClassifichePage() {
     }
   }, [searchParams]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      const supabase = createClient();
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    const supabase = createClient();
 
-      try {
-        // 1. CLASSIFICA GIRONI - Prendi TUTTE le squadre dal database
-        const { data: allTeams, error: teamsError } = await supabase
+    try {
+      // 1. CLASSIFICA GIRONI (Include partite LIVE per aggiornamento in tempo reale)
+      const { data: allTeams, error: teamsError } = await supabase
+        .from('teams')
+        .select('id, name, logo_url, girone');
+
+      if (teamsError) throw teamsError;
+
+      const { data: matchesData, error: matchesError } = await supabase
+        .from('matches')
+        .select('id, home_team_id, away_team_id, home_score, away_score, status')
+        .in('status', ['FINITA', 'LIVE', 'SUPP', 'RIGORI']);
+
+      if (matchesError) throw matchesError;
+
+      const statsMap = new Map<string, TeamStats>();
+      const newLiveMap = new Map<string, { matchId: string; score: string }>();
+
+      (allTeams || []).forEach(t => {
+        statsMap.set(t.id, { 
+          id: t.id, name: t.name, logo_url: t.logo_url, girone: t.girone, 
+          pt: 0, pg: 0, v: 0, p: 0, s: 0, gf: 0, gs: 0, dr: 0 
+        });
+      });
+
+      matchesData?.forEach((m: any) => {
+        const homeStats = statsMap.get(m.home_team_id);
+        const awayStats = statsMap.get(m.away_team_id);
+        if (!homeStats || !awayStats) return;
+
+        const hScore = m.home_score || 0;
+        const aScore = m.away_score || 0;
+
+        homeStats.pg += 1;
+        awayStats.pg += 1;
+        homeStats.gf += hScore;
+        homeStats.gs += aScore;
+        homeStats.dr = homeStats.gf - homeStats.gs;
+        
+        awayStats.gf += aScore;
+        awayStats.gs += hScore;
+        awayStats.dr = awayStats.gf - awayStats.gs;
+
+        if (hScore > aScore) {
+          homeStats.v += 1; homeStats.pt += 3; awayStats.s += 1;
+        } else if (aScore > hScore) {
+          awayStats.v += 1; awayStats.pt += 3; homeStats.s += 1;
+        } else {
+          homeStats.p += 1; homeStats.pt += 1;
+          awayStats.p += 1; awayStats.pt += 1;
+        }
+
+        // Registra le partite in diretta per l'UI
+        if (m.status === 'LIVE' || m.status === 'SUPP' || m.status === 'RIGORI') {
+          newLiveMap.set(m.home_team_id, { matchId: m.id, score: `${hScore} - ${aScore}` });
+          newLiveMap.set(m.away_team_id, { matchId: m.id, score: `${hScore} - ${aScore}` });
+        }
+      });
+
+      const allStats = Array.from(statsMap.values());
+      const sortFn = (a: TeamStats, b: TeamStats) => b.pt - a.pt || b.dr - a.dr || b.gf - a.gf;
+
+      setStandings({
+        gironeA: allStats.filter(t => t.girone === 'A').sort(sortFn),
+        gironeB: allStats.filter(t => t.girone === 'B').sort(sortFn),
+      });
+      setLiveMatchesMap(newLiveMap);
+
+      // 2. FASE FINALE
+      const { data: phaseMatchesData, error: phaseError } = await supabase
+        .from('matches')
+        .select('id, match_key, phase, status, home_score, away_score, home_team_id, away_team_id')
+        .in('phase', ['QUARTI', 'SEMIFINALI', 'FINALE', 'FINALE_3_4'])
+        .order('match_key', { ascending: true });
+
+      if (phaseError) throw phaseError;
+
+      const phaseTeamIds = Array.from(
+        new Set((phaseMatchesData || []).flatMap(m => [m.home_team_id, m.away_team_id]).filter(Boolean))
+      );
+
+      let phaseTeamsData: any[] = [];
+      if (phaseTeamIds.length > 0) {
+        const { data: teams, error: teamsError } = await supabase
           .from('teams')
-          .select('id, name, logo_url, girone');
-
+          .select('id, name, logo_url')
+          .in('id', phaseTeamIds);
         if (teamsError) throw teamsError;
-
-        // Prendi le partite finite per calcolare le stats
-        const { data: matchesData, error: matchesError } = await supabase
-          .from('matches')
-          .select('home_team_id, away_team_id, home_score, away_score, status')
-          .eq('status', 'FINITA');
-
-        if (matchesError) throw matchesError;
-
-        const statsMap = new Map<string, TeamStats>();
-
-        // Inizializza TUTTE le squadre con 0 punti
-        (allTeams || []).forEach(t => {
-          statsMap.set(t.id, { 
-            id: t.id, 
-            name: t.name, 
-            logo_url: t.logo_url, 
-            girone: t.girone, 
-            pt: 0, pg: 0, v: 0, p: 0, s: 0, gf: 0, gs: 0, dr: 0 
-          });
-        });
-
-        // Aggiorna le stats solo per le squadre che hanno giocato
-        matchesData?.forEach((m: any) => {
-          const homeStats = statsMap.get(m.home_team_id);
-          const awayStats = statsMap.get(m.away_team_id);
-          if (!homeStats || !awayStats) return;
-
-          homeStats.pg += 1;
-          awayStats.pg += 1;
-          homeStats.gf += m.home_score || 0;
-          homeStats.gs += m.away_score || 0;
-          homeStats.dr = homeStats.gf - homeStats.gs;
-          
-          awayStats.gf += m.away_score || 0;
-          awayStats.gs += m.home_score || 0;
-          awayStats.dr = awayStats.gf - awayStats.gs;
-
-          if ((m.home_score || 0) > (m.away_score || 0)) {
-            homeStats.v += 1;
-            homeStats.pt += 3;
-            awayStats.s += 1;
-          } else if ((m.home_score || 0) < (m.away_score || 0)) {
-            awayStats.v += 1;
-            awayStats.pt += 3;
-            homeStats.s += 1;
-          } else {
-            homeStats.p += 1;
-            homeStats.pt += 1;
-            awayStats.p += 1;
-            awayStats.pt += 1;
-          }
-        });
-
-        const allStats = Array.from(statsMap.values());
-        const sortFn = (a: TeamStats, b: TeamStats) => b.pt - a.pt || b.dr - a.dr || b.gf - a.gf;
-
-        setStandings({
-          gironeA: allStats.filter(t => t.girone === 'A').sort(sortFn),
-          gironeB: allStats.filter(t => t.girone === 'B').sort(sortFn),
-        });
-
-        // 2. FASE FINALE (rimane uguale)
-        const { data: phaseMatchesData, error: phaseError } = await supabase
-          .from('matches')
-          .select('id, match_key, phase, status, home_score, away_score, home_team_id, away_team_id')
-          .in('phase', ['QUARTI', 'SEMIFINALI', 'FINALE', 'FINALE_3_4'])
-          .order('match_key', { ascending: true });
-
-        if (phaseError) throw phaseError;
-
-        const phaseTeamIds = Array.from(
-          new Set(
-            (phaseMatchesData || [])
-              .flatMap(m => [m.home_team_id, m.away_team_id])
-              .filter(Boolean)
-          )
-        );
-
-        let phaseTeamsData: any[] = [];
-        if (phaseTeamIds.length > 0) {
-          const { data: teams, error: teamsError } = await supabase
-            .from('teams')
-            .select('id, name, logo_url')
-            .in('id', phaseTeamIds);
-          if (teamsError) throw teamsError;
-          phaseTeamsData = teams || [];
-        }
-
-        const mappedPhaseMatches: MatchData[] = (phaseMatchesData || []).map((m: any) => ({
-          id: m.id,
-          match_key: m.match_key,
-          phase: m.phase,
-          status: m.status,
-          home_score: m.home_score,
-          away_score: m.away_score,
-          home_team: phaseTeamsData.find((t: any) => t.id === m.home_team_id) || null,
-          away_team: phaseTeamsData.find((t: any) => t.id === m.away_team_id) || null,
-        }));
-        setPhaseMatches(mappedPhaseMatches);
-
-        // 3. MARCATORI - Prendi TUTTI i giocatori, non solo quelli con gol > 0
-        const { data: allPlayers, error: playersError } = await supabase
-          .from('players')
-          .select('id, first_name, last_name, goals, team_id')
-          .order('goals', { ascending: false })
-          .limit(50);
-
-        if (playersError) throw playersError;
-
-        const playerTeamIds = Array.from(new Set((allPlayers || []).map(p => p.team_id).filter(Boolean)));
-        let playerTeamsData: any[] = [];
-        if (playerTeamIds.length > 0) {
-          const { data: teams, error: teamsError } = await supabase
-            .from('teams')
-            .select('id, name, logo_url')
-            .in('id', playerTeamIds);
-          if (teamsError) throw teamsError;
-          playerTeamsData = teams || [];
-        }
-
-        const mappedPlayers: PlayerData[] = (allPlayers || []).map((p: any) => ({
-          id: p.id,
-          first_name: p.first_name,
-          last_name: p.last_name,
-          goals: p.goals,
-          team: playerTeamsData.find((t: any) => t.id === p.team_id) || null,
-        }));
-        setTopScorers(mappedPlayers);
-
-        // 4. COPPA CHIOSCO (rimane uguale)
-        const { data: metersData, error: metersError } = await supabase
-          .from('bar_meters')
-          .select('total_meters, team_id')
-          .order('total_meters', { ascending: false });
-
-        if (metersError) throw metersError;
-
-        const meterTeamIds = Array.from(new Set((metersData || []).map(m => m.team_id).filter(Boolean)));
-        let meterTeamsData: any[] = [];
-        if (meterTeamIds.length > 0) {
-          const { data: teams, error: teamsError } = await supabase
-            .from('teams')
-            .select('id, name, logo_url')
-            .in('id', meterTeamIds);
-          if (teamsError) throw teamsError;
-          meterTeamsData = teams || [];
-        }
-
-        const mappedMeters: BarMeterData[] = (metersData || []).map((m: any) => ({
-          total_meters: m.total_meters,
-          team: meterTeamsData.find((t: any) => t.id === m.team_id) || null,
-        }));
-        setBarMeters(mappedMeters);
-
-      } catch (err) {
-        console.error('Errore fetch classifiche:', err);
-      } finally {
-        setLoading(false);
+        phaseTeamsData = teams || [];
       }
-    };
 
-    fetchData();
+      const mappedPhaseMatches: MatchData[] = (phaseMatchesData || []).map((m: any) => ({
+        id: m.id, match_key: m.match_key, phase: m.phase, status: m.status,
+        home_score: m.home_score, away_score: m.away_score,
+        home_team: phaseTeamsData.find((t: any) => t.id === m.home_team_id) || null,
+        away_team: phaseTeamsData.find((t: any) => t.id === m.away_team_id) || null,
+      }));
+      setPhaseMatches(mappedPhaseMatches);
+
+      // 3. MARCATORI
+      const { data: allPlayers, error: playersError } = await supabase
+        .from('players')
+        .select('id, first_name, last_name, goals, team_id')
+        .order('goals', { ascending: false })
+        .limit(50);
+
+      if (playersError) throw playersError;
+
+      const playerTeamIds = Array.from(new Set((allPlayers || []).map(p => p.team_id).filter(Boolean)));
+      let playerTeamsData: any[] = [];
+      if (playerTeamIds.length > 0) {
+        const { data: teams, error: teamsError } = await supabase
+          .from('teams')
+          .select('id, name, logo_url')
+          .in('id', playerTeamIds);
+        if (teamsError) throw teamsError;
+        playerTeamsData = teams || [];
+      }
+
+      setTopScorers((allPlayers || []).map((p: any) => ({
+        id: p.id, first_name: p.first_name, last_name: p.last_name, goals: p.goals,
+        team: playerTeamsData.find((t: any) => t.id === p.team_id) || null,
+      })));
+
+      // 4. COPPA CHIOSCO
+      const { data: metersData, error: metersError } = await supabase
+        .from('bar_meters')
+        .select('total_meters, team_id')
+        .order('total_meters', { ascending: false });
+
+      if (metersError) throw metersError;
+
+      const meterTeamIds = Array.from(new Set((metersData || []).map(m => m.team_id).filter(Boolean)));
+      let meterTeamsData: any[] = [];
+      if (meterTeamIds.length > 0) {
+        const { data: teams, error: teamsError } = await supabase
+          .from('teams')
+          .select('id, name, logo_url')
+          .in('id', meterTeamIds);
+        if (teamsError) throw teamsError;
+        meterTeamsData = teams || [];
+      }
+
+      setBarMeters((metersData || []).map((m: any) => ({
+        total_meters: m.total_meters,
+        team: meterTeamsData.find((t: any) => t.id === m.team_id) || null,
+      })));
+
+    } catch (err) {
+      console.error('Errore fetch classifiche:', err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-      
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
-// ... (il resto del codice rimane uguale fino alla sezione MARCATORI)
+  // ✅ REALTIME: Aggiorna la classifica quando una partita cambia stato o punteggio
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel('classifiche-live-updates')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'matches' },
+        () => {
+          fetchData();
+        }
+      )
+      .subscribe();
 
-        {/* === MARCATORI === */}
-        {activeTab === 'marcatori' && (
-          <div className="px-3 sm:px-4">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="flex items-center px-3 py-2 bg-gray-50 border-b border-gray-200 text-[10px] font-bold text-gray-600 uppercase">
-                <div className="w-8 text-center flex-shrink-0">POS</div>
-                <div className="flex-1 pl-2">GIOCATORE</div>
-                <div className="w-20 text-center flex-shrink-0">SQUADRA</div>
-                <div className="w-10 text-center flex-shrink-0">GOL</div>
-              </div>
-              <div className="divide-y divide-gray-100">
-                {topScorers.length === 0 ? (
-                  <div className="px-3 py-4 text-center text-gray-500 text-sm">Giocatori non presenti</div>
-                ) : (
-                  topScorers.map((player, index) => (
-                    <div key={player.id} className="flex items-center px-3 py-2.5">
-                      <div className="w-8 text-center flex-shrink-0">
-                        {index === 0 ? <MedalIcon type="gold" /> : index === 1 ? <MedalIcon type="silver" /> : index === 2 ? <MedalIcon type="bronze" /> : <span className="font-bold text-xs text-gray-700">{index + 1}</span>}
-                      </div>
-                      <div className="flex-1 pl-2 flex items-center gap-2 min-w-0">
-                        <div className="w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                           {player.team?.logo_url ? (
-                             <Image src={player.team.logo_url} alt={player.team.name} width={20} height={20} className="object-cover" />
-                           ) : <span className="text-[5px] text-gray-400">L</span>}
-                        </div>
-                        <span className="font-bold text-[11px] text-[#000000] uppercase truncate">{player.first_name} {player.last_name}</span>
-                      </div>
-                      <div className="w-20 text-center flex-shrink-0">
-                        <span className="text-[10px] text-gray-600 uppercase">{player.team?.name}</span>
-                      </div>
-                      <div className="w-10 text-center flex-shrink-0">
-                        <span className="font-black text-sm text-[#581C24]">{player.goals}</span>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchData]);
 
   if (loading) {
     return (
@@ -337,9 +293,7 @@ export default function ClassifichePage() {
       </div>
     );
   }
-  
-  // Mantieni TUTTO il codice JSX originale delle ~600 righe
-  
+
   return (
     <div className="min-h-screen bg-[#F5F5F7] pb-24">
       {/* HEADER */}
@@ -399,31 +353,42 @@ export default function ClassifichePage() {
                       {teams.length === 0 ? (
                         <div className="px-3 py-4 text-center text-gray-500 text-sm">Squadre non presenti</div>
                       ) : (
-                        teams.map((team, index) => (
-                          <div key={team.id} className="flex items-center px-3 py-2">
-                            <div className="w-5 text-center flex-shrink-0">
-                              <span className="font-bold text-xs text-gray-700">{index + 1}</span>
-                            </div>
-                            <div className="flex-1 pl-1 flex items-center gap-1.5 min-w-0">
-                              <div className="w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                                {team.logo_url ? (
-                                  <Image src={team.logo_url} alt={team.name} width={20} height={20} className="object-cover" />
-                                ) : (
-                                  <span className="text-[5px] text-gray-400">L</span>
+                        teams.map((team, index) => {
+                          const isLive = liveMatchesMap.has(team.id);
+                          const liveData = liveMatchesMap.get(team.id);
+
+                          return (
+                            <div key={team.id} className={`flex items-center px-3 py-2 transition-colors ${isLive ? 'bg-[#581C24]/5' : ''}`}>
+                              <div className="w-5 text-center flex-shrink-0">
+                                <span className={`font-bold text-xs ${isLive ? 'text-[#581C24]' : 'text-gray-700'}`}>{index + 1}</span>
+                              </div>
+                              <div className="flex-1 pl-1 flex items-center gap-1.5 min-w-0">
+                                <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isLive ? 'bg-[#581C24]/10' : 'bg-gray-100'}`}>
+                                  {team.logo_url ? (
+                                    <Image src={team.logo_url} alt={team.name} width={20} height={20} className="object-cover" />
+                                  ) : (
+                                    <span className="text-[5px] text-gray-400">L</span>
+                                  )}
+                                </div>
+                                <span className={`font-bold text-[11px] uppercase truncate ${isLive ? 'text-[#581C24]' : 'text-[#000000]'}`}>{team.name}</span>
+                                {isLive && (
+                                  <Link href={`/partite/${liveData!.matchId}`} className="flex-shrink-0 px-1.5 py-0.5 bg-[#581C24] text-white text-[8px] font-bold rounded animate-pulse flex items-center gap-1 shadow-sm">
+                                    <span className="w-1 h-1 bg-white rounded-full" />
+                                    {liveData!.score}
+                                  </Link>
                                 )}
                               </div>
-                              <span className="font-bold text-[11px] text-[#000000] uppercase truncate">{team.name}</span>
+                              <div className="w-6 text-center flex-shrink-0"><span className={`font-black text-xs ${isLive ? 'text-[#581C24]' : 'text-[#581C24]'}`}>{team.pt}</span></div>
+                              <div className="w-5 text-center flex-shrink-0"><span className={`text-[10px] ${isLive ? 'text-[#581C24]/70' : 'text-gray-600'}`}>{team.pg}</span></div>
+                              <div className="w-4 text-center flex-shrink-0"><span className={`text-[10px] ${isLive ? 'text-[#581C24]/70' : 'text-gray-600'}`}>{team.v}</span></div>
+                              <div className="w-4 text-center flex-shrink-0"><span className={`text-[10px] ${isLive ? 'text-[#581C24]/70' : 'text-gray-600'}`}>{team.p}</span></div>
+                              <div className="w-4 text-center flex-shrink-0"><span className={`text-[10px] ${isLive ? 'text-[#581C24]/70' : 'text-gray-600'}`}>{team.s}</span></div>
+                              <div className="w-5 text-center flex-shrink-0"><span className={`text-[10px] ${isLive ? 'text-[#581C24]/70' : 'text-gray-600'}`}>{team.gf}</span></div>
+                              <div className="w-5 text-center flex-shrink-0"><span className={`text-[10px] ${isLive ? 'text-[#581C24]/70' : 'text-gray-600'}`}>{team.gs}</span></div>
+                              <div className="w-6 text-center flex-shrink-0"><span className={`text-[10px] ${isLive ? 'text-[#581C24]/70' : 'text-gray-600'}`}>{team.dr > 0 ? `+${team.dr}` : team.dr}</span></div>
                             </div>
-                            <div className="w-6 text-center flex-shrink-0"><span className="font-black text-xs text-[#581C24]">{team.pt}</span></div>
-                            <div className="w-5 text-center flex-shrink-0"><span className="text-[10px] text-gray-600">{team.pg}</span></div>
-                            <div className="w-4 text-center flex-shrink-0"><span className="text-[10px] text-gray-600">{team.v}</span></div>
-                            <div className="w-4 text-center flex-shrink-0"><span className="text-[10px] text-gray-600">{team.p}</span></div>
-                            <div className="w-4 text-center flex-shrink-0"><span className="text-[10px] text-gray-600">{team.s}</span></div>
-                            <div className="w-5 text-center flex-shrink-0"><span className="text-[10px] text-gray-600">{team.gf}</span></div>
-                            <div className="w-5 text-center flex-shrink-0"><span className="text-[10px] text-gray-600">{team.gs}</span></div>
-                            <div className="w-6 text-center flex-shrink-0"><span className="text-[10px] text-gray-600">{team.dr > 0 ? `+${team.dr}` : team.dr}</span></div>
-                          </div>
-                        ))
+                          );
+                        })
                       )}
                     </div>
                   </div>
@@ -455,82 +420,105 @@ export default function ClassifichePage() {
             <div className="px-4 pb-8">
               {phaseSubTab === 'quarti' && (
                 <div className="space-y-4 max-w-[220px] mx-auto">
-                  {phaseMatches.filter(m => m.phase === 'QUARTI').map((match) => (
-                    <Link key={match.id} href={`/partite/${match.id}`} className="block relative">
-                      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3 hover:shadow-md transition-shadow">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2 flex-1">
-                            <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                              {match.home_team?.logo_url ? (
-                                <Image src={match.home_team.logo_url} alt={match.home_team.name} width={24} height={24} className="object-cover" />
-                              ) : <span className="text-[6px] text-gray-400">L</span>}
+                  {phaseMatches.filter(m => m.phase === 'QUARTI').map((match) => {
+                    const isMatchLive = match.status === 'LIVE' || match.status === 'SUPP' || match.status === 'RIGORI';
+                    return (
+                      <Link key={match.id} href={`/partite/${match.id}`} className="block relative">
+                        <div className={`rounded-xl shadow-sm border p-3 transition-shadow relative ${
+                          isMatchLive 
+                            ? 'bg-[#581C24] text-white border-[#581C24] shadow-[0_0_15px_rgba(88,28,36,0.3)]' 
+                            : 'bg-white border-gray-100 hover:shadow-md'
+                        }`}>
+                          {isMatchLive && (
+                            <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[8px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm animate-pulse z-10">
+                              <span className="w-1.5 h-1.5 bg-white rounded-full" /> LIVE
                             </div>
-                            <span className="font-bold text-xs text-[#000000] uppercase truncate">{match.home_team?.name || 'TBD'}</span>
-                          </div>
-                          <span className="font-black text-base text-[#581C24] ml-2">{match.home_score ?? '-'}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 flex-1">
-                            <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                              {match.away_team?.logo_url ? (
-                                <Image src={match.away_team.logo_url} alt={match.away_team.name} width={24} height={24} className="object-cover" />
-                              ) : <span className="text-[6px] text-gray-400">L</span>}
+                          )}
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2 flex-1">
+                              <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isMatchLive ? 'bg-white/10' : 'bg-gray-100'}`}>
+                                {match.home_team?.logo_url ? (
+                                  <Image src={match.home_team.logo_url} alt={match.home_team.name} width={24} height={24} className="object-cover" />
+                                ) : <span className={`text-[6px] ${isMatchLive ? 'text-white/70' : 'text-gray-400'}`}>L</span>}
+                              </div>
+                              <span className={`font-bold text-xs uppercase truncate ${isMatchLive ? 'text-white' : 'text-[#000000]'}`}>{match.home_team?.name || 'TBD'}</span>
                             </div>
-                            <span className="font-bold text-xs text-[#000000] uppercase truncate">{match.away_team?.name || 'TBD'}</span>
+                            <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.home_score ?? '-'}</span>
                           </div>
-                          <span className="font-black text-base text-[#581C24] ml-2">{match.away_score ?? '-'}</span>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 flex-1">
+                              <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isMatchLive ? 'bg-white/10' : 'bg-gray-100'}`}>
+                                {match.away_team?.logo_url ? (
+                                  <Image src={match.away_team.logo_url} alt={match.away_team.name} width={24} height={24} className="object-cover" />
+                                ) : <span className={`text-[6px] ${isMatchLive ? 'text-white/70' : 'text-gray-400'}`}>L</span>}
+                              </div>
+                              <span className={`font-bold text-xs uppercase truncate ${isMatchLive ? 'text-white' : 'text-[#000000]'}`}>{match.away_team?.name || 'TBD'}</span>
+                            </div>
+                            <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.away_score ?? '-'}</span>
+                          </div>
                         </div>
-                      </div>
-                      <div className="absolute top-1/2 -right-12 w-12 h-px bg-gray-300" />
-                    </Link>
-                  ))}
+                        <div className="absolute top-1/2 -right-12 w-12 h-px bg-gray-300" />
+                      </Link>
+                    );
+                  })}
                 </div>
               )}
 
               {phaseSubTab === 'semifinali' && (
                 <div className="relative max-w-[220px] mx-auto">
-                  {phaseMatches.filter(m => m.phase === 'SEMIFINALI').map((match, idx) => (
-                    <div key={match.id} className={`relative ${idx === 0 ? 'mb-32' : ''}`}>
-                      <div className="absolute -left-12 top-1/2 w-6 h-px bg-gray-300" />
-                      <div className="absolute -left-6 top-1/2 w-px h-[100px] bg-gray-300" /> 
-                      <div className="absolute -left-12 top-[140px] w-6 h-px bg-gray-300" /> 
-                      <div className="absolute -left-6 top-[88px] w-6 h-px bg-gray-300" /> 
+                  {phaseMatches.filter(m => m.phase === 'SEMIFINALI').map((match, idx) => {
+                    const isMatchLive = match.status === 'LIVE' || match.status === 'SUPP' || match.status === 'RIGORI';
+                    return (
+                      <div key={match.id} className={`relative ${idx === 0 ? 'mb-32' : ''}`}>
+                        <div className="absolute -left-12 top-1/2 w-6 h-px bg-gray-300" />
+                        <div className="absolute -left-6 top-1/2 w-px h-[100px] bg-gray-300" /> 
+                        <div className="absolute -left-12 top-[140px] w-6 h-px bg-gray-300" /> 
+                        <div className="absolute -left-6 top-[88px] w-6 h-px bg-gray-300" /> 
 
-                      <Link href={`/partite/${match.id}`} className={`block relative ${idx === 0 ? 'translate-y-11' : 'translate-y-12'}`}>
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3 hover:shadow-md transition-shadow">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2 flex-1">
-                              <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                                {match.home_team?.logo_url ? (
-                                  <Image src={match.home_team.logo_url} alt={match.home_team.name} width={24} height={24} className="object-cover" />
-                                ) : <span className="text-[6px] text-gray-400">L</span>}
+                        <Link href={`/partite/${match.id}`} className={`block relative ${idx === 0 ? 'translate-y-11' : 'translate-y-12'}`}>
+                          <div className={`rounded-xl shadow-sm border p-3 transition-shadow relative ${
+                            isMatchLive 
+                              ? 'bg-[#581C24] text-white border-[#581C24] shadow-[0_0_15px_rgba(88,28,36,0.3)]' 
+                              : 'bg-white border-gray-100 hover:shadow-md'
+                          }`}>
+                            {isMatchLive && (
+                              <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[8px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm animate-pulse z-10">
+                                <span className="w-1.5 h-1.5 bg-white rounded-full" /> LIVE
                               </div>
-                              <span className="font-bold text-xs text-[#000000] uppercase truncate">{match.home_team?.name || 'TBD'}</span>
-                            </div>
-                            <span className="font-black text-base text-[#581C24] ml-2">{match.home_score ?? '-'}</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 flex-1">
-                              <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                                {match.away_team?.logo_url ? (
-                                  <Image src={match.away_team.logo_url} alt={match.away_team.name} width={24} height={24} className="object-cover" />
-                                ) : <span className="text-[6px] text-gray-400">L</span>}
+                            )}
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2 flex-1">
+                                <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isMatchLive ? 'bg-white/10' : 'bg-gray-100'}`}>
+                                  {match.home_team?.logo_url ? (
+                                    <Image src={match.home_team.logo_url} alt={match.home_team.name} width={24} height={24} className="object-cover" />
+                                  ) : <span className={`text-[6px] ${isMatchLive ? 'text-white/70' : 'text-gray-400'}`}>L</span>}
+                                </div>
+                                <span className={`font-bold text-xs uppercase truncate ${isMatchLive ? 'text-white' : 'text-[#000000]'}`}>{match.home_team?.name || 'TBD'}</span>
                               </div>
-                              <span className="font-bold text-xs text-[#000000] uppercase truncate">{match.away_team?.name || 'TBD'}</span>
+                              <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.home_score ?? '-'}</span>
                             </div>
-                            <span className="font-black text-base text-[#581C24] ml-2">{match.away_score ?? '-'}</span>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2 flex-1">
+                                <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isMatchLive ? 'bg-white/10' : 'bg-gray-100'}`}>
+                                  {match.away_team?.logo_url ? (
+                                    <Image src={match.away_team.logo_url} alt={match.away_team.name} width={24} height={24} className="object-cover" />
+                                  ) : <span className={`text-[6px] ${isMatchLive ? 'text-white/70' : 'text-gray-400'}`}>L</span>}
+                                </div>
+                                <span className={`font-bold text-xs uppercase truncate ${isMatchLive ? 'text-white' : 'text-[#000000]'}`}>{match.away_team?.name || 'TBD'}</span>
+                              </div>
+                              <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.away_score ?? '-'}</span>
+                            </div>
                           </div>
-                        </div>
-                        <div className="absolute top-1/2 -right-12 w-12 h-px bg-gray-300" />
-                      </Link>
-                    </div>
-                  ))}
+                          <div className="absolute top-1/2 -right-12 w-12 h-px bg-gray-300" />
+                        </Link>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
               {phaseSubTab === 'finale' && (
                 <div className="relative max-w-[220px] mx-auto pt-8 pb-32">
-                  {/* ✅ Mostra le linee SOLO se ci sono partite nella fase finale */}
                   {phaseMatches.some(m => m.phase === 'FINALE' || m.phase === 'FINALE_3_4') && (
                     <>
                       <div className="absolute -left-12 top-24 w-6 h-px bg-gray-300" />
@@ -540,64 +528,88 @@ export default function ClassifichePage() {
                     </>
                   )}
 
-                  {phaseMatches.filter(m => m.phase === 'FINALE').map((match) => (
-                    <Link key={match.id} href={`/partite/${match.id}`} className="block relative translate-y-[110px]">
-                      <div className="bg-gradient-to-br from-[#F9E4A8] to-[#E8D49A] rounded-xl shadow-md border-2 border-[#C9B037] p-3 hover:shadow-lg transition-shadow">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2 flex-1">
-                            <div className="w-6 h-6 bg-white/80 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                              {match.home_team?.logo_url ? (
-                                <Image src={match.home_team.logo_url} alt={match.home_team.name} width={24} height={24} className="object-cover" />
-                              ) : <span className="text-[6px] text-gray-400">L</span>}
+                  {phaseMatches.filter(m => m.phase === 'FINALE').map((match) => {
+                    const isMatchLive = match.status === 'LIVE' || match.status === 'SUPP' || match.status === 'RIGORI';
+                    return (
+                      <Link key={match.id} href={`/partite/${match.id}`} className="block relative translate-y-[110px]">
+                        <div className={`rounded-xl shadow-md border-2 p-3 transition-shadow relative ${
+                          isMatchLive
+                            ? 'bg-[#581C24] text-white border-[#581C24] shadow-[0_0_20px_rgba(88,28,36,0.4)]'
+                            : 'bg-gradient-to-br from-[#F9E4A8] to-[#E8D49A] border-[#C9B037] hover:shadow-lg'
+                        }`}>
+                          {isMatchLive && (
+                            <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[8px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm animate-pulse z-10">
+                              <span className="w-1.5 h-1.5 bg-white rounded-full" /> LIVE
                             </div>
-                            <span className="font-bold text-xs text-[#000000] uppercase truncate">{match.home_team?.name || 'TBD'}</span>
-                          </div>
-                          <span className="font-black text-base text-[#581C24] ml-2">{match.home_score ?? '-'}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 flex-1">
-                            <div className="w-6 h-6 bg-white/80 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                              {match.away_team?.logo_url ? (
-                                <Image src={match.away_team.logo_url} alt={match.away_team.name} width={24} height={24} className="object-cover" />
-                              ) : <span className="text-[6px] text-gray-400">L</span>}
+                          )}
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2 flex-1">
+                              <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isMatchLive ? 'bg-white/10' : 'bg-white/80'}`}>
+                                {match.home_team?.logo_url ? (
+                                  <Image src={match.home_team.logo_url} alt={match.home_team.name} width={24} height={24} className="object-cover" />
+                                ) : <span className={`text-[6px] ${isMatchLive ? 'text-white/70' : 'text-gray-400'}`}>L</span>}
+                              </div>
+                              <span className={`font-bold text-xs uppercase truncate ${isMatchLive ? 'text-white' : 'text-[#000000]'}`}>{match.home_team?.name || 'TBD'}</span>
                             </div>
-                            <span className="font-bold text-xs text-[#000000] uppercase truncate">{match.away_team?.name || 'TBD'}</span>
+                            <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.home_score ?? '-'}</span>
                           </div>
-                          <span className="font-black text-base text-[#581C24] ml-2">{match.away_score ?? '-'}</span>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 flex-1">
+                              <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isMatchLive ? 'bg-white/10' : 'bg-white/80'}`}>
+                                {match.away_team?.logo_url ? (
+                                  <Image src={match.away_team.logo_url} alt={match.away_team.name} width={24} height={24} className="object-cover" />
+                                ) : <span className={`text-[6px] ${isMatchLive ? 'text-white/70' : 'text-gray-400'}`}>L</span>}
+                              </div>
+                              <span className={`font-bold text-xs uppercase truncate ${isMatchLive ? 'text-white' : 'text-[#000000]'}`}>{match.away_team?.name || 'TBD'}</span>
+                            </div>
+                            <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.away_score ?? '-'}</span>
+                          </div>
                         </div>
-                      </div>
-                      <div className="absolute left-1/2 -bottom-16 w-px h-16 bg-gray-300 -translate-x-1/2" />
-                    </Link>
-                  ))}
+                        <div className="absolute left-1/2 -bottom-16 w-px h-16 bg-gray-300 -translate-x-1/2" />
+                      </Link>
+                    );
+                  })}
 
-                  {phaseMatches.filter(m => m.phase === 'FINALE_3_4').map((match) => (
-                    <Link key={match.id} href={`/partite/${match.id}`} className="block relative translate-y-[160px]">
-                      <div className="bg-gradient-to-br from-[#E8C8A8] to-[#D4B494] rounded-xl shadow-md border-2 border-[#B87333] p-3 hover:shadow-lg transition-shadow">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2 flex-1">
-                            <div className="w-6 h-6 bg-white/80 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                              {match.home_team?.logo_url ? (
-                                <Image src={match.home_team.logo_url} alt={match.home_team.name} width={24} height={24} className="object-cover" />
-                              ) : <span className="text-[6px] text-gray-400">L</span>}
+                  {phaseMatches.filter(m => m.phase === 'FINALE_3_4').map((match) => {
+                    const isMatchLive = match.status === 'LIVE' || match.status === 'SUPP' || match.status === 'RIGORI';
+                    return (
+                      <Link key={match.id} href={`/partite/${match.id}`} className="block relative translate-y-[160px]">
+                        <div className={`rounded-xl shadow-md border-2 p-3 transition-shadow relative ${
+                          isMatchLive
+                            ? 'bg-[#581C24] text-white border-[#581C24] shadow-[0_0_20px_rgba(88,28,36,0.4)]'
+                            : 'bg-gradient-to-br from-[#E8C8A8] to-[#D4B494] border-[#B87333] hover:shadow-lg'
+                        }`}>
+                          {isMatchLive && (
+                            <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[8px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm animate-pulse z-10">
+                              <span className="w-1.5 h-1.5 bg-white rounded-full" /> LIVE
                             </div>
-                            <span className="font-bold text-xs text-[#000000] uppercase truncate">{match.home_team?.name || 'TBD'}</span>
-                          </div>
-                          <span className="font-black text-base text-[#581C24] ml-2">{match.home_score ?? '-'}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 flex-1">
-                            <div className="w-6 h-6 bg-white/80 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                              {match.away_team?.logo_url ? (
-                                <Image src={match.away_team.logo_url} alt={match.away_team.name} width={24} height={24} className="object-cover" />
-                              ) : <span className="text-[6px] text-gray-400">L</span>}
+                          )}
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2 flex-1">
+                              <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isMatchLive ? 'bg-white/10' : 'bg-white/80'}`}>
+                                {match.home_team?.logo_url ? (
+                                  <Image src={match.home_team.logo_url} alt={match.home_team.name} width={24} height={24} className="object-cover" />
+                                ) : <span className={`text-[6px] ${isMatchLive ? 'text-white/70' : 'text-gray-400'}`}>L</span>}
+                              </div>
+                              <span className={`font-bold text-xs uppercase truncate ${isMatchLive ? 'text-white' : 'text-[#000000]'}`}>{match.home_team?.name || 'TBD'}</span>
                             </div>
-                            <span className="font-bold text-xs text-[#000000] uppercase truncate">{match.away_team?.name || 'TBD'}</span>
+                            <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.home_score ?? '-'}</span>
                           </div>
-                          <span className="font-black text-base text-[#581C24] ml-2">{match.away_score ?? '-'}</span>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 flex-1">
+                              <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isMatchLive ? 'bg-white/10' : 'bg-white/80'}`}>
+                                {match.away_team?.logo_url ? (
+                                  <Image src={match.away_team.logo_url} alt={match.away_team.name} width={24} height={24} className="object-cover" />
+                                ) : <span className={`text-[6px] ${isMatchLive ? 'text-white/70' : 'text-gray-400'}`}>L</span>}
+                              </div>
+                              <span className={`font-bold text-xs uppercase truncate ${isMatchLive ? 'text-white' : 'text-[#000000]'}`}>{match.away_team?.name || 'TBD'}</span>
+                            </div>
+                            <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.away_score ?? '-'}</span>
+                          </div>
                         </div>
-                      </div>
-                    </Link>
-                  ))}
+                      </Link>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -731,8 +743,6 @@ export default function ClassifichePage() {
             </div>
           </div>
         )}
-      </div>
-      <div className="px-3 sm:px-4">
       </div>
     </div>
   );
