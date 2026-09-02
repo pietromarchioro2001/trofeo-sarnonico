@@ -2,11 +2,44 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { ArrowLeft, Tv, Coins, Gift } from 'lucide-react';
 import { BarTVView, BarCassaView, BarPremiView } from '@/components/BarArea';
 import { createClient } from '@/lib/supabase/client';
 
 const BAR_PASSWORD = 'BAR2026';
+
+// ✅ COMPONENTE CALICI CHE BRINDANO
+const ClinkingGlasses = () => (
+  <svg width="120" height="100" viewBox="0 0 120 100" className="mx-auto">
+    {/* Calice sinistro */}
+    <g className="animate-clink-left">
+      <path d="M 20 10 L 20 50 Q 20 60 30 60 L 40 60 Q 50 60 50 50 L 50 10 Z" fill="#FFD700" stroke="#B8860B" strokeWidth="2" />
+      <path d="M 35 60 L 35 80 L 30 90 L 40 90 L 35 80 L 35 60" fill="#FFD700" stroke="#B8860B" strokeWidth="2" />
+      <ellipse cx="35" cy="10" rx="15" ry="3" fill="#FFF8DC" stroke="#B8860B" strokeWidth="1" />
+      {/* Schiuma */}
+      <ellipse cx="35" cy="15" rx="13" ry="2" fill="white" opacity="0.8" />
+    </g>
+    
+    {/* Calice destro */}
+    <g className="animate-clink-right">
+      <path d="M 70 10 L 70 50 Q 70 60 80 60 L 90 60 Q 100 60 100 50 L 100 10 Z" fill="#FFD700" stroke="#B8860B" strokeWidth="2" />
+      <path d="M 85 60 L 85 80 L 80 90 L 90 90 L 85 80 L 85 60" fill="#FFD700" stroke="#B8860B" strokeWidth="2" />
+      <ellipse cx="85" cy="10" rx="15" ry="3" fill="#FFF8DC" stroke="#B8860B" strokeWidth="1" />
+      {/* Schiuma */}
+      <ellipse cx="85" cy="15" rx="13" ry="2" fill="white" opacity="0.8" />
+    </g>
+    
+    {/* Stelle scintillanti */}
+    <g className="animate-sparkle">
+      <circle cx="60" cy="30" r="2" fill="white" />
+      <circle cx="55" cy="35" r="1.5" fill="white" />
+      <circle cx="65" cy="35" r="1.5" fill="white" />
+      <circle cx="58" cy="25" r="1" fill="white" />
+      <circle cx="62" cy="25" r="1" fill="white" />
+    </g>
+  </svg>
+);
 
 export default function BarPage() {
   const router = useRouter();
@@ -32,7 +65,7 @@ export default function BarPage() {
     }
   }, []);
 
-  // Fetch dati da Supabase e setup Realtime
+    // Fetch dati da Supabase e setup Realtime
   useEffect(() => {
     if (!isAuthenticated) return;
     
@@ -41,7 +74,6 @@ export default function BarPage() {
     const fetchInitialData = async () => {
       setLoading(true);
       try {
-        // 1. Recupera tutte le squadre
         const { data: teamsData, error: teamsError } = await supabase
           .from('teams')
           .select('id, name, logo_url')
@@ -56,7 +88,6 @@ export default function BarPage() {
           setTeamsMap(map);
         }
 
-        // 2. Recupera metri di birra iniziali
         const { data: metersData, error: metersError } = await supabase
           .from('bar_meters')
           .select('team_id, total_meters');
@@ -75,37 +106,37 @@ export default function BarPage() {
       }
     };
 
-    // Carica i dati una volta all'avvio
     fetchInitialData();
 
-    // ✅ LISTENER REALTIME: Aggiorna istantaneamente TUTTI i dispositivi collegati
+    // ✅ LISTENER REALTIME: Aggiorna metri E triggera celebrazione su tutti i dispositivi
     const channel = supabase
       .channel('bar-meters-realtime')
       .on(
         'postgres_changes',
         {
-          event: 'UPDATE', // Ascolta solo le modifiche ai record esistenti
+          event: 'UPDATE',
           schema: 'public',
           table: 'bar_meters',
         },
         (payload) => {
           const newTeamId = payload.new.team_id;
           const newMeters = payload.new.total_meters;
+          const teamName = teamsMap[newTeamId]?.name || '';
           
-          // Aggiorna immediatamente lo stato locale su tutti i client
-          setMeters(prev => ({
-            ...prev,
-            [newTeamId]: newMeters
-          }));
+          // Aggiorna i metri
+          setMeters(prev => ({ ...prev, [newTeamId]: newMeters }));
+          
+          // ✅ Triggera celebrazione su TUTTI i dispositivi (non solo chi clicca)
+          setCelebrationTeam(teamName);
+          setTimeout(() => setCelebrationTeam(null), 4000);
         }
       )
       .subscribe();
 
-    // Pulizia del canale quando il componente viene smontato o si fa logout
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, teamsMap]);
 
   // Listener ESC per tornare al menu dalla vista TV
   useEffect(() => {
@@ -265,6 +296,76 @@ export default function BarPage() {
   if (currentView === 'tv') {
     return (
       <div className="h-[100dvh] w-full overflow-hidden bg-gradient-to-br from-[#581C24] via-[#7A2D3A] to-[#581C24]">
+        {/*  Animazione di festeggiamento GLOBALE */}
+        {celebrationTeam && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            {/* Sfondo con bollicine animate */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#581C24]/95 via-[#7A2D3A]/95 to-[#581C24]/95 backdrop-blur-sm">
+              {/* Bollicine generate dinamicamente */}
+              {Array.from({ length: 20 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="bubble"
+                  style={{
+                    left: `${Math.random() * 100}%`,
+                    width: `${Math.random() * 30 + 10}px`,
+                    height: `${Math.random() * 30 + 10}px`,
+                    animationDuration: `${Math.random() * 3 + 2}s`,
+                    animationDelay: `${Math.random() * 2}s`,
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Popup ovale con animazione */}
+            <div 
+              className="relative bg-gradient-to-br from-[#FFD700] via-[#FFA500] to-[#FFD700] rounded-full p-1 shadow-2xl animate-[pop-in_0.5s_ease-out]"
+              style={{
+                width: 'min(90vw, 500px)',
+                height: 'min(90vw, 500px)',
+              }}
+            >
+              {/* Bordo decorativo */}
+              <div className="absolute inset-2 rounded-full border-4 border-white/50" />
+              
+              {/* Contenuto interno */}
+              <div className="absolute inset-4 rounded-full bg-gradient-to-br from-[#581C24] to-[#7A2D3A] flex flex-col items-center justify-center p-8 overflow-hidden">
+                {/* Titolo +1 METRO */}
+                <div className="text-center mb-4">
+                  <p className="text-5xl sm:text-6xl font-black text-[#FFD700] uppercase drop-shadow-lg">
+                    +1 METRO
+                  </p>
+                </div>
+
+                {/* Calici che brindano */}
+                <div className="mb-4">
+                  <ClinkingGlasses />
+                </div>
+
+                {/* Logo squadra (se disponibile) */}
+                {(() => {
+                  const team = Object.values(teamsMap).find(t => t.name === celebrationTeam);
+                  return team?.logo_url ? (
+                    <div className="w-32 h-32 sm:w-40 sm:h-40 bg-white rounded-full flex items-center justify-center border-4 border-[#FFD700] shadow-lg mb-4 overflow-hidden">
+                      <Image 
+                        src={team.logo_url} 
+                        alt={team.name} 
+                        width={160} 
+                        height={160} 
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : null;
+                })()}
+
+                {/* Nome squadra */}
+                <p className="text-4xl sm:text-5xl font-black text-white uppercase text-center drop-shadow-lg">
+                  {celebrationTeam}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
         <BarTVView 
           meters={meters} 
           teamsMap={teamsMap}
