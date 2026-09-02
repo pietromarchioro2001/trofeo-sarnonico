@@ -239,16 +239,17 @@ const formatDate = (dateStr: string | null) => {
   return d.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' }).replace('.', '');
 };
 
+// ✅ NUOVA ICONA GOL: Più pulita, moderna e geometrica
 const EventIcon = ({ type, size = 16 }: { type: string; size?: number }) => {
   if (type === 'GOAL') {
     return (
-      <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className="text-[#581C24]">
-        <circle cx="12" cy="12" r="10" fill="#1a1a1a"/>
-        <circle cx="12" cy="12" r="3" fill="white"/>
-        <path d="M12 2 L13 7 L12 12 L11 7 Z" fill="white"/>
-        <path d="M22 12 L17 13 L12 12 L17 11 Z" fill="white"/>
-        <path d="M12 22 L11 17 L12 12 L13 17 Z" fill="white"/>
-        <path d="M2 12 L7 11 L12 12 L7 13 Z" fill="white"/>
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#581C24]">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 2a10 10 0 0 1 10 10" />
+        <path d="M12 12 2.1 10.5" />
+        <path d="M12 12l9.9-1.5" />
+        <path d="M12 12l-6.5 8" />
+        <path d="M12 12l6.5 8" />
       </svg>
     );
   }
@@ -281,8 +282,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   const [winnerId, setWinnerId] = useState<string | null>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<MatchPlayerData | null>(null);
   const [showPenaltyPopup, setShowPenaltyPopup] = useState(false);
-  
-  // ✅ QUESTO DEVE ESSERE DENTRO IL COMPONENTE
   const [editingEvent, setEditingEvent] = useState<EventData | null>(null);
 
   // Fetch dati iniziali
@@ -924,16 +923,35 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                     <div key={player.id} onClick={() => setSelectedPlayer(player)} className="flex items-center gap-2 py-1.5 px-1 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors group">
                       <span className="font-bold text-xs text-gray-400 w-6 group-hover:text-[#581C24] transition-colors">{player.jersey_number || '-'}</span>
                       <span className="font-medium text-xs flex-1 truncate group-hover:text-[#581C24] transition-colors">{player.first_name?.[0] || ''}. {player.last_name}</span>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        {player.goals > 0 && <EventIcon type="GOAL" size={14} />}
-                        {player.yellow_cards > 0 && <EventIcon type="YELLOW_CARD" size={14} />}
-                        {player.red_cards > 0 && <EventIcon type="RED_CARD" size={14} />}
+                      
+                      {/* ✅ SEZIONE STICKER CON MOLTIPLICATORE */}
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {player.goals > 0 && (
+                          <div className="flex items-center gap-0.5">
+                            <EventIcon type="GOAL" size={14} />
+                            {player.goals > 1 && <span className="text-[9px] font-black text-[#581C24]">x{player.goals}</span>}
+                          </div>
+                        )}
+                        {player.yellow_cards > 0 && (
+                          <div className="flex items-center gap-0.5">
+                            <EventIcon type="YELLOW_CARD" size={14} />
+                            {player.yellow_cards > 1 && <span className="text-[9px] font-black text-yellow-700">x{player.yellow_cards}</span>}
+                          </div>
+                        )}
+                        {player.red_cards > 0 && (
+                          <div className="flex items-center gap-0.5">
+                            <EventIcon type="RED_CARD" size={14} />
+                            {player.red_cards > 1 && <span className="text-[9px] font-black text-red-700">x{player.red_cards}</span>}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
+              
               <div className="w-px bg-gray-300 self-stretch" />
+              
               <div className="flex-1">
                 <h3 className="text-[#581C24] font-bold text-sm uppercase tracking-wider mb-3 text-center border-b border-gray-200 pb-2">{match.away_team.name}</h3>
                 <div className="space-y-2">
@@ -941,10 +959,27 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                     <div key={player.id} onClick={() => setSelectedPlayer(player)} className="flex items-center gap-2 py-1.5 px-1 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors group">
                       <span className="font-bold text-xs text-gray-400 w-6 group-hover:text-[#581C24] transition-colors">{player.jersey_number || '-'}</span>
                       <span className="font-medium text-xs flex-1 truncate group-hover:text-[#581C24] transition-colors">{player.first_name?.[0] || ''}. {player.last_name}</span>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        {player.goals > 0 && <EventIcon type="GOAL" size={14} />}
-                        {player.yellow_cards > 0 && <EventIcon type="YELLOW_CARD" size={14} />}
-                        {player.red_cards > 0 && <EventIcon type="RED_CARD" size={14} />}
+                      
+                      {/* ✅ SEZIONE STICKER CON MOLTIPLICATORE */}
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {player.goals > 0 && (
+                          <div className="flex items-center gap-0.5">
+                            <EventIcon type="GOAL" size={14} />
+                            {player.goals > 1 && <span className="text-[9px] font-black text-[#581C24]">x{player.goals}</span>}
+                          </div>
+                        )}
+                        {player.yellow_cards > 0 && (
+                          <div className="flex items-center gap-0.5">
+                            <EventIcon type="YELLOW_CARD" size={14} />
+                            {player.yellow_cards > 1 && <span className="text-[9px] font-black text-yellow-700">x{player.yellow_cards}</span>}
+                          </div>
+                        )}
+                        {player.red_cards > 0 && (
+                          <div className="flex items-center gap-0.5">
+                            <EventIcon type="RED_CARD" size={14} />
+                            {player.red_cards > 1 && <span className="text-[9px] font-black text-red-700">x{player.red_cards}</span>}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -1005,7 +1040,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         </div>
       )}
 
-      {/* ✅ POPUP MODIFICA EVENTO (DENTRO IL COMPONENTE) */}
+      {/* ✅ POPUP MODIFICA EVENTO */}
       {isStaffMode && editingEvent && match && (
         <AdminEditEvent
           event={editingEvent}
