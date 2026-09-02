@@ -48,10 +48,10 @@ body {
     transform: translateX(0) rotate(0deg); 
   }
   50% { 
-    transform: translateX(40px) rotate(-25deg); /* Si muove E ruota insieme */
+    transform: translateX(38px) rotate(-25deg); /* Si muove E ruota insieme */
   }
   70% { 
-    transform: translateX(40px) rotate(-25deg); /* Mantiene posizione brindisi */
+    transform: translateX(38px) rotate(-25deg); /* Mantiene posizione brindisi */
   }
   100% { 
     transform: translateX(0) rotate(0deg); /* Ritorno fluido */
@@ -63,10 +63,10 @@ body {
     transform: translateX(0) rotate(0deg); 
   }
   50% { 
-    transform: translateX(-40px) rotate(25deg); /* Si muove E ruota insieme */
+    transform: translateX(-38px) rotate(25deg); /* Si muove E ruota insieme */
   }
   70% { 
-    transform: translateX(-40px) rotate(25deg); /* Mantiene posizione brindisi */
+    transform: translateX(-38px) rotate(25deg); /* Mantiene posizione brindisi */
   }
   100% { 
     transform: translateX(0) rotate(0deg); /* Ritorno fluido */

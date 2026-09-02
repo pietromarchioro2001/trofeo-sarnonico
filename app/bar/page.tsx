@@ -415,7 +415,7 @@ export default function BarPage() {
                 {/* ✅ Titolo NUOVO METRO! (più in alto) */}
                 <div className="text-center mb-2">
                   <p className="text-5xl sm:text-6xl font-black text-[#FFD700] uppercase drop-shadow-lg">
-                    NUOVO METRO!
+                    +1 METRO
                   </p>
                 </div>
 
