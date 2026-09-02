@@ -32,14 +32,14 @@ export default function BarPage() {
     }
   }, []);
 
-  // Fetch dati da Supabase
+  // Fetch dati da Supabase e setup Realtime
   useEffect(() => {
-    const fetchBarData = async () => {
-      if (!isAuthenticated) return;
-      
-      setLoading(true);
-      const supabase = createClient();
+    if (!isAuthenticated) return;
+    
+    const supabase = createClient();
 
+    const fetchInitialData = async () => {
+      setLoading(true);
       try {
         // 1. Recupera tutte le squadre
         const { data: teamsData, error: teamsError } = await supabase
@@ -51,14 +51,12 @@ export default function BarPage() {
 
         if (teamsData) {
           setTeams(teamsData);
-          
-          // Crea mappa per lookup veloce nella TV view
           const map: Record<string, { id: string; name: string; logo_url: string | null }> = {};
           teamsData.forEach(t => { map[t.id] = t; });
           setTeamsMap(map);
         }
 
-        // 2. Recupera metri di birra
+        // 2. Recupera metri di birra iniziali
         const { data: metersData, error: metersError } = await supabase
           .from('bar_meters')
           .select('team_id, total_meters');
@@ -70,7 +68,6 @@ export default function BarPage() {
           metersData.forEach(m => { metersMap[m.team_id] = m.total_meters; });
           setMeters(metersMap);
         }
-
       } catch (err) {
         console.error('Errore fetch bar:', err);
       } finally {
@@ -78,13 +75,36 @@ export default function BarPage() {
       }
     };
 
-    if (isAuthenticated) {
-      fetchBarData();
-      
-      // Polling ogni 5 secondi per aggiornamenti in tempo reale (solo vista TV)
-      const interval = setInterval(fetchBarData, 5000);
-      return () => clearInterval(interval);
-    }
+    // Carica i dati una volta all'avvio
+    fetchInitialData();
+
+    // ✅ LISTENER REALTIME: Aggiorna istantaneamente TUTTI i dispositivi collegati
+    const channel = supabase
+      .channel('bar-meters-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE', // Ascolta solo le modifiche ai record esistenti
+          schema: 'public',
+          table: 'bar_meters',
+        },
+        (payload) => {
+          const newTeamId = payload.new.team_id;
+          const newMeters = payload.new.total_meters;
+          
+          // Aggiorna immediatamente lo stato locale su tutti i client
+          setMeters(prev => ({
+            ...prev,
+            [newTeamId]: newMeters
+          }));
+        }
+      )
+      .subscribe();
+
+    // Pulizia del canale quando il componente viene smontato o si fa logout
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [isAuthenticated]);
 
   // Listener ESC per tornare al menu dalla vista TV
