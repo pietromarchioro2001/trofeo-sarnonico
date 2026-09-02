@@ -43,15 +43,16 @@ body {
 }
 
 /* Animazione calici che brindano - TRASLAZIONE + ROTAZIONE SIMULTANEE */
+/* Animazione calici che brindano - TRASLAZIONE + ROTAZIONE SIMULTANEE */
 @keyframes clink-left-mug {
   0% { 
     transform: translateX(0) rotate(0deg); 
   }
   50% { 
-    transform: translateX(35px) rotate(-30deg); /* Si muove E ruota insieme */
+    transform: translateX(40px) rotate(-25deg); /* Si muove E ruota insieme */
   }
   70% { 
-    transform: translateX(35px) rotate(-30deg); /* Mantiene posizione brindisi */
+    transform: translateX(40px) rotate(-25deg); /* Mantiene posizione brindisi */
   }
   100% { 
     transform: translateX(0) rotate(0deg); /* Ritorno fluido */
@@ -63,10 +64,10 @@ body {
     transform: translateX(0) rotate(0deg); 
   }
   50% { 
-    transform: translateX(-35px) rotate(30deg); /* Si muove E ruota insieme */
+    transform: translateX(-40px) rotate(25deg); /* Si muove E ruota insieme */
   }
   70% { 
-    transform: translateX(-35px) rotate(30deg); /* Mantiene posizione brindisi */
+    transform: translateX(-40px) rotate(25deg); /* Mantiene posizione brindisi */
   }
   100% { 
     transform: translateX(0) rotate(0deg); /* Ritorno fluido */
@@ -75,10 +76,12 @@ body {
 
 .animate-clink-left-mug {
   animation: clink-left-mug 3s ease-in-out 1;
+  display: inline-block; /* Necessario per le trasformazioni */
 }
 
 .animate-clink-right-mug {
   animation: clink-right-mug 3s ease-in-out 1;
+  display: inline-block; /* Necessario per le trasformazioni */
 }
 
 /* Bollicine di birra di sfondo */
