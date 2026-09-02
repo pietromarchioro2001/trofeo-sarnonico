@@ -239,25 +239,25 @@ const formatDate = (dateStr: string | null) => {
   return d.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' }).replace('.', '');
 };
 
-// ✅ NUOVA ICONA GOL: Più pulita, moderna e geometrica
+// ✅ NUOVA ICONA PALLONE: Più moderna, stilizzata e pulita
 const EventIcon = ({ type, size = 16 }: { type: string; size?: number }) => {
   if (type === 'GOAL') {
     return (
-      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#581C24]">
-        <circle cx="12" cy="12" r="10" />
-        <path d="M12 2a10 10 0 0 1 10 10" />
-        <path d="M12 12 2.1 10.5" />
-        <path d="M12 12l9.9-1.5" />
-        <path d="M12 12l-6.5 8" />
-        <path d="M12 12l6.5 8" />
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className="text-[#581C24]">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" />
+        <path d="M12 2 L14 7 L12 12 L10 7 Z" fill="currentColor" />
+        <path d="M22 12 L17 14 L12 12 L17 10 Z" fill="currentColor" />
+        <path d="M12 22 L10 17 L12 12 L14 17 Z" fill="currentColor" />
+        <path d="M2 12 L7 10 L12 12 L7 14 Z" fill="currentColor" />
+        <circle cx="12" cy="12" r="2.5" fill="currentColor" />
       </svg>
     );
   }
   if (type === 'YELLOW_CARD') {
-    return <div className="bg-yellow-400 rounded-sm border border-yellow-600" style={{ width: size * 0.75, height: size }} />;
+    return <div className="bg-yellow-400 rounded-sm border border-yellow-600 shadow-sm" style={{ width: size * 0.75, height: size }} />;
   }
   if (type === 'RED_CARD') {
-    return <div className="bg-red-600 rounded-sm border border-red-800" style={{ width: size * 0.75, height: size }} />;
+    return <div className="bg-red-600 rounded-sm border border-red-800 shadow-sm" style={{ width: size * 0.75, height: size }} />;
   }
   return null;
 };
