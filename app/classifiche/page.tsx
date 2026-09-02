@@ -56,6 +56,7 @@ interface PlayerData {
 }
 
 interface BarMeterData {
+  team_id: string;
   total_meters: number;
   team: {
     name: string;
@@ -249,6 +250,7 @@ export default function ClassifichePage() {
       }
 
       setBarMeters((metersData || []).map((m: any) => ({
+        team_id: m.team_id,
         total_meters: m.total_meters,
         team: meterTeamsData.find((t: any) => t.id === m.team_id) || null,
       })));
@@ -264,11 +266,13 @@ export default function ClassifichePage() {
     fetchData();
   }, [fetchData]);
 
-  // ✅ REALTIME: Aggiorna la classifica quando una partita cambia stato o punteggio
+  // ✅ REALTIME: Aggiorna classifica e coppa chiosco in tempo reale
   useEffect(() => {
     const supabase = createClient();
-    const channel = supabase
-      .channel('classifiche-live-updates')
+    
+    // 1. Canale per le partite (aggiorna classifica gironi e fase finale)
+    const matchesChannel = supabase
+      .channel('classifiche-matches-updates')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'matches' },
@@ -278,8 +282,30 @@ export default function ClassifichePage() {
       )
       .subscribe();
 
+    // 2. Canale per la Coppa Chiosco (aggiornamento istantaneo dei metri)
+    const barChannel = supabase
+      .channel('classifiche-bar-updates')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'bar_meters' },
+        (payload) => {
+          const updatedTeamId = payload.new.team_id;
+          const newMeters = payload.new.total_meters;
+          
+          // Aggiorna solo la squadra interessata e riordina la classifica
+          setBarMeters(prev => {
+            const updated = prev.map(item => 
+              item.team_id === updatedTeamId ? { ...item, total_meters: newMeters } : item
+            );
+            return updated.sort((a, b) => b.total_meters - a.total_meters);
+          });
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(matchesChannel);
+      supabase.removeChannel(barChannel);
     };
   }, [fetchData]);
 
