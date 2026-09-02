@@ -69,6 +69,7 @@ export default function HomePage() {
   // Stati Dati
   const [lastMatch, setLastMatch] = useState<MatchSummary | null>(null);
   const [nextMatch, setNextMatch] = useState<MatchSummary | null>(null);
+  const [recentMatches, setRecentMatches] = useState<MatchSummary[]>([]); // ✅ NUOVO
   const [standingsA, setStandingsA] = useState<StandingTeam[]>([]);
   const [standingsB, setStandingsB] = useState<StandingTeam[]>([]);
   const [topScorers, setTopScorers] = useState<TopScorer[]>([]);
@@ -133,7 +134,32 @@ export default function HomePage() {
         setNextMatch({ ...match, home_team: homeTeam as TeamData, away_team: awayTeam as TeamData });
       }
 
-      // 3. CLASSIFICHE (Calcolate al volo dalle partite finite)
+      // ✅ 3. ULTIME PARTITE (ultime 3 finite)
+      const { data: recentMatchesData } = await supabase
+        .from('matches')
+        .select('id, status, match_date, match_time, home_score, away_score, home_team_id, away_team_id')
+        .eq('status', 'FINITA')
+        .order('match_date', { ascending: false })
+        .order('match_time', { ascending: false })
+        .limit(3);
+
+      if (recentMatchesData && recentMatchesData.length > 0) {
+        const teamIds = Array.from(new Set(recentMatchesData.flatMap(m => [m.home_team_id, m.away_team_id])));
+        const { data: teamsData } = await supabase
+          .from('teams')
+          .select('id, name, logo_url')
+          .in('id', teamIds);
+        
+        const mappedMatches: MatchSummary[] = recentMatchesData.map(match => ({
+          ...match,
+          home_team: teamsData?.find(t => t.id === match.home_team_id) || null,
+          away_team: teamsData?.find(t => t.id === match.away_team_id) || null,
+        }));
+        
+        setRecentMatches(mappedMatches);
+      }
+
+      // 4. CLASSIFICHE (Calcolate al volo dalle partite finite)
       const { data: allMatches } = await supabase
         .from('matches')
         .select('home_team_id, away_team_id, home_score, away_score, status')
@@ -171,7 +197,7 @@ export default function HomePage() {
         setStandingsB(sorted.filter(t => t.girone === 'B').slice(0, 4));
       }
 
-      // 4. TOP SCORERS
+      // 5. TOP SCORERS
       const { data: scorersArray } = await supabase
         .from('players')
         .select('id, first_name, last_name, goals, team_id')
@@ -200,7 +226,7 @@ export default function HomePage() {
     } finally {
       setLoading(false);
     }
-  }, []); // Array vuoto perché usa solo setter di stato
+  }, []);
 
   // ✅ 2. Fetch iniziale (chiama la funzione definita sopra)
   useEffect(() => {
@@ -238,7 +264,7 @@ export default function HomePage() {
     return () => clearInterval(timer);
   }, [nextMatch]);
 
-  // ✅ 4. REALTIME: Aggiornamenti live su Home (ORA FUNZIONA!)
+  // ✅ 4. REALTIME: Aggiornamenti live su Home
   useEffect(() => {
     const supabase = createClient();
 
@@ -252,8 +278,7 @@ export default function HomePage() {
           table: 'matches',
         },
         () => {
-          console.log('🔄 Partita aggiornata, ricarico home...');
-          fetchHomeData(); // ✅ Ora può chiamarla perché è nello scope del componente
+          fetchHomeData();
         }
       )
       .subscribe();
@@ -268,8 +293,7 @@ export default function HomePage() {
           table: 'players',
         },
         () => {
-          console.log('⚽ Giocatore aggiornato, ricarico marcatori...');
-          fetchHomeData(); // ✅ Ora può chiamarla
+          fetchHomeData();
         }
       )
       .subscribe();
@@ -446,6 +470,53 @@ export default function HomePage() {
               </div>
             </div>
           </Link>
+        )}
+
+        {/* ✅ 4. ULTIME PARTITE (nuova sezione) */}
+        {recentMatches.length > 0 && (
+          <div>
+            <h3 className="text-[#581C24] font-bold text-sm uppercase tracking-wide mb-3">Ultime Partite</h3>
+            <div className="space-y-2">
+              {recentMatches.map((match) => (
+                <Link key={match.id} href={`/partite/${match.id}`} className="block">
+                  <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 flex-1">
+                        <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                          {match.home_team.logo_url ? (
+                            <Image src={match.home_team.logo_url} alt={match.home_team.name} width={32} height={32} className="object-cover" />
+                          ) : (
+                            <span className="text-[6px] text-gray-400">L</span>
+                          )}
+                        </div>
+                        <span className="font-bold text-xs text-[#000000] uppercase truncate">{match.home_team.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2 px-3">
+                        <span className="font-black text-sm text-[#581C24]">{match.home_score ?? '-'}</span>
+                        <span className="text-gray-400">-</span>
+                        <span className="font-black text-sm text-[#581C24]">{match.away_score ?? '-'}</span>
+                      </div>
+                      <div className="flex items-center gap-2 flex-1 justify-end">
+                        <span className="font-bold text-xs text-[#000000] uppercase truncate">{match.away_team.name}</span>
+                        <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                          {match.away_team.logo_url ? (
+                            <Image src={match.away_team.logo_url} alt={match.away_team.name} width={32} height={32} className="object-cover" />
+                          ) : (
+                            <span className="text-[6px] text-gray-400">L</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-center mt-2">
+                      <span className="text-[9px] text-gray-500">
+                        {new Date(match.match_date!).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })} • {match.match_time}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* GRIGLIA CLASSIFICHE E MARCATORI */}
