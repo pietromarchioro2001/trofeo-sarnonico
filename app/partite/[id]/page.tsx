@@ -882,7 +882,9 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                             {player.photo ? <Image src={player.photo} alt={player.name} width={56} height={56} className="object-cover" /> : <span className={`text-[10px] ${hasVoted ? 'text-white/70' : 'text-gray-400'}`}>FOTO</span>}
                           </div>
                           <div className="text-center w-full">
-                            <p className={`font-bold text-xs truncate w-full ${hasVoted ? 'text-white' : 'text-[#581C24]'}`}>{player.name}</p>
+                            <p className={`font-bold text-xs truncate w-full ${hasVoted ? 'text-white' : 'text-[#581C24]'}`}>
+                              {player.name.split(' ')[0][0]}. {player.name.split(' ')[1]?.toUpperCase() || ''}
+                            </p>
                             
                             {totalMvpVotes > 0 ? (
                               <>
