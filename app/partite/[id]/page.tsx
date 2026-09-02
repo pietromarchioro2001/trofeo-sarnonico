@@ -239,7 +239,7 @@ const formatDate = (dateStr: string | null) => {
   return d.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' }).replace('.', '');
 };
 
-// ✅ NUOVA ICONA PALLONE: Più moderna, stilizzata e pulita
+// ✅ NUOVA ICONA PALLONE: Identica a quella della Home (Marcatori)
 const EventIcon = ({ type, size = 16 }: { type: string; size?: number }) => {
   if (type === 'GOAL') {
     return (
@@ -502,6 +502,46 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     };
   }, [params.id]);
 
+  // ✅ REALTIME: Aggiorna voti MVP in tempo reale
+  useEffect(() => {
+    if (!match || mvpPlayers.length === 0 || isVotingClosed) return;
+    
+    const supabase = createClient();
+    
+    const votesChannel = supabase
+      .channel(`mvp-votes-${match.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'mvp_votes',
+          filter: `match_id=eq.${match.id}`,
+        },
+        async () => {
+          const { data: votesData } = await supabase
+            .from('mvp_votes')
+            .select('player_id')
+            .eq('match_id', match.id);
+          
+          const voteCounts: Record<string, number> = {};
+          (votesData || []).forEach((v: any) => {
+            voteCounts[v.player_id] = (voteCounts[v.player_id] || 0) + 1;
+          });
+          
+          setMvpPlayers(prev => prev.map(p => ({
+            ...p,
+            votes: voteCounts[p.id] || 0
+          })));
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(votesChannel);
+    };
+  }, [match?.id, mvpPlayers.length, isVotingClosed]);
+
   const handleSaveMvpCandidates = async (playerIds: string[]) => {
     if (!match) return;
     const supabase = createClient();
@@ -665,6 +705,9 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   const isLiveStatus = match.status === 'LIVE' || match.status === 'SUPP' || match.status === 'RIGORI';
   const isFinalPhase = match.phase !== 'GIRONI';
 
+  // ✅ Calcolo totale voti MVP per le percentuali (definito PRIMA del return)
+  const totalMvpVotes = mvpPlayers.reduce((sum, p) => sum + p.votes, 0);
+
   return (
     <div className="min-h-screen bg-[#F5F5F7] pb-24">
       {/* HEADER */}
@@ -778,7 +821,25 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                           </div>
                           <div className="text-center w-full">
                             <p className={`font-bold text-xs truncate w-full ${hasVoted ? 'text-white' : 'text-[#581C24]'}`}>{player.name}</p>
-                            <p className={`text-[10px] font-black mt-1 ${hasVoted ? 'text-white' : 'text-[#581C24]'}`}>{player.votes} {player.votes === 1 ? 'voto' : 'voti'}</p>
+                            
+                            {/* ✅ Calcolo e visualizzazione percentuale (ora totalMvpVotes è definito) */}
+                            {totalMvpVotes > 0 ? (
+                              <>
+                                <p className={`text-[10px] font-black mt-1 ${hasVoted ? 'text-white' : 'text-[#581C24]'}`}>
+                                  {Math.round((player.votes / totalMvpVotes) * 100)}%
+                                </p>
+                                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1 overflow-hidden">
+                                  <div 
+                                    className={`h-full rounded-full transition-all ${hasVoted ? 'bg-white' : 'bg-[#581C24]'}`}
+                                    style={{ width: `${(player.votes / totalMvpVotes) * 100}%` }}
+                                  />
+                                </div>
+                              </>
+                            ) : (
+                              <p className={`text-[10px] font-black mt-1 ${hasVoted ? 'text-white/70' : 'text-gray-400'}`}>
+                                In attesa di voti...
+                              </p>
+                            )}
                           </div>
                           <button onClick={() => handleVote(player.id)} disabled={isVotingClosed || hasVoted} className={`w-full text-[10px] font-bold px-3 py-1.5 rounded-md transition-colors flex items-center justify-center gap-1 ${hasVoted ? 'bg-white text-[#581C24] cursor-default' : isVotingClosed ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-[#581C24] text-white hover:bg-[#581C24]/90'}`}>
                             {hasVoted ? <>✓ VOTATO</> : <><Vote size={10} /> VOTA</>}
