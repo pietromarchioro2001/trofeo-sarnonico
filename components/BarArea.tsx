@@ -29,18 +29,6 @@ export function BarTVView({
 
   return (
     <div className="h-[100dvh] w-full overflow-hidden flex flex-col bg-gradient-to-br from-[#581C24] via-[#7A2D3A] to-[#581C24] text-white relative">
-      
-      {/* Animazione di festeggiamento */}
-      {celebrationTeam && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-gradient-to-br from-[#FFD700] to-[#FFA500] p-12 rounded-3xl shadow-2xl text-center animate-in zoom-in-50 duration-500 border-8 border-white">
-            <Sparkles className="w-24 h-24 text-white mx-auto mb-6 animate-pulse" />
-            <h2 className="text-6xl font-black text-[#581C24] uppercase mb-4">Nuovo Metro!</h2>
-            <p className="text-7xl font-black text-white drop-shadow-lg mb-6">{celebrationTeam}</p>
-            <Beer className="w-32 h-32 text-white mx-auto animate-bounce" />
-          </div>
-        </div>
-      )}
 
       {/* LAYOUT A 3 COLONNE: COPPA | Classifica | CHIOSCO */}
       <div className="flex-1 flex min-h-0 relative">
