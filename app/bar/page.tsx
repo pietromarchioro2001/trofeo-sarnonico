@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowLeft, Tv, Coins, Gift } from 'lucide-react';
@@ -65,7 +65,15 @@ export default function BarPage() {
     }
   }, []);
 
-    // Fetch dati da Supabase e setup Realtime
+  // Ref per accedere a teamsMap senza causare re-render dell'effetto
+  const teamsMapRef = useRef(teamsMap);
+  
+  // Aggiorna la ref ogni volta che teamsMap cambia
+  useEffect(() => {
+    teamsMapRef.current = teamsMap;
+  }, [teamsMap]);
+
+  // Fetch dati da Supabase e setup Realtime
   useEffect(() => {
     if (!isAuthenticated) return;
     
@@ -121,12 +129,14 @@ export default function BarPage() {
         (payload) => {
           const newTeamId = payload.new.team_id;
           const newMeters = payload.new.total_meters;
-          const teamName = teamsMap[newTeamId]?.name || '';
+          
+          // ✅ Usa la ref per ottenere il nome senza causare loop infinito
+          const teamName = teamsMapRef.current[newTeamId]?.name || 'Squadra';
           
           // Aggiorna i metri
           setMeters(prev => ({ ...prev, [newTeamId]: newMeters }));
           
-          // ✅ Triggera celebrazione su TUTTI i dispositivi (non solo chi clicca)
+          // Triggera celebrazione su TUTTI i dispositivi
           setCelebrationTeam(teamName);
           setTimeout(() => setCelebrationTeam(null), 4000);
         }
@@ -136,7 +146,7 @@ export default function BarPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [isAuthenticated, teamsMap]);
+  }, [isAuthenticated]); // ✅ RIMOSSO teamsMap dalle dipendenze!
 
   // Listener ESC per tornare al menu dalla vista TV
   useEffect(() => {
