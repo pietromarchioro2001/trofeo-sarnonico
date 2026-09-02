@@ -311,7 +311,6 @@ export default function BarPage() {
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             {/* Sfondo con bollicine animate */}
             <div className="absolute inset-0 bg-gradient-to-br from-[#581C24]/95 via-[#7A2D3A]/95 to-[#581C24]/95 backdrop-blur-sm">
-              {/* Bollicine generate dinamicamente */}
               {Array.from({ length: 20 }).map((_, i) => (
                 <div
                   key={i}
@@ -335,40 +334,38 @@ export default function BarPage() {
                 height: 'min(90vw, 500px)',
               }}
             >
-              {/* Bordo decorativo */}
               <div className="absolute inset-2 rounded-full border-4 border-white/50" />
               
-              {/* Contenuto interno */}
               <div className="absolute inset-4 rounded-full bg-gradient-to-br from-[#581C24] to-[#7A2D3A] flex flex-col items-center justify-center p-8 overflow-hidden">
-                {/* Titolo +1 METRO */}
-                <div className="text-center mb-4">
+                
+                {/* ✅ Titolo NUOVO METRO! (più in alto) */}
+                <div className="text-center mb-2">
                   <p className="text-5xl sm:text-6xl font-black text-[#FFD700] uppercase drop-shadow-lg">
-                    +1 METRO
+                    +1 METRO!
                   </p>
                 </div>
 
-                {/* Calici che brindano */}
-                <div className="mb-4">
-                  <ClinkingGlasses />
-                </div>
-
-                {/* Logo squadra (se disponibile) */}
+                {/* ✅ Logo squadra (al centro) */}
                 {(() => {
                   const team = Object.values(teamsMap).find(t => t.name === celebrationTeam);
                   return team?.logo_url ? (
-                    <div className="w-32 h-32 sm:w-40 sm:h-40 bg-white rounded-full flex items-center justify-center border-4 border-[#FFD700] shadow-lg mb-4 overflow-hidden">
+                    <div className="w-40 h-40 sm:w-48 sm:h-48 bg-white rounded-full flex items-center justify-center border-4 border-[#FFD700] shadow-lg mb-3 overflow-hidden">
                       <Image 
                         src={team.logo_url} 
                         alt={team.name} 
-                        width={160} 
-                        height={160} 
+                        width={192} 
+                        height={192} 
                         className="object-cover"
                       />
                     </div>
-                  ) : null;
+                  ) : (
+                    <div className="w-32 h-32 bg-white/20 rounded-full flex items-center justify-center mb-3">
+                      <span className="text-6xl">🍺</span>
+                    </div>
+                  );
                 })()}
 
-                {/* Nome squadra */}
+                {/* ✅ Nome squadra (in basso) */}
                 <p className="text-4xl sm:text-5xl font-black text-white uppercase text-center drop-shadow-lg">
                   {celebrationTeam}
                 </p>
