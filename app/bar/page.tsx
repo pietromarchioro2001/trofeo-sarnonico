@@ -129,16 +129,17 @@ export default function BarPage() {
         (payload) => {
           const newTeamId = payload.new.team_id;
           const newMeters = payload.new.total_meters;
-          
-          // ✅ Usa la ref per ottenere il nome senza causare loop infinito
-          const teamName = teamsMapRef.current[newTeamId]?.name || 'Squadra';
+          const previousMeters = meters[newTeamId] || 0;
           
           // Aggiorna i metri
           setMeters(prev => ({ ...prev, [newTeamId]: newMeters }));
           
-          // Triggera celebrazione su TUTTI i dispositivi
-          setCelebrationTeam(teamName);
-          setTimeout(() => setCelebrationTeam(null), 4000);
+          // ✅ Mostra celebrazione SOLO se il valore è aumentato (non su correzioni)
+          if (newMeters > previousMeters) {
+            const teamName = teamsMapRef.current[newTeamId]?.name || 'Squadra';
+            setCelebrationTeam(teamName);
+            setTimeout(() => setCelebrationTeam(null), 4000);
+          }
         }
       )
       .subscribe();
