@@ -243,11 +243,13 @@ const formatDate = (dateStr: string | null) => {
 const EventIcon = ({ type, size = 16 }: { type: string; size?: number }) => {
   if (type === 'GOAL') {
     return (
-      <div className="flex items-center justify-center" style={{ width: size, height: size }}>
-        <div className="w-full h-full rounded-full bg-[#581C24] flex items-center justify-center">
-          <span className="text-white text-[8px] font-black">⚽</span>
-        </div>
-      </div>
+      <svg width={size} height={size} viewBox="0 0 24 24" className="text-[#581C24]">
+        <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="2"/>
+        <path d="M12 6 L15 9 L12 12 L9 9 Z" fill="currentColor"/>
+        <path d="M12 12 L15 15 L12 18 L9 15 Z" fill="currentColor"/>
+        <path d="M6 12 L9 9 L12 12 L9 15 Z" fill="currentColor"/>
+        <path d="M18 12 L15 9 L12 12 L15 15 Z" fill="currentColor"/>
+      </svg>
     );
   }
   if (type === 'YELLOW_CARD') {
