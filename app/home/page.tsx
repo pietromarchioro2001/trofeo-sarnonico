@@ -479,40 +479,38 @@ export default function HomePage() {
           </Link>
         )}
 
-        {/* ✅ ULTIME PARTITE - 3 CARD PICCOLE */}
+        {/* ✅ ULTIME PARTITE - 3 CARD COMPATTE ORIZZONTALI */}
         {recentMatches.length > 0 && (
           <div>
             <h3 className="text-[#581C24] font-bold text-sm uppercase tracking-wide mb-3">Ultime Partite</h3>
-            <div className="space-y-2">
+            <div className="grid grid-cols-3 gap-2">
               {recentMatches.map((match) => (
                 <Link key={match.id} href={`/partite/${match.id}`} className="block">
-                  <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 flex-1">
-                        <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                          {match?.home_team?.logo_url ? (
-                            <Image src={match.home_team.logo_url} alt={match.home_team.name} width={32} height={32} className="object-cover" />
-                          ) : (
-                            <span className="text-[6px] text-gray-400">L</span>
-                          )}
-                        </div>
-                        <span className="font-bold text-xs text-[#000000] uppercase truncate">{match?.home_team?.name}</span>
+                  <div className="bg-white rounded-lg p-2 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                    {/* Squadra Casa */}
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <div className="w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        {match?.home_team?.logo_url ? (
+                          <Image src={match.home_team.logo_url} alt={match.home_team.name} width={20} height={20} className="object-cover" />
+                        ) : (
+                          <span className="text-[4px] text-gray-400">L</span>
+                        )}
                       </div>
-                      <div className="flex items-center gap-2 px-3">
-                        <span className="font-black text-sm text-[#581C24]">{match.home_score ?? '-'}</span>
-                        <span className="text-gray-400">-</span>
-                        <span className="font-black text-sm text-[#581C24]">{match.away_score ?? '-'}</span>
+                      <span className="font-bold text-[9px] text-[#000000] uppercase truncate flex-1">{match?.home_team?.name}</span>
+                      <span className="font-black text-xs text-[#581C24]">{match.home_score ?? '-'}</span>
+                    </div>
+                    
+                    {/* Squadra Ospite */}
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        {match?.away_team?.logo_url ? (
+                          <Image src={match.away_team.logo_url} alt={match.away_team.name} width={20} height={20} className="object-cover" />
+                        ) : (
+                          <span className="text-[4px] text-gray-400">L</span>
+                        )}
                       </div>
-                      <div className="flex items-center gap-2 flex-1 justify-end">
-                        <span className="font-bold text-xs text-[#000000] uppercase truncate">{match?.away_team?.name}</span>
-                        <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                          {match?.away_team?.logo_url ? (
-                            <Image src={match.away_team.logo_url} alt={match.away_team.name} width={32} height={32} className="object-cover" />
-                          ) : (
-                            <span className="text-[6px] text-gray-400">L</span>
-                          )}
-                        </div>
-                      </div>
+                      <span className="font-bold text-[9px] text-[#000000] uppercase truncate flex-1">{match?.away_team?.name}</span>
+                      <span className="font-black text-xs text-[#581C24]">{match.away_score ?? '-'}</span>
                     </div>
                   </div>
                 </Link>
