@@ -48,13 +48,13 @@ body {
     transform: translateX(0) rotate(0deg); 
   }
   30% { 
-    transform: translateX(35px) rotate(0deg); /* Traslazione verso destra */
+    transform: translateX(30px) rotate(0deg); /* Traslazione verso destra */
   }
   50% { 
-    transform: translateX(35px) rotate(-30deg); /* Rotazione al brindisi */
+    transform: translateX(25px) rotate(-25deg); /* Rotazione al brindisi */
   }
   70% { 
-    transform: translateX(35px) rotate(-30deg); /* Mantieni posizione */
+    transform: translateX(35px) rotate(-25deg); /* Mantieni posizione */
   }
   100% { 
     transform: translateX(0) rotate(0deg); /* Ritorno */
@@ -66,13 +66,13 @@ body {
     transform: translateX(0) rotate(0deg); 
   }
   30% { 
-    transform: translateX(-35px) rotate(0deg); /* Traslazione verso sinistra */
+    transform: translateX(-25px) rotate(0deg); /* Traslazione verso sinistra */
   }
   50% { 
-    transform: translateX(-35px) rotate(30deg); /* Rotazione al brindisi */
+    transform: translateX(-35px) rotate(25deg); /* Rotazione al brindisi */
   }
   70% { 
-    transform: translateX(-35px) rotate(30deg); /* Mantieni posizione */
+    transform: translateX(-35px) rotate(25deg); /* Mantieni posizione */
   }
   100% { 
     transform: translateX(0) rotate(0deg); /* Ritorno */
