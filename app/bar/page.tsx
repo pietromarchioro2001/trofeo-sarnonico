@@ -9,43 +9,79 @@ import { createClient } from '@/lib/supabase/client';
 
 const BAR_PASSWORD = 'BAR2026';
 
-// ✅ COMPONENTE CALICI DI BIRRA CHE BRINDANO
+// ✅ COMPONENTE CALICI DI BIRRA CHE BRINDANO (più grandi e stilizzati)
 const ClinkingBeerMugs = () => (
-  <div className="flex justify-center items-center gap-1 mb-3">
+  <div className="flex justify-center items-center gap-2 mt-4">
     {/* Calice sinistro */}
     <svg 
-      width="60" 
-      height="70" 
-      viewBox="0 0 60 70" 
+      width="100" 
+      height="110" 
+      viewBox="0 0 100 110" 
       className="animate-clink-left-mug origin-bottom"
     >
-      {/* Corpo del boccale */}
-      <rect x="10" y="20" width="35" height="40" rx="3" fill="#FFD700" stroke="#B8860B" strokeWidth="2" />
+      {/* Ombra */}
+      <ellipse cx="45" cy="105" rx="35" ry="5" fill="rgba(0,0,0,0.2)" />
+      
       {/* Manico */}
-      <path d="M 45 30 Q 55 30 55 45 Q 55 60 45 60" fill="none" stroke="#FFD700" strokeWidth="3" />
+      <path d="M 75 45 Q 95 45 95 65 Q 95 85 75 85" fill="none" stroke="#FFD700" strokeWidth="6" strokeLinecap="round" />
+      <path d="M 75 45 Q 92 45 92 65 Q 92 85 75 85" fill="none" stroke="#FFA500" strokeWidth="2" />
+      
+      {/* Corpo del boccale */}
+      <rect x="15" y="35" width="60" height="60" rx="5" fill="url(#beerGradient)" stroke="#B8860B" strokeWidth="3" />
+      
+      {/* Riflesso sul vetro */}
+      <rect x="25" y="40" width="8" height="50" rx="2" fill="rgba(255,255,255,0.3)" />
+      
       {/* Schiuma */}
-      <ellipse cx="27.5" cy="20" rx="18" ry="5" fill="white" opacity="0.9" />
-      <ellipse cx="25" cy="18" rx="5" ry="3" fill="white" opacity="0.8" />
-      <ellipse cx="32" cy="17" rx="4" ry="2.5" fill="white" opacity="0.8" />
-      <ellipse cx="20" cy="19" rx="3" ry="2" fill="white" opacity="0.7" />
+      <path d="M 15 35 Q 25 20 35 35 Q 45 18 55 35 Q 65 20 75 35" fill="white" stroke="#F0F0F0" strokeWidth="1" />
+      <circle cx="25" cy="28" r="4" fill="white" opacity="0.9" />
+      <circle cx="40" cy="25" r="5" fill="white" opacity="0.85" />
+      <circle cx="55" cy="27" r="4" fill="white" opacity="0.9" />
+      <circle cx="65" cy="30" r="3" fill="white" opacity="0.8" />
+      
+      {/* Gradiente birra */}
+      <defs>
+        <linearGradient id="beerGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style={{stopColor:'#FFD700', stopOpacity:0.9}} />
+          <stop offset="100%" style={{stopColor:'#FFA500', stopOpacity:0.95}} />
+        </linearGradient>
+      </defs>
     </svg>
 
     {/* Calice destro */}
     <svg 
-      width="60" 
-      height="70" 
-      viewBox="0 0 60 70" 
+      width="100" 
+      height="110" 
+      viewBox="0 0 100 110" 
       className="animate-clink-right-mug origin-bottom"
     >
-      {/* Corpo del boccale */}
-      <rect x="10" y="20" width="35" height="40" rx="3" fill="#FFD700" stroke="#B8860B" strokeWidth="2" />
+      {/* Ombra */}
+      <ellipse cx="45" cy="105" rx="35" ry="5" fill="rgba(0,0,0,0.2)" />
+      
       {/* Manico */}
-      <path d="M 45 30 Q 55 30 55 45 Q 55 60 45 60" fill="none" stroke="#FFD700" strokeWidth="3" />
+      <path d="M 75 45 Q 95 45 95 65 Q 95 85 75 85" fill="none" stroke="#FFD700" strokeWidth="6" strokeLinecap="round" />
+      <path d="M 75 45 Q 92 45 92 65 Q 92 85 75 85" fill="none" stroke="#FFA500" strokeWidth="2" />
+      
+      {/* Corpo del boccale */}
+      <rect x="15" y="35" width="60" height="60" rx="5" fill="url(#beerGradient2)" stroke="#B8860B" strokeWidth="3" />
+      
+      {/* Riflesso sul vetro */}
+      <rect x="25" y="40" width="8" height="50" rx="2" fill="rgba(255,255,255,0.3)" />
+      
       {/* Schiuma */}
-      <ellipse cx="27.5" cy="20" rx="18" ry="5" fill="white" opacity="0.9" />
-      <ellipse cx="25" cy="18" rx="5" ry="3" fill="white" opacity="0.8" />
-      <ellipse cx="32" cy="17" rx="4" ry="2.5" fill="white" opacity="0.8" />
-      <ellipse cx="20" cy="19" rx="3" ry="2" fill="white" opacity="0.7" />
+      <path d="M 15 35 Q 25 20 35 35 Q 45 18 55 35 Q 65 20 75 35" fill="white" stroke="#F0F0F0" strokeWidth="1" />
+      <circle cx="25" cy="28" r="4" fill="white" opacity="0.9" />
+      <circle cx="40" cy="25" r="5" fill="white" opacity="0.85" />
+      <circle cx="55" cy="27" r="4" fill="white" opacity="0.9" />
+      <circle cx="65" cy="30" r="3" fill="white" opacity="0.8" />
+      
+      {/* Gradiente birra */}
+      <defs>
+        <linearGradient id="beerGradient2" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style={{stopColor:'#FFD700', stopOpacity:0.9}} />
+          <stop offset="100%" style={{stopColor:'#FFA500', stopOpacity:0.95}} />
+        </linearGradient>
+      </defs>
     </svg>
   </div>
 );
@@ -318,7 +354,7 @@ export default function BarPage() {
       <div className="h-[100dvh] w-full overflow-hidden bg-gradient-to-br from-[#581C24] via-[#7A2D3A] to-[#581C24]">
         {/*  Animazione di festeggiamento GLOBALE */}
         {celebrationTeam && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 z-50 flex flex-col items-center justify-center">
             {/* Sfondo con bollicine animate */}
             <div className="absolute inset-0 bg-gradient-to-br from-[#581C24]/95 via-[#7A2D3A]/95 to-[#581C24]/95 backdrop-blur-sm">
               {Array.from({ length: 20 }).map((_, i) => (
@@ -351,7 +387,7 @@ export default function BarPage() {
                 {/* ✅ Titolo NUOVO METRO! (più in alto) */}
                 <div className="text-center mb-2">
                   <p className="text-5xl sm:text-6xl font-black text-[#FFD700] uppercase drop-shadow-lg">
-                    +1 METRO
+                    NUOVO METRO!
                   </p>
                 </div>
 
@@ -370,21 +406,20 @@ export default function BarPage() {
                     </div>
                   ) : (
                     <div className="w-32 h-32 bg-white/20 rounded-full flex items-center justify-center mb-3">
-                      <span className="text-6xl">🍺</span>
+                      <span className="text-6xl"></span>
                     </div>
                   );
                 })()}
 
-                {/* ✅ Nome squadra (in basso) */}
+                {/* ✅ Nome squadra (in basso nel cerchio) */}
                 <p className="text-4xl sm:text-5xl font-black text-white uppercase text-center drop-shadow-lg">
                   {celebrationTeam}
                 </p>
               </div>
-
-              {/* ✅ Calici che brindano */}
-              <ClinkingBeerMugs />
-
             </div>
+
+            {/* ✅ CALICI FUORI DAL CERCHIO, SOTTO */}
+            <ClinkingBeerMugs />
           </div>
         )}
         <BarTVView 

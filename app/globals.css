@@ -43,26 +43,27 @@ body {
 }
 
 /* Animazione calici che brindano - Boccali di birra */
+/* Animazione calici che brindano - UNA SOLA VOLTA */
 @keyframes clink-left-mug {
-  0%, 100% { transform: translateX(0) rotate(0deg); }
-  30% { transform: translateX(8px) rotate(-10deg); }
-  50% { transform: translateX(12px) rotate(-15deg); }
-  70% { transform: translateX(8px) rotate(-10deg); }
+  0% { transform: translateX(0) rotate(0deg); }
+  40% { transform: translateX(20px) rotate(-20deg); }
+  60% { transform: translateX(20px) rotate(-20deg); }
+  100% { transform: translateX(0) rotate(0deg); }
 }
 
 @keyframes clink-right-mug {
-  0%, 100% { transform: translateX(0) rotate(0deg); }
-  30% { transform: translateX(-8px) rotate(10deg); }
-  50% { transform: translateX(-12px) rotate(15deg); }
-  70% { transform: translateX(-8px) rotate(10deg); }
+  0% { transform: translateX(0) rotate(0deg); }
+  40% { transform: translateX(-20px) rotate(20deg); }
+  60% { transform: translateX(-20px) rotate(20deg); }
+  100% { transform: translateX(0) rotate(0deg); }
 }
 
 .animate-clink-left-mug {
-  animation: clink-left-mug 1.2s ease-in-out infinite;
+  animation: clink-left-mug 1.5s ease-in-out 1; /* 1 = esegue una volta sola */
 }
 
 .animate-clink-right-mug {
-  animation: clink-right-mug 1.2s ease-in-out infinite;
+  animation: clink-right-mug 1.5s ease-in-out 1; /* 1 = esegue una volta sola */
 }
 
 /* Bollicine di birra di sfondo */
