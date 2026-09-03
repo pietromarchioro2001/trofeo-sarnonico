@@ -917,8 +917,8 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
 
             {/* CRONACA */}
             <div>
-              <div className="flex items-center justify-between mb-4">
-                {isStaffMode && match.status !== 'FINITA' && (
+                            <div className="flex items-center justify-between mb-4">
+                {isStaffMode ? (
                   <>
                     <AdminAddEvent 
                       matchId={match.id}
@@ -930,8 +930,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                       teamSide="away"
                     />
                   </>
-                )}
-                {!isStaffMode && (
+                ) : (
                   <h2 className="text-[#581C24] font-bold text-base uppercase tracking-wider text-center w-full">Cronaca</h2>
                 )}
               </div>
