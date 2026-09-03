@@ -122,43 +122,27 @@ export default function HomePage() {
         .eq('status', 'PROGRAMMATA')
         .order('match_date', { ascending: true })
         .order('match_time', { ascending: true })
-        .limit(20);
+        .limit(1); // Prendiamo solo la prima in ordine cronologico
 
       if (nextError) {
         console.error('Errore fetch prossima partita:', nextError);
       }
 
-      console.log('🔍 Partite PROGRAMMATA trovate:', nextMatchArray?.length || 0);
-
       if (nextMatchArray && nextMatchArray.length > 0) {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const nextMatch = nextMatchArray[0];
+        console.log('✅ Prossima partita trovata:', nextMatch);
         
-        console.log(' Data oggi:', today.toISOString().split('T')[0]);
+        const { data: teamsData } = await supabase
+          .from('teams')
+          .select('id, name, logo_url')
+          .in('id', [nextMatch.home_team_id, nextMatch.away_team_id]);
         
-        // Trova la prima partita con data >= oggi
-        const futureMatch = nextMatchArray.find(match => {
-          if (!match.match_date) return false;
-          const matchDate = parseDate(match.match_date);
-          const isFuture = matchDate && matchDate.getTime() >= today.getTime();
-          console.log(`  Partita ${match.match_date} - Data parsata: ${matchDate} - Futuro: ${isFuture}`);
-          return isFuture;
-        });
+        const homeTeam = teamsData?.find(t => t.id === nextMatch.home_team_id) || null;
+        const awayTeam = teamsData?.find(t => t.id === nextMatch.away_team_id) || null;
         
-        if (futureMatch) {
-          console.log('✅ Prossima partita trovata:', futureMatch);
-          const { data: teamsData } = await supabase
-            .from('teams')
-            .select('id, name, logo_url')
-            .in('id', [futureMatch.home_team_id, futureMatch.away_team_id]);
-          
-          const homeTeam = teamsData?.find(t => t.id === futureMatch.home_team_id) || null;
-          const awayTeam = teamsData?.find(t => t.id === futureMatch.away_team_id) || null;
-          
-          setNextMatch({ ...futureMatch, home_team: homeTeam as TeamData, away_team: awayTeam as TeamData });
-        } else {
-          console.warn('⚠️ Nessuna partita futura trovata');
-        }
+        setNextMatch({ ...nextMatch, home_team: homeTeam as TeamData, away_team: awayTeam as TeamData });
+      } else {
+        console.warn('⚠️ Nessuna partita PROGRAMMATA trovata');
       }
 
       // 3. ULTIME PARTITE
