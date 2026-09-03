@@ -89,6 +89,7 @@ export default function ClassifichePage() {
   const { isStaffMode } = useAuth();
   const [activeTab, setActiveTab] = useState<'gironi' | 'fase-finale' | 'marcatori' | 'coppa-chiosco'>('gironi');
   const [phaseSubTab, setPhaseSubTab] = useState<'quarti' | 'semifinali' | 'finale'>('quarti');
+  const [hasFinalPhase, setHasFinalPhase] = useState(false);
   const searchParams = useSearchParams();
 
   const [standings, setStandings] = useState<{ gironeA: TeamStats[], gironeB: TeamStats[] }>({ gironeA: [], gironeB: [] });
@@ -206,6 +207,22 @@ export default function ClassifichePage() {
         away_team: phaseTeamsData.find((t: any) => t.id === m.away_team_id) || null,
       }));
       setPhaseMatches(mappedPhaseMatches);
+      // ✅ CONTROLLA SE ESISTE LA FASE FINALE
+      const hasFinal = mappedPhaseMatches.length > 0;
+      setHasFinalPhase(hasFinal);
+      
+      // Se c'è la fase finale, imposta come default
+      if (hasFinal) {
+        setActiveTab('fase-finale');
+        // Salva nel localStorage per le visite successive
+        localStorage.setItem('classifiche_default_tab', 'fase-finale');
+      } else {
+        // Altrimenti controlla se c'era un salvataggio precedente
+        const savedTab = localStorage.getItem('classifiche_default_tab');
+        if (savedTab === 'fase-finale') {
+          setActiveTab('fase-finale');
+        }
+      }
 
       // 3. MARCATORI
       const { data: allPlayers, error: playersError } = await supabase

@@ -1621,6 +1621,7 @@ export const AdminCreateQuarters: React.FC<AdminCreateQuartersProps> = ({ onSucc
       alert('Errore nel salvataggio dei quarti di finale.');
     } else {
       alert('✅ Quarti di Finale creati con successo! Le rose delle squadre sono ora bloccate.');
+      localStorage.setItem('classifiche_default_tab', 'fase-finale');
       setIsOpen(false);
       onSuccess();
     }
