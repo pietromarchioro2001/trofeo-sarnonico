@@ -121,21 +121,20 @@ export default function PartitePage() {
           const d = parseDate(m.match_date);
           if (d) {
             const dateStr = `${d.getDate()} ${d.toLocaleString('it-IT', { month: 'short' }).toUpperCase()}`;
-            // Conserva la data reale (oggetto Date) per poterla ordinare dopo
+            // Conserva la data reale per l'ordinamento
             if (!uniqueDatesMap.has(dateStr) || uniqueDatesMap.get(dateStr)! > d) {
               uniqueDatesMap.set(dateStr, d);
             }
           } else {
-            // Se non c'è data, la mettiamo alla fine
-            uniqueDatesMap.set('DA DEFINIRE', new Date(9999, 0, 1)); 
+            uniqueDatesMap.set('DA DEFINIRE', new Date(9999, 0, 1));
           }
         });
 
-        // Ordina le date basandosi sul valore temporale reale (crescente)
+        // Ordina le date basandosi sul valore temporale reale
         const dates = Array.from(uniqueDatesMap.entries())
-          .sort((a, b) => a[1].getTime() - b[1].getTime()) 
-          .map(entry => entry[0]); // Estrai solo la stringa formattata
-        
+          .sort((a, b) => a[1].getTime() - b[1].getTime())
+          .map(entry => entry[0]);
+
         setAvailableDates(dates);
         if (dates.length > 0 && !selectedDate) {
           setSelectedDate(dates[0]);
