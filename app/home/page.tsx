@@ -130,7 +130,6 @@ export default function HomePage() {
 
       if (nextMatchArray && nextMatchArray.length > 0) {
         const nextMatch = nextMatchArray[0];
-        console.log('✅ Prossima partita trovata:', nextMatch);
         
         const { data: teamsData } = await supabase
           .from('teams')

@@ -20,14 +20,6 @@ interface MatchData {
   away_team: { name: string; logo_url: string | null; girone?: 'A' | 'B' } | null;
 }
 
-// Funzione helper per parsare le date
-const parseDate = (dateStr: string | null) => {
-  if (!dateStr) return null;
-  const isoDate = dateStr.replace(' ', 'T');
-  const d = new Date(isoDate);
-  return isNaN(d.getTime()) ? null : d;
-};
-
 export default function PartitePage() {
   const { isStaffMode } = useAuth();
   const [selectedDate, setSelectedDate] = useState('');
@@ -35,7 +27,6 @@ export default function PartitePage() {
   const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // ✅ 1. AGGIUNTO: Stato "interruttore" per forzare il ricaricamento
   const [refreshKey, setRefreshKey] = useState(0);
   
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -56,7 +47,7 @@ export default function PartitePage() {
       const supabase = createClient();
 
       try {
-        // 1. Prendi le partite
+        // 1. Prendi le partite (già ordinate cronologicamente dal DB)
         const { data: matchesData, error: matchesError } = await supabase
           .from('matches')
           .select(`
@@ -114,26 +105,35 @@ export default function PartitePage() {
           };
         });
 
-        // 5. Estrai le date uniche e ORDINALE CRONOLOGICAMENTE
-        const uniqueDatesMap = new Map<string, Date>();
+        // 5. ✅ ESTRATTO DATE UNICHE MANTENENDO L'ORDINE DEL DATABASE
+        // Questo evita qualsiasi problema di fuso orario o ordinamento JavaScript errato
+        const dates: string[] = [];
+        const seenDates = new Set<string>();
 
         (mappedMatches || []).forEach(m => {
-          const d = parseDate(m.match_date);
-          if (d) {
-            const dateStr = `${d.getDate()} ${d.toLocaleString('it-IT', { month: 'short' }).toUpperCase()}`;
-            // Conserva la data reale per l'ordinamento
-            if (!uniqueDatesMap.has(dateStr) || uniqueDatesMap.get(dateStr)! > d) {
-              uniqueDatesMap.set(dateStr, d);
+          if (m.match_date) {
+            // Parsing sicuro della data (YYYY-MM-DD) per evitare shift di fuso orario
+            const datePart = m.match_date.split('T')[0]; 
+            const parts = datePart.split('-');
+            
+            if (parts.length === 3) {
+              // Creiamo la data usando anno, mese e giorno locali
+              const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+              const month = d.toLocaleString('it-IT', { month: 'short' }).toUpperCase();
+              const dateStr = `${d.getDate()} ${month}`;
+              
+              if (!seenDates.has(dateStr)) {
+                seenDates.add(dateStr);
+                dates.push(dateStr);
+              }
             }
           } else {
-            uniqueDatesMap.set('DA DEFINIRE', new Date(9999, 0, 1));
+            if (!seenDates.has('DA DEFINIRE')) {
+              seenDates.add('DA DEFINIRE');
+              dates.push('DA DEFINIRE');
+            }
           }
         });
-
-        // Ordina le date basandosi sul valore temporale reale
-        const dates = Array.from(uniqueDatesMap.entries())
-          .sort((a, b) => a[1].getTime() - b[1].getTime())
-          .map(entry => entry[0]);
 
         setAvailableDates(dates);
         if (dates.length > 0 && !selectedDate) {
@@ -152,24 +152,15 @@ export default function PartitePage() {
     fetchMatches();
   }, [refreshKey]);
 
-    // ==========================================
-  // ✅ REALTIME: Aggiornamenti live su Partite
-  // ==========================================
+  // REALTIME: Aggiornamenti live su Partite
   useEffect(() => {
     const supabase = createClient();
-
-    // Ascolta cambiamenti sulle partite
     const matchesChannel = supabase
       .channel('partite-matches')
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'matches',
-        },
+        { event: '*', schema: 'public', table: 'matches' },
         () => {
-          console.log('🔄 Partita aggiornata, ricarico lista...');
           setRefreshKey(k => k + 1);
         }
       )
@@ -180,12 +171,19 @@ export default function PartitePage() {
     };
   }, []);
 
-  // Filtra le partite per la data selezionata
+  // Filtra le partite per la data selezionata (con lo stesso parsing sicuro)
   const filteredMatches = matches.filter(match => {
-    const d = parseDate(match.match_date);
-    if (!d) return selectedDate === 'DA DEFINIRE';
-    const dateStr = `${d.getDate()} ${d.toLocaleString('it-IT', { month: 'short' }).toUpperCase()}`;
-    return dateStr === selectedDate;
+    if (!match.match_date) return selectedDate === 'DA DEFINIRE';
+    
+    const datePart = match.match_date.split('T')[0];
+    const parts = datePart.split('-');
+    if (parts.length === 3) {
+      const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      const month = d.toLocaleString('it-IT', { month: 'short' }).toUpperCase();
+      const dateStr = `${d.getDate()} ${month}`;
+      return dateStr === selectedDate;
+    }
+    return false;
   });
 
   if (loading) {
@@ -203,26 +201,17 @@ export default function PartitePage() {
     <div className="min-h-screen bg-[#F5F5F7] pb-24">
       {/* HEADER CON IMMAGINE CAMPO */}
       <div className="relative h-40 sm:h-48 w-full overflow-hidden">
-        <Image
-          src="/header-partite.jpg"
-          alt="Partite"
-          fill
-          className="object-cover"
-          priority
-        />
+        <Image src="/header-partite.jpg" alt="Partite" fill className="object-cover" priority />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-transparent" />
         
         {isStaffMode && (
           <div className="absolute top-20 left-0 z-30 px-4">
-            {/* ✅ 3. MODIFICATO: Passiamo la funzione che incrementa refreshKey al salvataggio */}
             <AdminPartiteButton onMatchCreated={() => setRefreshKey(k => k + 1)} />
           </div>
         )}
         
         <div className="absolute inset-0 flex items-start justify-center pt-6">
-          <h1 className="text-3xl font-black text-white uppercase tracking-wider drop-shadow-2xl font-oswald">
-            PARTITE
-          </h1>
+          <h1 className="text-3xl font-black text-white uppercase tracking-wider drop-shadow-2xl font-oswald">PARTITE</h1>
         </div>
       </div>
 
@@ -259,7 +248,6 @@ export default function PartitePage() {
                 <div className={`rounded-xl p-3.5 shadow-sm border transition-all hover:shadow-md ${
                   isLive ? 'bg-[#581C24] border-[#581C24] shadow-[0_0_20px_rgba(88,28,36,0.3)]' : 'bg-white border-gray-100'
                 }`}>
-                  {/* Header card */}
                   <div className="flex items-center justify-between mb-2.5">
                     {isLive && (
                       <span className="bg-red-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
@@ -271,17 +259,14 @@ export default function PartitePage() {
                     )}
                     {isScheduled && <span className="text-gray-500 text-sm font-bold">In programma</span>}
                     
-                    {/* Spazio vuoto al centro per bilanciare */}
                     <div className="flex-1" />
                     
-                    {/* Girone a destra */}
                     <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
                       isLive ? 'bg-white/20 text-white' : 'bg-gray-100 text-[#581C24]'
                     }`}>
                       {match.phase === 'GIRONI' ? `GIRONE ${match.home_team?.girone || 'A'}` : match.phase}
                     </span>
 
-                    {/* ✅ PULSANTE ELIMINA - Solo per staff */}
                     {isStaffMode && (
                       <AdminDeleteMatchButton 
                         matchId={match.id} 
@@ -290,9 +275,7 @@ export default function PartitePage() {
                     )}
                   </div>
 
-                  {/* Squadre e risultato */}
                   <div className="flex items-center justify-between">
-                    {/* Squadra Casa */}
                     <div className="flex flex-col items-center gap-1.5 flex-1">
                       <div className={`w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isLive ? 'bg-white/10' : 'bg-gray-100'}`}>
                         {match.home_team?.logo_url ? (
@@ -306,13 +289,10 @@ export default function PartitePage() {
                       </span>
                     </div>
 
-                    {/* Orario + Risultato allineati */}
                     <div className="px-3.5 flex flex-col items-center justify-center gap-1">
-                      {/* Orario spostato qui */}
                       <span className={`text-[10px] font-bold ${isLive ? 'text-white/90' : 'text-gray-500'}`}>
                         {match.match_time || '--:--'}
                       </span>
-                      {/* Risultato */}
                       <div className={`text-2xl font-black tracking-wider ${
                         isLive ? 'text-white animate-pulse' : isScheduled ? 'text-gray-400' : 'text-black'
                       }`}>
@@ -320,7 +300,6 @@ export default function PartitePage() {
                       </div>
                     </div>
 
-                    {/* Squadra Trasferta */}
                     <div className="flex flex-col items-center gap-1.5 flex-1">
                       <div className={`w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isLive ? 'bg-white/10' : 'bg-gray-100'}`}>
                         {match.away_team?.logo_url ? (
