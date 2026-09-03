@@ -502,20 +502,27 @@ export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, matchId 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (isOpen && matchId) {
-      const fetchPlayers = async () => {
-        const supabase = createClient();
-        const { data: match } = await supabase.from('matches').select('home_team_id, away_team_id').eq('id', matchId).single();
-        if (match) {
-          const teamId = teamSide === 'home' ? match.home_team_id : match.away_team_id;
-          const { data } = await supabase.from('players').select('id, first_name, last_name, jersey_number, goals, yellow_cards, red_cards').eq('team_id', teamId).order('jersey_number', { ascending: true, nullsFirst: false });
-          if (data) setPlayers(data);
-        }
-      };
-      fetchPlayers();
-    }
-  }, [isOpen, matchId, teamSide]);
+    useEffect(() => {
+      if (isOpen && matchId) {
+        const fetchPlayers = async () => {
+          const supabase = createClient();
+          const { data: match } = await supabase.from('matches').select('home_team_id, away_team_id').eq('id', matchId).single();
+          if (match) {
+            const teamId = teamSide === 'home' ? match.home_team_id : match.away_team_id;
+            
+            // ✅ MODIFICA QUI: .order('last_name', { ascending: true })
+            const { data } = await supabase
+              .from('players')
+              .select('id, first_name, last_name, jersey_number, goals, yellow_cards, red_cards')
+              .eq('team_id', teamId)
+              .order('last_name', { ascending: true });
+              
+            if (data) setPlayers(data);
+          }
+        };
+        fetchPlayers();
+      }
+    }, [isOpen, matchId, teamSide]);
 
   const handleSave = async () => {
     if (!eventType || !selectedPlayer || !minute) { setError('⚠️ Compila tutti i campi!'); return; }
@@ -1271,18 +1278,21 @@ export const AdminEditEvent: React.FC<AdminEditEventProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    const fetchPlayers = async () => {
-      const supabase = createClient();
-      const { data } = await supabase
-        .from('players')
-        .select('id, first_name, last_name, jersey_number, team_id, goals, yellow_cards, red_cards')
-        .in('team_id', [homeTeamId, awayTeamId])
-        .order('jersey_number', { ascending: true, nullsFirst: false });
-      if (data) setPlayers(data);
-    };
-    fetchPlayers();
-  }, [homeTeamId, awayTeamId]);
+    useEffect(() => {
+      const fetchPlayers = async () => {
+        const supabase = createClient();
+        
+        // ✅ MODIFICA QUI: .order('last_name', { ascending: true })
+        const { data } = await supabase
+          .from('players')
+          .select('id, first_name, last_name, jersey_number, team_id, goals, yellow_cards, red_cards')
+          .in('team_id', [homeTeamId, awayTeamId])
+          .order('last_name', { ascending: true });
+          
+        if (data) setPlayers(data);
+      };
+      fetchPlayers();
+    }, [homeTeamId, awayTeamId]);
 
   const handleSave = async () => {
     if (!eventType || !selectedPlayer || !minute) {
