@@ -486,7 +486,7 @@ export const AdminStopVoting: React.FC<AdminStopVotingProps> = ({ onStop, matchI
 };
 
 // ============================================================
-// AdminAddEvent REALE (CORRETTO - fa tutto lui)
+// AdminAddEvent REALE (CORRETTO - con gestione squalifiche)
 // ============================================================
 interface AdminAddEventProps { 
   teamSide: 'home' | 'away'; 
@@ -502,27 +502,24 @@ export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, matchId 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-      if (isOpen && matchId) {
-        const fetchPlayers = async () => {
-          const supabase = createClient();
-          const { data: match } = await supabase.from('matches').select('home_team_id, away_team_id').eq('id', matchId).single();
-          if (match) {
-            const teamId = teamSide === 'home' ? match.home_team_id : match.away_team_id;
-            
-            // ✅ MODIFICA QUI: .order('last_name', { ascending: true })
-            const { data } = await supabase
-              .from('players')
-              .select('id, first_name, last_name, jersey_number, goals, yellow_cards, red_cards')
-              .eq('team_id', teamId)
-              .order('last_name', { ascending: true });
-              
-            if (data) setPlayers(data);
-          }
-        };
-        fetchPlayers();
-      }
-    }, [isOpen, matchId, teamSide]);
+  useEffect(() => {
+    if (isOpen && matchId) {
+      const fetchPlayers = async () => {
+        const supabase = createClient();
+        const { data: match } = await supabase.from('matches').select('home_team_id, away_team_id').eq('id', matchId).single();
+        if (match) {
+          const teamId = teamSide === 'home' ? match.home_team_id : match.away_team_id;
+          const { data } = await supabase
+            .from('players')
+            .select('id, first_name, last_name, jersey_number, goals, yellow_cards, red_cards, is_suspended')
+            .eq('team_id', teamId)
+            .order('last_name', { ascending: true });
+          if (data) setPlayers(data);
+        }
+      };
+      fetchPlayers();
+    }
+  }, [isOpen, matchId, teamSide]);
 
   const handleSave = async () => {
     if (!eventType || !selectedPlayer || !minute) { setError('⚠️ Compila tutti i campi!'); return; }
@@ -530,14 +527,13 @@ export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, matchId 
     try {
       const supabase = createClient();
       
-      // Prendi dati partita e team
-      const { data: match } = await supabase.from('matches').select('home_team_id, away_team_id, home_score, away_score').eq('id', matchId).single();
+      const { data: match } = await supabase.from('matches').select('id, home_team_id, away_team_id, home_score, away_score').eq('id', matchId).single();
       if (!match) throw new Error('Partita non trovata');
 
       const teamId = teamSide === 'home' ? match.home_team_id : match.away_team_id;
       const dbEventType = eventType === 'goal' ? 'GOAL' : eventType === 'yellow' ? 'YELLOW_CARD' : 'RED_CARD';
       
-      // 1. INSERT EVENTO (una sola volta!)
+      // 1. INSERT EVENTO
       const { error: eventError } = await supabase.from('match_events').insert({
         match_id: matchId,
         player_id: selectedPlayer,
@@ -547,17 +543,61 @@ export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, matchId 
       });
       if (eventError) throw eventError;
 
-      // 2. AGGIORNA GOALS/CARTELLINI DEL GIOCATORE
       const player = players.find(p => p.id === selectedPlayer);
+      let shouldSuspend = false;
+
+      // 2. LOGICA SQUALIFICHE
+      if (eventType === 'yellow') {
+        // Controllo doppio giallo nella STESSA partita
+        const { data: matchEvents } = await supabase
+          .from('match_events')
+          .select('event_type')
+          .eq('match_id', matchId)
+          .eq('player_id', selectedPlayer);
+        
+        const yellowsInThisMatch = (matchEvents || []).filter(e => e.event_type === 'YELLOW_CARD').length;
+        
+        if (yellowsInThisMatch >= 1) {
+          shouldSuspend = true; // Doppio giallo
+          // Aggiungi automaticamente RED_CARD
+          await supabase.from('match_events').insert({
+            match_id: matchId,
+            player_id: selectedPlayer,
+            event_type: 'RED_CARD',
+            minute: parseInt(minute),
+            team_id: teamId
+          });
+        }
+
+        // Controllo 3° giallo accumulato
+        const totalYellows = (player?.yellow_cards || 0) + 1;
+        if (totalYellows >= 3) {
+          shouldSuspend = true;
+        }
+      } 
+      
+      if (eventType === 'red') {
+        shouldSuspend = true;
+      }
+
+      // 3. APPLICA SQUALIFICA
+      if (shouldSuspend) {
+        await supabase.from('players').update({ is_suspended: true }).eq('id', selectedPlayer);
+      }
+
+      // 4. AGGIORNA STATISTICHE
       if (player) {
         const updates: any = {};
         if (eventType === 'goal') updates.goals = (player.goals || 0) + 1;
         if (eventType === 'yellow') updates.yellow_cards = (player.yellow_cards || 0) + 1;
         if (eventType === 'red') updates.red_cards = (player.red_cards || 0) + 1;
-        await supabase.from('players').update(updates).eq('id', selectedPlayer);
+        
+        if (Object.keys(updates).length > 0) {
+          await supabase.from('players').update(updates).eq('id', selectedPlayer);
+        }
       }
 
-      // 3. AGGIORNA PUNTEGGIO (se gol)
+      // 5. AGGIORNA PUNTEGGIO
       if (eventType === 'goal') {
         const currentScore = teamSide === 'home' ? match.home_score : match.away_score;
         const newScore = (currentScore || 0) + 1;
@@ -566,7 +606,6 @@ export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, matchId 
         }).eq('id', matchId);
       }
 
-      // ✅ CHIUDI POPUP SENZA CHIAMARE onAddEvent (il realtime aggiorna tutto)
       setIsOpen(false); 
       setEventType(''); 
       setSelectedPlayer(''); 
@@ -580,12 +619,20 @@ export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, matchId 
     }
   };
 
-  const handleClose = () => { setIsOpen(false); setEventType(''); setSelectedPlayer(''); setMinute(''); setError(''); };
+  const handleClose = () => { 
+    setIsOpen(false); 
+    setEventType(''); 
+    setSelectedPlayer(''); 
+    setMinute(''); 
+    setError(''); 
+  };
 
   return (
     <>
       <button onClick={() => setIsOpen(true)} className="text-[10px] font-bold text-[#581C24] bg-[#581C24]/10 px-3 py-1.5 rounded-full border border-[#581C24]/20 hover:bg-[#581C24]/20 transition-colors flex items-center gap-1">
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+        </svg>
         EVENTO
       </button>
       {isOpen && (
@@ -593,7 +640,9 @@ export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, matchId 
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="bg-[#581C24] p-3 flex items-center justify-between">
               <h2 className="text-base font-black text-white uppercase tracking-wider">Evento - {teamSide === 'home' ? 'Casa' : 'Trasferta'}</h2>
-              <button onClick={handleClose} className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/20 transition-colors"><X size={20} /></button>
+              <button onClick={handleClose} className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/20 transition-colors">
+                <X size={20} />
+              </button>
             </div>
             <div className="p-4 space-y-3">
               <div>
@@ -618,13 +667,25 @@ export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, matchId 
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-600 uppercase mb-2">Minuto</label>
-                <input type="number" min="1" max="120" value={minute} onChange={(e) => setMinute(e.target.value)} placeholder="Es: 45" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm" />
+                <input 
+                  type="number" 
+                  min="1" 
+                  max="120" 
+                  value={minute} 
+                  onChange={(e) => setMinute(e.target.value)} 
+                  placeholder="Es: 45" 
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm" 
+                />
               </div>
               {error && <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs font-bold text-center">{error}</div>}
             </div>
             <div className="p-3 border-t border-gray-200 flex gap-2">
               <button onClick={handleClose} className="flex-1 px-3 py-2 border border-gray-300 text-gray-700 font-bold rounded-lg hover:bg-gray-50 transition-colors text-xs">Annulla</button>
-              <button onClick={handleSave} disabled={loading} className="flex-1 px-3 py-2 bg-[#581C24] text-white font-bold rounded-lg hover:bg-[#581C24]/90 transition-colors text-xs shadow-md disabled:opacity-50">
+              <button 
+                onClick={handleSave} 
+                disabled={loading} 
+                className="flex-1 px-3 py-2 bg-[#581C24] text-white font-bold rounded-lg hover:bg-[#581C24]/90 transition-colors text-xs shadow-md disabled:opacity-50"
+              >
                 {loading ? 'Salvataggio...' : 'SALVA'}
               </button>
             </div>

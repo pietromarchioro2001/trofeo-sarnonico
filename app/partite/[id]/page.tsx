@@ -697,12 +697,28 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     setMatch({ ...match, status: 'LIVE' });
   };
 
-  const handleEndMatch = async () => {
-    if (!match || !confirm('Terminare la partita?')) return;
-    const supabase = createClient();
-    await supabase.from('matches').update({ status: 'FINITA' }).eq('id', match.id);
-    setMatch({ ...match, status: 'FINITA' });
-  };
+    const handleEndMatch = async () => {
+      if (!match || !confirm('Terminare la partita? Verranno sbloccati i giocatori squalificati di queste squadre.')) return;
+      const supabase = createClient();
+      
+      try {
+        // 1. Termina la partita
+        await supabase.from('matches').update({ status: 'FINITA' }).eq('id', match.id);
+        setMatch({ ...match, status: 'FINITA' });
+
+        // 2. RESET SQUALIFICHE per le due squadre che hanno appena giocato
+        // (Chi ha giocato questa partita, ha "scontato" la squalifica)
+        await supabase
+          .from('players')
+          .update({ is_suspended: false })
+          .in('team_id', [match.home_team.id, match.away_team.id])
+          .eq('is_suspended', true);
+
+      } catch (err) {
+        console.error('Errore termine partita:', err);
+        alert('Errore nel salvataggio');
+      }
+    };
 
   const handleExtraTime = async () => {
     if (!match || !confirm('Passare ai tempi supplementari?')) return;

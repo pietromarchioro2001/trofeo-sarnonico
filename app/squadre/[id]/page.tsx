@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, X } from 'lucide-react';
+import { ArrowLeft, X, AlertTriangle } from 'lucide-react'; // ✅ Aggiunto AlertTriangle
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { createClient } from '@/lib/supabase/client';
@@ -72,10 +72,10 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
 
         if (teamError) throw teamError;
 
-        // 2. Dati giocatori
+        // 2. Dati giocatori (✅ Aggiunto is_suspended alla select)
         const { data: players, error: playersError } = await supabase
           .from('players')
-          .select('id, first_name, last_name, jersey_number, birth_date, photo_url, goals, yellow_cards, red_cards, mvp_wins')
+          .select('id, first_name, last_name, jersey_number, birth_date, photo_url, goals, yellow_cards, red_cards, mvp_wins, is_suspended')
           .eq('team_id', teamId)
           .order('jersey_number', { ascending: true, nullsFirst: false });
 
@@ -112,7 +112,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
           stats.dr = stats.gf - stats.gs;
         }
 
-        // 4. ✅ CONTROLLO BLOCCO TORNEO (Spostato DENTRO la funzione async)
+        // 4. Controllo blocco torneo
         const { count: finalPhaseCount } = await supabase
           .from('matches')
           .select('*', { count: 'exact', head: true })
@@ -120,7 +120,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
 
         const isTournamentLocked = (finalPhaseCount || 0) > 0;
 
-        // 5. Mappa giocatori
+        // 5. Mappa giocatori (✅ Aggiunto isSuspended al mapping)
         const mappedPlayers = (players || []).map((p: any) => ({
           id: p.id,
           number: p.jersey_number || '-',
@@ -133,6 +133,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
           yellow: p.yellow_cards || 0,
           red: p.red_cards || 0,
           mvp: p.mvp_wins || 0,
+          isSuspended: p.is_suspended || false, // ✅ Nuovo campo
         }));
 
         // 6. Salva dati
@@ -144,7 +145,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
           teamPhoto: team.team_photo_url || '',
           stats: stats,
           players: mappedPlayers,
-          isTournamentLocked: isTournamentLocked, // <-- Ora funziona correttamente
+          isTournamentLocked: isTournamentLocked,
         });
 
       } catch (err) {
@@ -251,7 +252,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
         lastName: data.last_name,
         birthDate: data.birth_date || '',
         photo: data.photo_url || '',
-        goals: 0, yellow: 0, red: 0, mvp: 0,
+        goals: 0, yellow: 0, red: 0, mvp: 0, isSuspended: false,
       };
       setTeamData((prev: any) => ({ ...prev, players: [...prev.players, mappedPlayer] }));
       alert('✅ Giocatore aggiunto con successo!');
@@ -354,7 +355,6 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     }
   };
 
-  // ✅ Il capitano ha i permessi SOLO se è la sua squadra E il torneo NON è bloccato
   const isMyTeam = isCaptain && captainTeamId === params.id && !teamData?.isTournamentLocked;
 
   if (loading) {
@@ -432,7 +432,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
         )}
       </div>
 
-      {/* ✅ AREA CAPITANO / BLOCCO ROSA AGGIORNATA */}
+      {/* AREA CAPITANO / BLOCCO ROSA */}
       {isCaptain && captainTeamId === params.id && (
         <div className="px-4 mb-6">
           {teamData?.isTournamentLocked ? (
@@ -532,9 +532,23 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
                   <div className="w-6 text-center flex-shrink-0">
                     <span className="text-xs font-bold text-gray-500">{player.number}</span>
                   </div>
-                  <div className="flex-1 pl-2">
-                    <span className="font-bold text-[11px] text-[#581C24] uppercase truncate block">{player.name}</span>
+                  
+                  {/* ✅ SEZIONE NOME CON TRIANGOLO DI AVVISO (Layout inalterato grazie a flex e flex-shrink-0) */}
+                  <div className="flex-1 pl-2 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      {player.isSuspended && (
+                        <div title="Giocatore squalificato per la prossima partita">
+                          <AlertTriangle 
+                            className="w-4 h-4 text-red-600 flex-shrink-0" 
+                          />
+                        </div>
+                      )}
+                      <span className="font-bold text-[11px] text-[#581C24] uppercase truncate block">
+                        {player.name}
+                      </span>
+                    </div>
                   </div>
+                  
                   <div className="w-6 text-center flex-shrink-0"><span className="text-xs font-bold text-gray-800">{player.goals}</span></div>
                   <div className="w-6 text-center flex-shrink-0"><span className="text-xs font-bold text-gray-800">{player.yellow}</span></div>
                   <div className="w-7 text-center flex-shrink-0"><span className="text-xs font-bold text-gray-800">{player.red}</span></div>
@@ -579,28 +593,21 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
               </div>
             </div>
             <div className="p-6 space-y-4">
-              {/* GOL */}
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-[#581C24]/10 rounded-full flex items-center justify-center flex-shrink-0"><EventIcon type="GOAL" size={20} /></div>
                 <div className="flex-1"><p className="text-[#581C24] font-bold uppercase text-sm">GOL</p></div>
                 <p className="text-2xl font-black text-[#581C24]">{selectedPlayer.goals ?? 0}</p>
               </div>
-              
-              {/* MVP */}
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-[#581C24]/10 rounded-full flex items-center justify-center flex-shrink-0"><svg className="w-5 h-5 text-[#581C24]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>
                 <div className="flex-1"><p className="text-[#581C24] font-bold uppercase text-sm">MVP</p></div>
                 <p className="text-2xl font-black text-[#581C24]">{selectedPlayer.mvp ?? 0}</p>
               </div>
-              
-              {/* AMMONIZIONI */}
               <div className="flex items-center gap-3">
                 <div className="w-6 h-8 bg-yellow-400 rounded-sm flex-shrink-0 border border-yellow-600" />
                 <div className="flex-1"><p className="text-[#581C24] font-bold uppercase text-sm">AMMONIZIONI</p></div>
                 <p className="text-2xl font-black text-[#581C24]">{selectedPlayer.yellow ?? 0}</p>
               </div>
-              
-              {/* ESPULSIONI */}
               <div className="flex items-center gap-3">
                 <div className="w-6 h-8 bg-red-600 rounded-sm flex-shrink-0 border border-red-800" />
                 <div className="flex-1"><p className="text-[#581C24] font-bold uppercase text-sm">ESPULSIONI</p></div>

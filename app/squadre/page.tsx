@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useAuth } from '@/lib/AuthContext';
 import { AdminSquadreButton } from '@/components/AdminButtons';
 import { createClient } from '@/lib/supabase/client';
+import { AlertTriangle } from 'lucide-react';
 
 // Tipo per le squadre da Supabase
 interface Team {
@@ -12,6 +13,7 @@ interface Team {
   name: string;
   girone: 'A' | 'B';
   logo_url: string | null;
+  hasSuspendedPlayers: boolean; // ✅ Nuovo flag per l'avviso
 }
 
 export default function SquadrePage() {
@@ -24,13 +26,31 @@ export default function SquadrePage() {
     const fetchTeams = async () => {
       try {
         const supabase = createClient();
+        
+        // ✅ Query aggiornata per includere lo stato di squalifica dei giocatori
         const { data, error } = await supabase
           .from('teams')
-          .select('id, name, girone, logo_url')
+          .select(`
+            id, 
+            name, 
+            girone, 
+            logo_url,
+            players (is_suspended)
+          `)
           .order('name', { ascending: true });
 
         if (error) throw error;
-        setTeams(data || []);
+
+        // ✅ Mappiamo i dati per creare il flag hasSuspendedPlayers
+        const mappedTeams: Team[] = (data || []).map((team: any) => ({
+          id: team.id,
+          name: team.name,
+          girone: team.girone,
+          logo_url: team.logo_url,
+          hasSuspendedPlayers: Array.isArray(team.players) && team.players.some((p: any) => p.is_suspended === true)
+        }));
+
+        setTeams(mappedTeams);
       } catch (err: any) {
         setError(err.message || 'Errore nel caricamento squadre');
         console.error('Errore fetch teams:', err);
@@ -126,13 +146,20 @@ export default function SquadrePage() {
                   )}
                 </div>
                 
-                {/* Nome squadra */}
-                <span className="font-bold text-sm text-[#581C24] uppercase tracking-wide flex-1">
-                  {team.name}
-                </span>
+                {/* ✅ Nome squadra e eventuale avviso (senza alterare il layout) */}
+                <div className="flex items-center gap-2 flex-1">
+                  <span className="font-bold text-sm text-[#581C24] uppercase tracking-wide truncate">
+                    {team.name}
+                  </span>
+                  {team.hasSuspendedPlayers && (
+                    <AlertTriangle 
+                      className="w-4 h-4 text-red-600 flex-shrink-0" 
+                    />
+                  )}
+                </div>
                 
                 {/* Girone badge */}
-                <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded flex-shrink-0">
                   {team.girone}
                 </span>
                 
