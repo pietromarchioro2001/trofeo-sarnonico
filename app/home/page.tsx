@@ -8,6 +8,14 @@ import { useAuth } from '@/lib/AuthContext';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
+// Funzione helper per parsare le date
+const parseDate = (dateStr: string | null) => {
+  if (!dateStr) return null;
+  const isoDate = dateStr.replace(' ', 'T');
+  const d = new Date(isoDate);
+  return isNaN(d.getTime()) ? null : d;
+};
+
 // Tipi dati semplificati per la home
 interface TeamData {
   id: string;
@@ -107,27 +115,36 @@ export default function HomePage() {
         setLastMatch({ ...match, home_team: homeTeam as TeamData, away_team: awayTeam as TeamData });
       }
 
-      // 2. PROSSIMA PARTITA
+            // 2. PROSSIMA PARTITA
       const { data: nextMatchArray } = await supabase
         .from('matches')
         .select('id, status, match_date, match_time, home_score, away_score, home_team_id, away_team_id')
         .eq('status', 'PROGRAMMATA')
-        .gte('match_date', today)
         .order('match_date', { ascending: true })
         .order('match_time', { ascending: true })
-        .limit(1);
-      
+        .limit(10); // Prendiamo 10 per poter filtrare quella futura
+
       if (nextMatchArray && nextMatchArray.length > 0) {
-        const match = nextMatchArray[0];
-        const { data: teamsData } = await supabase
-          .from('teams')
-          .select('id, name, logo_url')
-          .in('id', [match.home_team_id, match.away_team_id]);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
         
-        const homeTeam = teamsData?.find(t => t.id === match.home_team_id) || null;
-        const awayTeam = teamsData?.find(t => t.id === match.away_team_id) || null;
+        // Trova la prima partita che ha una data >= a oggi
+        const futureMatch = nextMatchArray.find(match => {
+          const matchDate = parseDate(match.match_date);
+          return matchDate && matchDate >= today;
+        });
         
-        setNextMatch({ ...match, home_team: homeTeam as TeamData, away_team: awayTeam as TeamData });
+        if (futureMatch) {
+          const { data: teamsData } = await supabase
+            .from('teams')
+            .select('id, name, logo_url')
+            .in('id', [futureMatch.home_team_id, futureMatch.away_team_id]);
+          
+          const homeTeam = teamsData?.find(t => t.id === futureMatch.home_team_id) || null;
+          const awayTeam = teamsData?.find(t => t.id === futureMatch.away_team_id) || null;
+          
+          setNextMatch({ ...futureMatch, home_team: homeTeam as TeamData, away_team: awayTeam as TeamData });
+        }
       }
 
       // 3. ULTIME PARTITE

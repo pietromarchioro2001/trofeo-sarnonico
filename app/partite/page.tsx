@@ -114,18 +114,35 @@ export default function PartitePage() {
           };
         });
 
-        // 5. Estrai le date uniche
-        const dates = Array.from(new Set((mappedMatches || []).map(m => {
+        // 5. Estrai le date uniche e ORDINALE CRONOLOGICAMENTE
+        const uniqueDatesMap = new Map<string, Date>();
+
+        (mappedMatches || []).forEach(m => {
           const d = parseDate(m.match_date);
-          if (!d) return 'DA DEFINIRE';
-          return `${d.getDate()} ${d.toLocaleString('it-IT', { month: 'short' }).toUpperCase()}`;
-        })));
+          if (d) {
+            const dateStr = `${d.getDate()} ${d.toLocaleString('it-IT', { month: 'short' }).toUpperCase()}`;
+            // Conserva la data reale (oggetto Date) per poterla ordinare dopo
+            if (!uniqueDatesMap.has(dateStr) || uniqueDatesMap.get(dateStr)! > d) {
+              uniqueDatesMap.set(dateStr, d);
+            }
+          } else {
+            // Se non c'è data, la mettiamo alla fine
+            uniqueDatesMap.set('DA DEFINIRE', new Date(9999, 0, 1)); 
+          }
+        });
+
+        // Ordina le date basandosi sul valore temporale reale (crescente)
+        const dates = Array.from(uniqueDatesMap.entries())
+          .sort((a, b) => a[1].getTime() - b[1].getTime()) 
+          .map(entry => entry[0]); // Estrai solo la stringa formattata
         
         setAvailableDates(dates);
         if (dates.length > 0 && !selectedDate) {
           setSelectedDate(dates[0]);
         }
+        
         setMatches(mappedMatches);
+        
       } catch (err) {
         console.error('Errore fetch partite:', err);
       } finally {
@@ -134,9 +151,7 @@ export default function PartitePage() {
     };
 
     fetchMatches();
-  // ✅ 2. MODIFICATO: Aggiunto refreshKey alle dipendenze. 
-  // Ora il fetch si riesegue ogni volta che refreshKey cambia.
-  }, [refreshKey]); 
+  }, [refreshKey]);
 
     // ==========================================
   // ✅ REALTIME: Aggiornamenti live su Partite
