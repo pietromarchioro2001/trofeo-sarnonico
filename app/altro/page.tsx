@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useAuth } from '@/lib/AuthContext';
 import { createClient } from '@/lib/supabase/client';
-import { uploadFile } from '@/lib/supabase/storage'; // Il nostro helper con compressione
+import { uploadFile } from '@/lib/supabase/storage';
 import {
   AdminLiberatorieManager,
   AdminMultiUpload,
@@ -89,6 +89,9 @@ export default function AltroPage() {
   const [isCaptain, setIsCaptain] = useState(false);
   const [userTeamId, setUserTeamId] = useState('');
   const [loading, setLoading] = useState(true);
+  
+  // ✅ NUOVO: Stato per sapere se siamo in fase finale
+  const [isTournamentLocked, setIsTournamentLocked] = useState(false);
 
   // Stati dati
   const [teamsLiberatorie, setTeamsLiberatorie] = useState<TeamLiberatorie[]>([]);
@@ -105,7 +108,6 @@ export default function AltroPage() {
     whatsapp: '+39 333 1234567'
   });
 
-  // Carica stato capitano
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setIsCaptain(localStorage.getItem('isCaptain') === 'true');
@@ -113,7 +115,6 @@ export default function AltroPage() {
     }
   }, []);
 
-  // Fetch dati da Supabase
   useEffect(() => {
     const fetchAltroData = async () => {
       setLoading(true);
@@ -135,10 +136,7 @@ export default function AltroPage() {
           })));
         }
 
-        // 2. CONTATTI (Salvati come JSON in una tabella config o hardcoded per ora)
-        // Per semplicità iniziale manteniamo lo stato locale, ma puoi creare una tabella 'settings'
-
-        // 3. DOCUMENTI REGOLAMENTI/EVENTI (Tabella documents)
+        // 2. DOCUMENTI REGOLAMENTI/EVENTI/LIBERATORIE
         const { data: docsData } = await supabase
           .from('documents')
           .select('*')
@@ -152,27 +150,34 @@ export default function AltroPage() {
           setEventi(docsData.filter(d => d.document_category === 'altro').map(d => ({
             id: d.id, url: d.file_url, type: d.file_type.includes('pdf') ? 'pdf' : 'image', uploadedAt: d.uploaded_at
           })));
-        }
 
-        // 4. LIBERATORIE (Raggruppate per team_id)
-        const { data: teamsData } = await supabase.from('teams').select('id, name');
-        const liberatorieMap: Record<string, UploadedDocument[]> = {};
-        
-        if (docsData && teamsData) {
-          docsData.filter(d => d.document_category === 'liberatoria').forEach(doc => {
-            if (!liberatorieMap[doc.team_id]) liberatorieMap[doc.team_id] = [];
-            liberatorieMap[doc.team_id].push({
-              id: doc.id, url: doc.file_url, fileName: doc.file_name,
-              uploadedAt: doc.uploaded_at, uploadedBy: doc.uploaded_by || ''
+          const { data: teamsData } = await supabase.from('teams').select('id, name');
+          const liberatorieMap: Record<string, UploadedDocument[]> = {};
+          
+          if (teamsData) {
+            docsData.filter(d => d.document_category === 'liberatoria').forEach(doc => {
+              if (!liberatorieMap[doc.team_id]) liberatorieMap[doc.team_id] = [];
+              liberatorieMap[doc.team_id].push({
+                id: doc.id, url: doc.file_url, fileName: doc.file_name,
+                uploadedAt: doc.uploaded_at, uploadedBy: doc.uploaded_by || ''
+              });
             });
-          });
 
-          setTeamsLiberatorie(teamsData.map(t => ({
-            teamId: t.id,
-            teamName: t.name,
-            documents: liberatorieMap[t.id] || []
-          })));
+            setTeamsLiberatorie(teamsData.map(t => ({
+              teamId: t.id,
+              teamName: t.name,
+              documents: liberatorieMap[t.id] || []
+            })));
+          }
         }
+
+        // 3. ✅ CONTROLLO BLOCCO FASE FINALE
+        const { count: finalPhaseCount } = await supabase
+          .from('matches')
+          .select('*', { count: 'exact', head: true })
+          .in('phase', ['QUARTI', 'SEMIFINALI', 'FINALE', 'FINALE_3_4']);
+        
+        setIsTournamentLocked((finalPhaseCount || 0) > 0);
 
       } catch (err) {
         console.error('Errore fetch altro:', err);
@@ -184,7 +189,6 @@ export default function AltroPage() {
     fetchAltroData();
   }, []);
 
-  // Upload file reale su Supabase
   const handleRealUpload = async (files: FileList, category: 'evento' | 'sponsor' | 'regolamento' | 'liberatoria', teamId?: string) => {
     if (!files.length) return;
     
@@ -212,8 +216,6 @@ export default function AltroPage() {
         alert('Errore nel caricamento del file');
       }
     }
-    
-    // Ricarica dati dopo upload
     window.location.reload();
   };
 
@@ -275,6 +277,7 @@ export default function AltroPage() {
                         userTeamId={userTeamId}
                         onUpdate={setTeamsLiberatorie}
                         onTemplateUpload={setTemplateDoc}
+                        isTournamentLocked={isTournamentLocked} // ✅ Passiamo lo stato di blocco
                       />
                     </div>
                   )}

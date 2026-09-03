@@ -4,7 +4,9 @@ import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/lib/AuthContext';
 import { createClient } from '@/lib/supabase/client';
+import { AdminCreateQuarters } from '@/components/AdminButtons';
 
 // Tipi corretti per Supabase
 interface Team {
@@ -84,6 +86,7 @@ const MedalIcon = ({ type }: { type: 'gold' | 'silver' | 'bronze' }) => {
 };
 
 export default function ClassifichePage() {
+  const { isStaffMode } = useAuth();
   const [activeTab, setActiveTab] = useState<'gironi' | 'fase-finale' | 'marcatori' | 'coppa-chiosco'>('gironi');
   const [phaseSubTab, setPhaseSubTab] = useState<'quarti' | 'semifinali' | 'finale'>('quarti');
   const searchParams = useSearchParams();
@@ -107,7 +110,7 @@ export default function ClassifichePage() {
     const supabase = createClient();
 
     try {
-      // 1. CLASSIFICA GIRONI (Include partite LIVE per aggiornamento in tempo reale)
+      // 1. CLASSIFICA GIRONI
       const { data: allTeams, error: teamsError } = await supabase
         .from('teams')
         .select('id, name, logo_url, girone');
@@ -158,7 +161,6 @@ export default function ClassifichePage() {
           awayStats.p += 1; awayStats.pt += 1;
         }
 
-        // Registra le partite in diretta per l'UI
         if (m.status === 'LIVE' || m.status === 'SUPP' || m.status === 'RIGORI') {
           newLiveMap.set(m.home_team_id, { matchId: m.id, score: `${hScore} - ${aScore}` });
           newLiveMap.set(m.away_team_id, { matchId: m.id, score: `${hScore} - ${aScore}` });
@@ -270,7 +272,6 @@ export default function ClassifichePage() {
   useEffect(() => {
     const supabase = createClient();
     
-    // 1. Canale per le partite (aggiorna classifica gironi e fase finale)
     const matchesChannel = supabase
       .channel('classifiche-matches-updates')
       .on(
@@ -282,7 +283,6 @@ export default function ClassifichePage() {
       )
       .subscribe();
 
-    // 2. Canale per la Coppa Chiosco (aggiornamento istantaneo dei metri)
     const barChannel = supabase
       .channel('classifiche-bar-updates')
       .on(
@@ -292,7 +292,6 @@ export default function ClassifichePage() {
           const updatedTeamId = payload.new.team_id;
           const newMeters = payload.new.total_meters;
           
-          // Aggiorna solo la squadra interessata e riordina la classifica
           setBarMeters(prev => {
             const updated = prev.map(item => 
               item.team_id === updatedTeamId ? { ...item, total_meters: newMeters } : item
@@ -445,49 +444,64 @@ export default function ClassifichePage() {
 
             <div className="px-4 pb-8">
               {phaseSubTab === 'quarti' && (
-                <div className="space-y-4 max-w-[220px] mx-auto">
-                  {phaseMatches.filter(m => m.phase === 'QUARTI').map((match) => {
-                    const isMatchLive = match.status === 'LIVE' || match.status === 'SUPP' || match.status === 'RIGORI';
-                    return (
-                      <Link key={match.id} href={`/partite/${match.id}`} className="block relative">
-                        <div className={`rounded-xl shadow-sm border p-3 transition-shadow relative ${
-                          isMatchLive 
-                            ? 'bg-[#581C24] text-white border-[#581C24] shadow-[0_0_15px_rgba(88,28,36,0.3)]' 
-                            : 'bg-white border-gray-100 hover:shadow-md'
-                        }`}>
-                          {isMatchLive && (
-                            <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[8px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm animate-pulse z-10">
-                              <span className="w-1.5 h-1.5 bg-white rounded-full" /> LIVE
-                            </div>
-                          )}
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2 flex-1">
-                              <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isMatchLive ? 'bg-white/10' : 'bg-gray-100'}`}>
-                                {match.home_team?.logo_url ? (
-                                  <Image src={match.home_team.logo_url} alt={match.home_team.name} width={24} height={24} className="object-cover" />
-                                ) : <span className={`text-[6px] ${isMatchLive ? 'text-white/70' : 'text-gray-400'}`}>L</span>}
+                <>
+                  {/* ✅ PULSANTE CREA FASE FINALE (visibile solo allo staff e se non ci sono ancora quarti) */}
+                  {isStaffMode && phaseMatches.filter(m => m.phase === 'QUARTI').length === 0 && (
+                    <div className="mb-8 max-w-md mx-auto">
+                      <AdminCreateQuarters onSuccess={() => fetchData()} />
+                    </div>
+                  )}
+
+                  <div className="space-y-4 max-w-[220px] mx-auto">
+                    {phaseMatches.filter(m => m.phase === 'QUARTI').length === 0 && !isStaffMode ? (
+                      <div className="text-center py-8 text-gray-500 text-sm font-bold uppercase">
+                        Quarti di finale non ancora programmati
+                      </div>
+                    ) : (
+                      phaseMatches.filter(m => m.phase === 'QUARTI').map((match) => {
+                        const isMatchLive = match.status === 'LIVE' || match.status === 'SUPP' || match.status === 'RIGORI';
+                        return (
+                          <Link key={match.id} href={`/partite/${match.id}`} className="block relative">
+                            <div className={`rounded-xl shadow-sm border p-3 transition-shadow relative ${
+                              isMatchLive 
+                                ? 'bg-[#581C24] text-white border-[#581C24] shadow-[0_0_15px_rgba(88,28,36,0.3)]' 
+                                : 'bg-white border-gray-100 hover:shadow-md'
+                            }`}>
+                              {isMatchLive && (
+                                <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[8px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm animate-pulse z-10">
+                                  <span className="w-1.5 h-1.5 bg-white rounded-full" /> LIVE
+                                </div>
+                              )}
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2 flex-1">
+                                  <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isMatchLive ? 'bg-white/10' : 'bg-gray-100'}`}>
+                                    {match.home_team?.logo_url ? (
+                                      <Image src={match.home_team.logo_url} alt={match.home_team.name} width={24} height={24} className="object-cover" />
+                                    ) : <span className={`text-[6px] ${isMatchLive ? 'text-white/70' : 'text-gray-400'}`}>L</span>}
+                                  </div>
+                                  <span className={`font-bold text-xs uppercase truncate ${isMatchLive ? 'text-white' : 'text-[#000000]'}`}>{match.home_team?.name || 'TBD'}</span>
+                                </div>
+                                <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.home_score ?? '-'}</span>
                               </div>
-                              <span className={`font-bold text-xs uppercase truncate ${isMatchLive ? 'text-white' : 'text-[#000000]'}`}>{match.home_team?.name || 'TBD'}</span>
-                            </div>
-                            <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.home_score ?? '-'}</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 flex-1">
-                              <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isMatchLive ? 'bg-white/10' : 'bg-gray-100'}`}>
-                                {match.away_team?.logo_url ? (
-                                  <Image src={match.away_team.logo_url} alt={match.away_team.name} width={24} height={24} className="object-cover" />
-                                ) : <span className={`text-[6px] ${isMatchLive ? 'text-white/70' : 'text-gray-400'}`}>L</span>}
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 flex-1">
+                                  <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isMatchLive ? 'bg-white/10' : 'bg-gray-100'}`}>
+                                    {match.away_team?.logo_url ? (
+                                      <Image src={match.away_team.logo_url} alt={match.away_team.name} width={24} height={24} className="object-cover" />
+                                    ) : <span className={`text-[6px] ${isMatchLive ? 'text-white/70' : 'text-gray-400'}`}>L</span>}
+                                  </div>
+                                  <span className={`font-bold text-xs uppercase truncate ${isMatchLive ? 'text-white' : 'text-[#000000]'}`}>{match.away_team?.name || 'TBD'}</span>
+                                </div>
+                                <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.away_score ?? '-'}</span>
                               </div>
-                              <span className={`font-bold text-xs uppercase truncate ${isMatchLive ? 'text-white' : 'text-[#000000]'}`}>{match.away_team?.name || 'TBD'}</span>
                             </div>
-                            <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.away_score ?? '-'}</span>
-                          </div>
-                        </div>
-                        <div className="absolute top-1/2 -right-12 w-12 h-px bg-gray-300" />
-                      </Link>
-                    );
-                  })}
-                </div>
+                            <div className="absolute top-1/2 -right-12 w-12 h-px bg-gray-300" />
+                          </Link>
+                        );
+                      })
+                    )}
+                  </div>
+                </>
               )}
 
               {phaseSubTab === 'semifinali' && (

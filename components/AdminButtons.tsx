@@ -994,10 +994,11 @@ interface AdminLiberatorieManagerProps {
   userTeamId?: string;
   onUpdate: (teams: TeamLiberatorie[]) => void;
   onTemplateUpload: (doc: UploadedDocument) => void;
+  isTournamentLocked?: boolean;
 }
 
 export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = ({
-  teams, templateDoc, userRole, userTeamId, onUpdate, onTemplateUpload
+  teams, templateDoc, userRole, userTeamId, onUpdate, onTemplateUpload, isTournamentLocked = false
 }) => {
   const [selectedTeam, setSelectedTeam] = useState<TeamLiberatorie | null>(null);
   const [showTemplateUpload, setShowTemplateUpload] = useState(false);
@@ -1081,26 +1082,33 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
         {teams.map(team => {
           const hasDocs = team.documents.length > 0;
           const canEdit = userRole === 'staff' || (userRole === 'captain' && team.teamId === userTeamId);
+          const isLockedForCaptain = isTournamentLocked && userRole === 'captain'; // ✅ Blocco specifico per capitani
           
           return (
             <div 
               key={team.teamId} 
-              onClick={() => canEdit && setSelectedTeam(team)} 
+              onClick={() => {
+                if (isLockedForCaptain) {
+                  alert('⚠️ Siamo nella fase finale, non puoi più inserire o modificare liberatorie.');
+                  return;
+                }
+                if (canEdit) setSelectedTeam(team);
+              }} 
               className={`bg-white rounded-xl p-4 shadow-sm border flex items-center justify-between transition-all ${
-                canEdit 
+                canEdit && !isLockedForCaptain
                   ? 'border-gray-100 cursor-pointer hover:shadow-md hover:border-[#581C24]/30' 
                   : 'border-gray-100 opacity-60 cursor-not-allowed'
               }`}
             >
               <div className="flex items-center gap-3">
                 <div className={`w-3 h-3 rounded-full ${hasDocs ? 'bg-green-500' : 'bg-gray-300'}`} />
-                <span className={`font-bold text-sm ${canEdit ? 'text-[#581C24]' : 'text-gray-500'}`}>
+                <span className={`font-bold text-sm ${canEdit && !isLockedForCaptain ? 'text-[#581C24]' : 'text-gray-500'}`}>
                   {team.teamName} {userRole === 'captain' && team.teamId === userTeamId && '(La tua squadra)'}
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-500">{team.documents.length} file</span>
-                {canEdit && <Eye className="w-4 h-4 text-gray-400" />}
+                {canEdit && !isLockedForCaptain && <Eye className="w-4 h-4 text-gray-400" />}
               </div>
             </div>
           );
@@ -1523,6 +1531,198 @@ export const AdminEditEvent: React.FC<AdminEditEventProps> = ({
         </div>
       </div>
     </div>
+  );
+};
+
+// ============================================================
+// Admin Create Quarters (Crea Fase Finale - Quarti)
+// ============================================================
+interface AdminCreateQuartersProps {
+  onSuccess: () => void;
+}
+
+export const AdminCreateQuarters: React.FC<AdminCreateQuartersProps> = ({ onSuccess }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [matchups, setMatchups] = useState<any[]>([]);
+
+  // Calcola classifica e prepara gli abbinamenti all'apertura
+  useEffect(() => {
+    if (isOpen) {
+      const calculateStandings = async () => {
+        setLoading(true);
+        const supabase = createClient();
+        
+        // 1. Prendi tutte le squadre
+        const { data: teams } = await supabase.from('teams').select('id, name, logo_url, girone');
+        // 2. Prendi tutte le partite finite
+        const { data: matches } = await supabase.from('matches').select('home_team_id, away_team_id, home_score, away_score').eq('status', 'FINITA');
+
+        if (teams && matches) {
+          const stats: any = {};
+          teams.forEach((t: any) => {
+            stats[t.id] = { ...t, pt: 0, gf: 0, gs: 0, dr: 0 };
+          });
+
+          matches.forEach((m: any) => {
+            const h = stats[m.home_team_id];
+            const a = stats[m.away_team_id];
+            if (!h || !a) return;
+            const hs = m.home_score || 0;
+            const as_ = m.away_score || 0;
+            h.gf += hs; h.gs += as_; h.dr = h.gf - h.gs;
+            a.gf += as_; a.gs += hs; a.dr = a.gf - a.gs;
+            if (hs > as_) { h.pt += 3; } 
+            else if (as_ > hs) { a.pt += 3; } 
+            else { h.pt += 1; a.pt += 1; }
+          });
+
+          const allTeams = Object.values(stats);
+          const groupA = allTeams.filter((t: any) => t.girone === 'A').sort((a: any, b: any) => b.pt - a.pt || b.dr - a.dr || b.gf - a.gf);
+          const groupB = allTeams.filter((t: any) => t.girone === 'B').sort((a: any, b: any) => b.pt - a.pt || b.dr - a.dr || b.gf - a.gf);
+
+          // Abbinamenti: 1A-4B, 2B-3A, 2A-3B, 1B-4A
+          const newMatchups = [
+            { home: groupA[0], away: groupB[3], date: '', time: '' },
+            { home: groupB[1], away: groupA[2], date: '', time: '' },
+            { home: groupA[1], away: groupB[2], date: '', time: '' },
+            { home: groupB[0], away: groupA[3], date: '', time: '' },
+          ];
+          setMatchups(newMatchups);
+        }
+        setLoading(false);
+      };
+      calculateStandings();
+    }
+  }, [isOpen]);
+
+  const handleSave = async () => {
+    // Validazione: tutte le date e ore devono essere compilate
+    if (matchups.some(m => !m.date || !m.time)) {
+      alert('⚠️ Compila data e ora per tutti gli scontri!');
+      return;
+    }
+
+    setLoading(true);
+    const supabase = createClient();
+    const matchesToInsert = matchups.map(m => ({
+      home_team_id: m.home.id,
+      away_team_id: m.away.id,
+      match_date: m.date,
+      match_time: m.time,
+      status: 'PROGRAMMATA',
+      phase: 'QUARTI'
+    }));
+
+    const { error } = await supabase.from('matches').insert(matchesToInsert);
+
+    if (error) {
+      console.error(error);
+      alert('Errore nel salvataggio dei quarti di finale.');
+    } else {
+      alert('✅ Quarti di Finale creati con successo! Le rose delle squadre sono ora bloccate.');
+      setIsOpen(false);
+      onSuccess();
+    }
+    setLoading(false);
+  };
+
+  return (
+    <>
+      <button 
+        onClick={() => setIsOpen(true)} 
+        className="w-full py-3 bg-[#581C24] text-white font-black rounded-xl shadow-lg hover:bg-[#581C24]/90 transition-colors text-sm uppercase tracking-wider flex items-center justify-center gap-2"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+        CREA FASE FINALE (QUARTI)
+      </button>
+
+      {isOpen && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="bg-[#581C24] p-4 flex items-center justify-between flex-shrink-0">
+              <h2 className="text-lg font-black text-white uppercase tracking-wider">Crea Quarti di Finale</h2>
+              <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/20 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto flex-1">
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className="w-10 h-10 border-4 border-[#581C24] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                  <p className="text-sm text-gray-600 font-bold">Calcolo classifiche e abbinamenti...</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {matchups.map((match, idx) => (
+                    <div key={idx} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                        {/* Squadre */}
+                        <div className="flex items-center gap-3 flex-1 w-full sm:w-auto justify-center sm:justify-start">
+                          <div className="flex flex-col items-center w-20">
+                            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center border border-gray-200 overflow-hidden mb-1">
+                              {match.home.logo_url ? <Image src={match.home.logo_url} alt="" width={40} height={40} className="object-cover" /> : <span className="text-[6px]">LOGO</span>}
+                            </div>
+                            <span className="text-[10px] font-bold text-[#581C24] uppercase text-center leading-tight">{match.home.name}</span>
+                          </div>
+                          
+                          <span className="text-xl font-black text-gray-400">-</span>
+                          
+                          <div className="flex flex-col items-center w-20">
+                            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center border border-gray-200 overflow-hidden mb-1">
+                              {match.away.logo_url ? <Image src={match.away.logo_url} alt="" width={40} height={40} className="object-cover" /> : <span className="text-[6px]">LOGO</span>}
+                            </div>
+                            <span className="text-[10px] font-bold text-[#581C24] uppercase text-center leading-tight">{match.away.name}</span>
+                          </div>
+                        </div>
+
+                        {/* Data e Ora */}
+                        <div className="flex items-center gap-2 w-full sm:w-auto justify-center">
+                          <input 
+                            type="date" 
+                            value={match.date}
+                            onChange={(e) => {
+                              const newMatchups = [...matchups];
+                              newMatchups[idx].date = e.target.value;
+                              setMatchups(newMatchups);
+                            }}
+                            className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-bold focus:ring-2 focus:ring-[#581C24] outline-none"
+                          />
+                          <input 
+                            type="time" 
+                            value={match.time}
+                            onChange={(e) => {
+                              const newMatchups = [...matchups];
+                              newMatchups[idx].time = e.target.value;
+                              setMatchups(newMatchups);
+                            }}
+                            className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-bold focus:ring-2 focus:ring-[#581C24] outline-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t border-gray-200 flex gap-3 flex-shrink-0 bg-white">
+              <button onClick={() => setIsOpen(false)} className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 font-bold rounded-lg hover:bg-gray-50 transition-colors text-sm uppercase">
+                Annulla
+              </button>
+              <button 
+                onClick={handleSave} 
+                disabled={loading}
+                className="flex-1 px-4 py-2.5 bg-[#581C24] text-white font-bold rounded-lg hover:bg-[#581C24]/90 transition-colors text-sm shadow-md uppercase disabled:opacity-50"
+              >
+                {loading ? 'Salvataggio...' : 'SALVA'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
