@@ -115,38 +115,51 @@ export default function HomePage() {
         setLastMatch({ ...match, home_team: homeTeam as TeamData, away_team: awayTeam as TeamData });
       }
 
-        // 2. PROSSIMA PARTITA
-        const { data: nextMatchArray } = await supabase
-          .from('matches')
-          .select('id, status, match_date, match_time, home_score, away_score, home_team_id, away_team_id')
-          .eq('status', 'PROGRAMMATA')
-          .order('match_date', { ascending: true })
-          .order('match_time', { ascending: true })
-          .limit(20); // Aumentiamo per sicurezza
+      // 2. PROSSIMA PARTITA
+      const { data: nextMatchArray, error: nextError } = await supabase
+        .from('matches')
+        .select('id, status, match_date, match_time, home_score, away_score, home_team_id, away_team_id')
+        .eq('status', 'PROGRAMMATA')
+        .order('match_date', { ascending: true })
+        .order('match_time', { ascending: true })
+        .limit(20);
 
-        if (nextMatchArray && nextMatchArray.length > 0) {
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
+      if (nextError) {
+        console.error('Errore fetch prossima partita:', nextError);
+      }
+
+      console.log('🔍 Partite PROGRAMMATA trovate:', nextMatchArray?.length || 0);
+
+      if (nextMatchArray && nextMatchArray.length > 0) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        console.log(' Data oggi:', today.toISOString().split('T')[0]);
+        
+        // Trova la prima partita con data >= oggi
+        const futureMatch = nextMatchArray.find(match => {
+          if (!match.match_date) return false;
+          const matchDate = parseDate(match.match_date);
+          const isFuture = matchDate && matchDate.getTime() >= today.getTime();
+          console.log(`  Partita ${match.match_date} - Data parsata: ${matchDate} - Futuro: ${isFuture}`);
+          return isFuture;
+        });
+        
+        if (futureMatch) {
+          console.log('✅ Prossima partita trovata:', futureMatch);
+          const { data: teamsData } = await supabase
+            .from('teams')
+            .select('id, name, logo_url')
+            .in('id', [futureMatch.home_team_id, futureMatch.away_team_id]);
           
-          // Trova la prima partita con data >= oggi
-          const futureMatch = nextMatchArray.find(match => {
-            if (!match.match_date) return false;
-            const matchDate = parseDate(match.match_date);
-            return matchDate && matchDate.getTime() >= today.getTime();
-          });
+          const homeTeam = teamsData?.find(t => t.id === futureMatch.home_team_id) || null;
+          const awayTeam = teamsData?.find(t => t.id === futureMatch.away_team_id) || null;
           
-          if (futureMatch) {
-            const { data: teamsData } = await supabase
-              .from('teams')
-              .select('id, name, logo_url')
-              .in('id', [futureMatch.home_team_id, futureMatch.away_team_id]);
-            
-            const homeTeam = teamsData?.find(t => t.id === futureMatch.home_team_id) || null;
-            const awayTeam = teamsData?.find(t => t.id === futureMatch.away_team_id) || null;
-            
-            setNextMatch({ ...futureMatch, home_team: homeTeam as TeamData, away_team: awayTeam as TeamData });
-          }
+          setNextMatch({ ...futureMatch, home_team: homeTeam as TeamData, away_team: awayTeam as TeamData });
+        } else {
+          console.warn('⚠️ Nessuna partita futura trovata');
         }
+      }
 
       // 3. ULTIME PARTITE
       const { data: recentMatchesData } = await supabase
