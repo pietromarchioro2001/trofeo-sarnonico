@@ -1123,13 +1123,15 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                         const hasSuppEvents = events.some(e => e.minute !== null && e.minute > 90 && e.minute <= 120);
                         const hasRigoriEvents = events.some(e => e.minute !== null && e.minute > 120);
 
+                        const prevPhase = events[i - 1]?.phase || 'LIVE'; // ✅ Fallback a 'LIVE' se undefined
+
                         const showSuppLine = 
                           event.phase === 'SUPP' && 
-                          (i === 0 || events[i - 1]?.phase !== 'SUPP');
+                          (i === 0 || prevPhase !== 'SUPP');
 
                         const showRigoriLine = 
                           event.phase === 'RIGORI' && 
-                          (i === 0 || events[i - 1]?.phase !== 'RIGORI');
+                          (i === 0 || prevPhase !== 'RIGORI');
 
                         return (
                           <React.Fragment key={event.id}>
