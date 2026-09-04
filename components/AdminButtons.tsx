@@ -105,6 +105,7 @@ const UppercaseInput = ({
 export const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
   homeTeam, awayTeam, isAdmin, onClose
 }) => {
+
   const [started, setStarted] = useState(false);
   const [firstKicker, setFirstKicker] = useState<'home' | 'away' | null>(null);
   const [penaltyScore, setPenaltyScore] = useState({ home: 0, away: 0 });
@@ -135,6 +136,15 @@ export const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
   };
 
   const getTeamKicks = (team: 'home' | 'away') => kicks.filter(kick => kick.team === team);
+
+  // ✅ Modifica l'useEffect per resettare solo quando cambia isAdmin
+    useEffect(() => {
+      setStarted(false);
+      setFirstKicker(null);
+      setPenaltyScore({ home: 0, away: 0 });
+      setKicks([]);
+      setCurrentKick(0);
+    }, [isAdmin]); // Aggiungi isAdmin come dipendenza
 
   if (!started || !firstKicker) {
     return (
