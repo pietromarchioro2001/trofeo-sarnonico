@@ -59,6 +59,7 @@ export interface EventData {
   event_type: string;
   player_id: string | null;
   team_id: string | null;
+  phase?: string; // ✅ Aggiunto per la colorazione della linea
   player: {
     first_name: string;
     last_name: string;
@@ -105,7 +106,6 @@ const UppercaseInput = ({
 export const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
   homeTeam, awayTeam, isAdmin, onClose
 }) => {
-
   const [started, setStarted] = useState(false);
   const [firstKicker, setFirstKicker] = useState<'home' | 'away' | null>(null);
   const [penaltyScore, setPenaltyScore] = useState({ home: 0, away: 0 });
@@ -114,7 +114,10 @@ export const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
   const [lightState, setLightState] = useState<'none' | 'green' | 'red'>('none');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleFirstKickerSelect = (team: 'home' | 'away') => { setFirstKicker(team); setStarted(true); };
+  const handleFirstKickerSelect = (team: 'home' | 'away') => { 
+    setFirstKicker(team); 
+    setStarted(true); 
+  };
 
   const handleKick = (scored: boolean) => {
     if (isProcessing) return;
@@ -137,14 +140,14 @@ export const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
 
   const getTeamKicks = (team: 'home' | 'away') => kicks.filter(kick => kick.team === team);
 
-  // ✅ Modifica l'useEffect per resettare solo quando cambia isAdmin
-    useEffect(() => {
-      setStarted(false);
-      setFirstKicker(null);
-      setPenaltyScore({ home: 0, away: 0 });
-      setKicks([]);
-      setCurrentKick(0);
-    }, [isAdmin]); // Aggiungi isAdmin come dipendenza
+  // ✅ Resetta lo stato quando il popup viene riaperto (isAdmin cambia o al mount)
+  useEffect(() => {
+    setStarted(false);
+    setFirstKicker(null);
+    setPenaltyScore({ home: 0, away: 0 });
+    setKicks([]);
+    setCurrentKick(0);
+  }, [isAdmin]);
 
   if (!started || !firstKicker) {
     return (
@@ -223,13 +226,28 @@ interface AdminMatchControlsProps {
 
 export const AdminMatchControls: React.FC<AdminMatchControlsProps> = ({ matchStatus, isFinalPhase, matchId, homeTeam, awayTeam, currentScore, onStatusChange }) => {
   const [showPenaltyPopup, setShowPenaltyPopup] = useState(false);
+  
   const handleStartMatch = () => { if (confirm('Iniziare la partita?')) onStatusChange('LIVE'); };
   const handleExtraTime = () => { if (confirm('Passare ai tempi supplementari?')) onStatusChange('SUPP'); };
   const handlePenalties = () => { setShowPenaltyPopup(true); };
   const handleEndMatch = () => { if (confirm('Terminare la partita? Verranno calcolate classifica e statistiche.')) { onStatusChange('TERMINATA'); console.log('Partita terminata'); } };
-  const handlePenaltyEnd = (winner: 'home' | 'away' | null) => { setShowPenaltyPopup(false); if (winner) console.log(`Vincitore ai rigori: ${winner === 'home' ? homeTeam.name : awayTeam.name}`); onStatusChange('TERMINATA'); };
-  const getButtonLabel = () => { if (matchStatus === 'PROGRAMMATA') return 'INIZIA'; if (matchStatus === 'LIVE') return 'TERMINA'; return ''; };
-  const getExtraTimeButtonLabel = () => { if (matchStatus === 'LIVE' && isFinalPhase && currentScore.home === currentScore.away) return 'SUPPLEMENTARI'; return null; };
+  const handlePenaltyEnd = (winner: 'home' | 'away' | null) => { 
+    setShowPenaltyPopup(false); 
+    if (winner) console.log(`Vincitore ai rigori: ${winner === 'home' ? homeTeam.name : awayTeam.name}`); 
+    onStatusChange('TERMINATA'); 
+  };
+  
+  const getButtonLabel = () => { 
+    if (matchStatus === 'PROGRAMMATA') return 'INIZIA'; 
+    if (matchStatus === 'LIVE') return 'TERMINA'; 
+    return ''; 
+  };
+  
+  const getExtraTimeButtonLabel = () => { 
+    if (matchStatus === 'LIVE' && isFinalPhase && currentScore.home === currentScore.away) return 'SUPPLEMENTARI'; 
+    return null; 
+  };
+  
   const extraTimeLabel = getExtraTimeButtonLabel();
 
   return (
@@ -237,8 +255,14 @@ export const AdminMatchControls: React.FC<AdminMatchControlsProps> = ({ matchSta
       <div className="flex gap-2">
         {matchStatus !== 'TERMINATA' && (
           <>
-            <button onClick={matchStatus === 'PROGRAMMATA' ? handleStartMatch : handleEndMatch} className={`px-4 py-2 rounded-lg font-bold text-xs uppercase transition-colors shadow-lg ${matchStatus === 'PROGRAMMATA' ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-red-600 text-white hover:bg-red-700'}`}>{getButtonLabel()}</button>
-            {extraTimeLabel && <button onClick={handleExtraTime} className="px-4 py-2 bg-orange-600 text-white rounded-lg font-bold text-xs uppercase hover:bg-orange-700 transition-colors shadow-lg">{extraTimeLabel}</button>}
+            <button onClick={matchStatus === 'PROGRAMMATA' ? handleStartMatch : handleEndMatch} className={`px-4 py-2 rounded-lg font-bold text-xs uppercase transition-colors shadow-lg ${matchStatus === 'PROGRAMMATA' ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-red-600 text-white hover:bg-red-700'}`}>
+              {getButtonLabel()}
+            </button>
+            {extraTimeLabel && (
+              <button onClick={handleExtraTime} className="px-4 py-2 bg-orange-600 text-white rounded-lg font-bold text-xs uppercase hover:bg-orange-700 transition-colors shadow-lg">
+                {extraTimeLabel}
+              </button>
+            )}
             {/* ✅ MOSTRA PULSANTE RIGORI SIA IN SUPP CHE IN RIGORI */}
             {(matchStatus === 'SUPP' || matchStatus === 'RIGORI') && (
               <button onClick={handlePenalties} className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold text-xs uppercase hover:bg-purple-700 transition-colors shadow-lg">
@@ -299,7 +323,6 @@ export const AdminPartiteButton = ({ onMatchCreated }: { onMatchCreated?: () => 
     setIsOpen(false);
     setHomeTeam(''); setAwayTeam(''); setMatchDate(''); setMatchTime(''); setError('');
     
-    // ✅ 2. Aggiungi questa riga alla fine di handleSave
     if (onMatchCreated) onMatchCreated();
   };
 
@@ -569,7 +592,6 @@ export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, matchId 
 
       // 2. LOGICA SQUALIFICHE
       if (eventType === 'yellow') {
-        // Controllo doppio giallo nella STESSA partita
         const { data: matchEvents } = await supabase
           .from('match_events')
           .select('event_type')
@@ -578,7 +600,6 @@ export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, matchId 
         
         const yellowsInThisMatch = (matchEvents || []).filter(e => e.event_type === 'YELLOW_CARD').length;
         
-        // Nel blocco "Controllo doppio giallo nella STESSA partita"
         if (yellowsInThisMatch >= 2) {  
           shouldSuspend = true;
           await supabase.from('match_events').insert({
@@ -591,7 +612,6 @@ export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, matchId 
           });
         }
 
-        // Controllo 3° giallo accumulato
         const totalYellows = (player?.yellow_cards || 0) + 1;
         if (totalYellows >= 3) {
           shouldSuspend = true;
