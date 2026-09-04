@@ -251,7 +251,8 @@ export default function PartitePage() {
                   <div className="flex items-center justify-between mb-2.5">
                     {isLive && (
                       <span className="bg-red-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" /> LIVE
+                        <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" /> 
+                        {match.status === 'SUPP' ? 'SUPP' : match.status === 'RIGORI' ? 'RIGORI' : 'LIVE'}
                       </span>
                     )}
                     {!isLive && !isScheduled && (
