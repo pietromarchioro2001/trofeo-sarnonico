@@ -934,9 +934,9 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
               </div>
             )}
 
-            {/* CRONACA */}
+      {/* CRONACA */}
             <div>
-                            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4">
                 {isStaffMode ? (
                   <>
                     <AdminAddEvent 
@@ -956,6 +956,20 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
 
               <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
                 <div className="space-y-4">
+                  
+                  {/* ✅ NUOVO: LINEA DIVISORIA SUPPLEMENTARI / RIGORI */}
+                  {(match.status === 'SUPP' || match.status === 'RIGORI') && (
+                    <div className="flex items-center gap-3 my-2">
+                      <div className={`flex-1 h-px ${match.status === 'SUPP' ? 'bg-orange-400' : 'bg-purple-400'}`} />
+                      <span className={`font-black text-xs uppercase tracking-wider whitespace-nowrap ${
+                        match.status === 'SUPP' ? 'text-orange-500' : 'text-purple-500'
+                      }`}>
+                        {match.status === 'SUPP' ? 'Supplementari' : 'Calci di Rigore'}
+                      </span>
+                      <div className={`flex-1 h-px ${match.status === 'SUPP' ? 'bg-orange-400' : 'bg-purple-400'}`} />
+                    </div>
+                  )}
+
                   {events.length === 0 ? (
                     <div className="text-center py-4 text-gray-500 text-sm">Nessun evento registrato</div>
                   ) : (
@@ -1000,7 +1014,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
               </div>
             </div>
           </>
-                ) : (
+        ) : (
           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
             <div className="flex gap-4">
               <div className="flex-1">
