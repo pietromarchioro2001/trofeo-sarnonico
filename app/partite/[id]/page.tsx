@@ -92,7 +92,7 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
   const [lightState, setLightState] = useState<'none' | 'green' | 'red'>('none');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // ✅ Fetch e Realtime dei rigori dal database
+    // ✅ Fetch e Realtime dei rigori dal database
   useEffect(() => {
     const supabase = createClient();
     
@@ -113,7 +113,7 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
         
         const penaltyEvents = data.filter(e => e.event_type === 'PENALTY_GOAL' || e.event_type === 'PENALTY_MISS');
         const newKicks = penaltyEvents.map(e => ({
-          team: e.team_id === homeTeam.id ? 'home' : 'away',
+          team: (e.team_id === homeTeam.id ? 'home' : 'away') as 'home' | 'away', // ✅ Fix TypeScript
           scored: e.event_type === 'PENALTY_GOAL',
           kickerId: e.id
         }));
