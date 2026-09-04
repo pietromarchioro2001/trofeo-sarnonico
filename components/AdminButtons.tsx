@@ -545,6 +545,7 @@ export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, matchId 
         event_type: dbEventType,
         minute: parseInt(minute),
         team_id: teamId,
+        phase: eventPhase
       });
       if (eventError) throw eventError;
 
@@ -570,7 +571,8 @@ export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, matchId 
             player_id: selectedPlayer,
             event_type: 'RED_CARD',
             minute: parseInt(minute),
-            team_id: teamId
+            team_id: teamId,
+            phase: eventPhase
           });
         }
 

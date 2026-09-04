@@ -52,6 +52,7 @@ export interface EventData {
   event_type: string;
   player_id: string | null;
   team_id: string | null;
+  phase?: string;
   player: {
     first_name: string;
     last_name: string;
@@ -462,7 +463,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
 
         const { data: eventsData, error: eventsError } = await supabase
           .from('match_events')
-          .select('id, minute, event_type, player_id, team_id, player:players(first_name, last_name)') // ✅ Rimosso phase
+          .select('id, minute, event_type, player_id, team_id, phase, player:players(first_name, last_name)')
           .eq('match_id', matchId)
           .order('minute', { ascending: true });
         if (eventsError) throw eventsError;
@@ -473,6 +474,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           event_type: e.event_type,
           player_id: e.player_id,
           team_id: e.team_id,
+          phase: e.phase || 'LIVE',
           player: e.player && !Array.isArray(e.player) ? {
             first_name: e.player.first_name,
             last_name: e.player.last_name
@@ -591,7 +593,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         async () => {
           const { data: newEvents } = await supabase
             .from('match_events')
-            .select('id, minute, event_type, player_id, team_id, player:players(first_name, last_name)') // ✅ Rimosso phase
+            .select('id, minute, event_type, player_id, team_id, phase, player:players(first_name, last_name)')
             .eq('match_id', matchId)
             .order('minute', { ascending: true });
 
@@ -602,7 +604,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
               event_type: e.event_type,
               player_id: e.player_id,
               team_id: e.team_id,
-              // ✅ Rimosso phase
+              phase: e.phase || 'LIVE',
               player: e.player && !Array.isArray(e.player) ? {
                 first_name: e.player.first_name,
                 last_name: e.player.last_name
@@ -1117,8 +1119,8 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                   
                   // ✅ Determina il colore della linea verticale in base allo status
                   const lineColor = 
-                    match.status === 'RIGORI' ? 'bg-purple-400' :
-                    match.status === 'SUPP' ? 'bg-orange-400' :
+                    event.phase === 'RIGORI' ? 'bg-purple-400' :
+                    event.phase === 'SUPP' ? 'bg-orange-400' :
                     'bg-gray-300';
                   
                   return (
