@@ -97,7 +97,7 @@ export default function HomePage() {
       const { data: lastMatchArray } = await supabase
         .from('matches')
         .select('id, status, match_date, match_time, home_score, away_score, home_team_id, away_team_id')
-        .or('status.eq.LIVE,status.eq.FINITA')
+        .or('status.eq.LIVE,status.eq.SUPP,status.eq.RIGORI,status.eq.FINITA') // ✅ Aggiunti SUPP e RIGORI
         .order('match_date', { ascending: false })
         .order('match_time', { ascending: false })
         .limit(1);
@@ -328,7 +328,7 @@ export default function HomePage() {
     router.push('/');
   };
 
-  const isLive = lastMatch?.status === 'LIVE';
+  const isLive = lastMatch?.status === 'LIVE' || lastMatch?.status === 'SUPP' || lastMatch?.status === 'RIGORI'; // ✅ Riconosce anche SUPP e RIGORI
   const showCountdown = !!nextMatch && !lastMatch;
 
   if (loading) {
@@ -414,7 +414,8 @@ export default function HomePage() {
                 <div className="w-12" />
                 {isLive ? (
                   <span className="bg-red-600 text-white text-[9px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
-                    <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" /> LIVE
+                    <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" /> 
+                    {lastMatch?.status === 'SUPP' ? 'SUPP' : lastMatch?.status === 'RIGORI' ? 'RIGORI' : 'LIVE'}
                   </span>
                 ) : (
                   <span className="bg-gray-200 text-[#581C24] text-[9px] font-bold px-2.5 py-0.5 rounded-full">TERMINATA</span>
