@@ -557,9 +557,8 @@ export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, matchId 
         
         const yellowsInThisMatch = (matchEvents || []).filter(e => e.event_type === 'YELLOW_CARD').length;
         
-        if (yellowsInThisMatch >= 1) {
-          shouldSuspend = true; // Doppio giallo
-          // Aggiungi automaticamente RED_CARD
+        if (yellowsInThisMatch >= 2) {  
+          shouldSuspend = true;
           await supabase.from('match_events').insert({
             match_id: matchId,
             player_id: selectedPlayer,

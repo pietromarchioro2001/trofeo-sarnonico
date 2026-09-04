@@ -461,7 +461,6 @@ export default function ClassifichePage() {
             <div className="px-4 pb-8">
               {phaseSubTab === 'quarti' && (
                 <>
-                  {/* ✅ PULSANTE CREA FASE FINALE (visibile solo allo staff e se non ci sono ancora quarti) */}
                   {isStaffMode && phaseMatches.filter(m => m.phase === 'QUARTI').length === 0 && (
                     <div className="mb-8 max-w-md mx-auto">
                       <AdminCreateQuarters onSuccess={() => fetchData()} />
@@ -476,6 +475,11 @@ export default function ClassifichePage() {
                     ) : (
                       phaseMatches.filter(m => m.phase === 'QUARTI').map((match) => {
                         const isMatchLive = match.status === 'LIVE' || match.status === 'SUPP' || match.status === 'RIGORI';
+                        const isFinished = match.status === 'FINITA';
+                        // ✅ Determina chi ha perso
+                        const homeLost = isFinished && (match.home_score ?? 0) < (match.away_score ?? 0);
+                        const awayLost = isFinished && (match.away_score ?? 0) < (match.home_score ?? 0);
+                        
                         return (
                           <Link key={match.id} href={`/partite/${match.id}`} className="block relative">
                             <div className={`rounded-xl shadow-sm border p-3 transition-shadow relative ${
@@ -488,7 +492,10 @@ export default function ClassifichePage() {
                                   <span className="w-1.5 h-1.5 bg-white rounded-full" /> LIVE
                                 </div>
                               )}
-                              <div className="flex items-center justify-between mb-2">
+                              {/* ✅ Squadra Casa con opacità se eliminata */}
+                              <div className={`flex items-center justify-between mb-2 transition-opacity ${
+                                homeLost ? 'opacity-30' : ''
+                              }`}>
                                 <div className="flex items-center gap-2 flex-1">
                                   <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isMatchLive ? 'bg-white/10' : 'bg-gray-100'}`}>
                                     {match.home_team?.logo_url ? (
@@ -499,7 +506,10 @@ export default function ClassifichePage() {
                                 </div>
                                 <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.home_score ?? '-'}</span>
                               </div>
-                              <div className="flex items-center justify-between">
+                              {/* ✅ Squadra Trasferta con opacità se eliminata */}
+                              <div className={`flex items-center justify-between transition-opacity ${
+                                awayLost ? 'opacity-30' : ''
+                              }`}>
                                 <div className="flex items-center gap-2 flex-1">
                                   <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isMatchLive ? 'bg-white/10' : 'bg-gray-100'}`}>
                                     {match.away_team?.logo_url ? (
@@ -524,6 +534,11 @@ export default function ClassifichePage() {
                 <div className="relative max-w-[220px] mx-auto">
                   {phaseMatches.filter(m => m.phase === 'SEMIFINALI').map((match, idx) => {
                     const isMatchLive = match.status === 'LIVE' || match.status === 'SUPP' || match.status === 'RIGORI';
+                    const isFinished = match.status === 'FINITA';
+                    // ✅ Determina chi ha perso
+                    const homeLost = isFinished && (match.home_score ?? 0) < (match.away_score ?? 0);
+                    const awayLost = isFinished && (match.away_score ?? 0) < (match.home_score ?? 0);
+                    
                     return (
                       <div key={match.id} className={`relative ${idx === 0 ? 'mb-32' : ''}`}>
                         <div className="absolute -left-12 top-1/2 w-6 h-px bg-gray-300" />
@@ -542,7 +557,10 @@ export default function ClassifichePage() {
                                 <span className="w-1.5 h-1.5 bg-white rounded-full" /> LIVE
                               </div>
                             )}
-                            <div className="flex items-center justify-between mb-2">
+                            {/* ✅ Squadra Casa con opacità se eliminata */}
+                            <div className={`flex items-center justify-between mb-2 transition-opacity ${
+                              homeLost ? 'opacity-30' : ''
+                            }`}>
                               <div className="flex items-center gap-2 flex-1">
                                 <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isMatchLive ? 'bg-white/10' : 'bg-gray-100'}`}>
                                   {match.home_team?.logo_url ? (
@@ -553,7 +571,10 @@ export default function ClassifichePage() {
                               </div>
                               <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.home_score ?? '-'}</span>
                             </div>
-                            <div className="flex items-center justify-between">
+                            {/* ✅ Squadra Trasferta con opacità se eliminata */}
+                            <div className={`flex items-center justify-between transition-opacity ${
+                              awayLost ? 'opacity-30' : ''
+                            }`}>
                               <div className="flex items-center gap-2 flex-1">
                                 <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isMatchLive ? 'bg-white/10' : 'bg-gray-100'}`}>
                                   {match.away_team?.logo_url ? (
@@ -586,6 +607,11 @@ export default function ClassifichePage() {
 
                   {phaseMatches.filter(m => m.phase === 'FINALE').map((match) => {
                     const isMatchLive = match.status === 'LIVE' || match.status === 'SUPP' || match.status === 'RIGORI';
+                    const isFinished = match.status === 'FINITA';
+                    // ✅ Determina chi ha perso
+                    const homeLost = isFinished && (match.home_score ?? 0) < (match.away_score ?? 0);
+                    const awayLost = isFinished && (match.away_score ?? 0) < (match.home_score ?? 0);
+                    
                     return (
                       <Link key={match.id} href={`/partite/${match.id}`} className="block relative translate-y-[110px]">
                         <div className={`rounded-xl shadow-md border-2 p-3 transition-shadow relative ${
@@ -598,7 +624,10 @@ export default function ClassifichePage() {
                               <span className="w-1.5 h-1.5 bg-white rounded-full" /> LIVE
                             </div>
                           )}
-                          <div className="flex items-center justify-between mb-2">
+                          {/* ✅ Squadra Casa con opacità se eliminata */}
+                          <div className={`flex items-center justify-between mb-2 transition-opacity ${
+                            homeLost ? 'opacity-30' : ''
+                          }`}>
                             <div className="flex items-center gap-2 flex-1">
                               <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isMatchLive ? 'bg-white/10' : 'bg-white/80'}`}>
                                 {match.home_team?.logo_url ? (
@@ -609,7 +638,10 @@ export default function ClassifichePage() {
                             </div>
                             <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.home_score ?? '-'}</span>
                           </div>
-                          <div className="flex items-center justify-between">
+                          {/* ✅ Squadra Trasferta con opacità se eliminata */}
+                          <div className={`flex items-center justify-between transition-opacity ${
+                            awayLost ? 'opacity-30' : ''
+                          }`}>
                             <div className="flex items-center gap-2 flex-1">
                               <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isMatchLive ? 'bg-white/10' : 'bg-white/80'}`}>
                                 {match.away_team?.logo_url ? (
@@ -628,6 +660,11 @@ export default function ClassifichePage() {
 
                   {phaseMatches.filter(m => m.phase === 'FINALE_3_4').map((match) => {
                     const isMatchLive = match.status === 'LIVE' || match.status === 'SUPP' || match.status === 'RIGORI';
+                    const isFinished = match.status === 'FINITA';
+                    // ✅ Determina chi ha perso
+                    const homeLost = isFinished && (match.home_score ?? 0) < (match.away_score ?? 0);
+                    const awayLost = isFinished && (match.away_score ?? 0) < (match.home_score ?? 0);
+                    
                     return (
                       <Link key={match.id} href={`/partite/${match.id}`} className="block relative translate-y-[160px]">
                         <div className={`rounded-xl shadow-md border-2 p-3 transition-shadow relative ${
@@ -640,7 +677,10 @@ export default function ClassifichePage() {
                               <span className="w-1.5 h-1.5 bg-white rounded-full" /> LIVE
                             </div>
                           )}
-                          <div className="flex items-center justify-between mb-2">
+                          {/* ✅ Squadra Casa con opacità se eliminata */}
+                          <div className={`flex items-center justify-between mb-2 transition-opacity ${
+                            homeLost ? 'opacity-30' : ''
+                          }`}>
                             <div className="flex items-center gap-2 flex-1">
                               <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isMatchLive ? 'bg-white/10' : 'bg-white/80'}`}>
                                 {match.home_team?.logo_url ? (
@@ -651,7 +691,10 @@ export default function ClassifichePage() {
                             </div>
                             <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.home_score ?? '-'}</span>
                           </div>
-                          <div className="flex items-center justify-between">
+                          {/* ✅ Squadra Trasferta con opacità se eliminata */}
+                          <div className={`flex items-center justify-between transition-opacity ${
+                            awayLost ? 'opacity-30' : ''
+                          }`}>
                             <div className="flex items-center gap-2 flex-1">
                               <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isMatchLive ? 'bg-white/10' : 'bg-white/80'}`}>
                                 {match.away_team?.logo_url ? (
