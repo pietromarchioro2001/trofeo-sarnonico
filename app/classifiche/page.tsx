@@ -111,84 +111,70 @@ export default function ClassifichePage() {
     const supabase = createClient();
 
     try {
-      // 1. CLASSIFICA GIRONI (solo se NON siamo ancora in fase finale)
-      const { data: finalPhaseMatches } = await supabase
+      // 1. CLASSIFICA GIRONI (sempre calcolata, ma SOLO con partite dei gironi)
+      const { data: allTeams, error: teamsError } = await supabase
+        .from('teams')
+        .select('id, name, logo_url, girone');
+
+      if (teamsError) throw teamsError;
+
+      const { data: matchesData, error: matchesError } = await supabase
         .from('matches')
-        .select('phase')
-        .in('phase', ['QUARTI', 'SEMIFINALI', 'FINALE', 'FINALE_3_4'])
-        .limit(1);
+        .select('id, home_team_id, away_team_id, home_score, away_score, status, phase')
+        .eq('phase', 'GIRONI') // ✅ FILTRO: solo partite dei gironi
+        .in('status', ['FINITA', 'LIVE', 'SUPP', 'RIGORI']);
 
-      const hasFinalPhase = finalPhaseMatches && finalPhaseMatches.length > 0;
+      if (matchesError) throw matchesError;
 
-      // Se siamo già in fase finale, NON aggiornare le classifiche
-      if (!hasFinalPhase) {
-        const { data: allTeams, error: teamsError } = await supabase
-          .from('teams')
-          .select('id, name, logo_url, girone');
+      const statsMap = new Map<string, TeamStats>();
+      const newLiveMap = new Map<string, { matchId: string; score: string }>();
 
-        if (teamsError) throw teamsError;
-
-        const { data: matchesData, error: matchesError } = await supabase
-          .from('matches')
-          .select('id, home_team_id, away_team_id, home_score, away_score, status, phase')
-          .eq('phase', 'GIRONI') // ✅ Solo partite dei gironi
-          .in('status', ['FINITA', 'LIVE', 'SUPP', 'RIGORI']);
-
-        if (matchesError) throw matchesError;
-
-        const statsMap = new Map<string, TeamStats>();
-        const newLiveMap = new Map<string, { matchId: string; score: string }>();
-
-        (allTeams || []).forEach(t => {
-          statsMap.set(t.id, { 
-            id: t.id, name: t.name, logo_url: t.logo_url, girone: t.girone, 
-            pt: 0, pg: 0, v: 0, p: 0, s: 0, gf: 0, gs: 0, dr: 0 
-          });
+      (allTeams || []).forEach(t => {
+        statsMap.set(t.id, { 
+          id: t.id, name: t.name, logo_url: t.logo_url, girone: t.girone, 
+          pt: 0, pg: 0, v: 0, p: 0, s: 0, gf: 0, gs: 0, dr: 0 
         });
+      });
 
-        matchesData?.forEach((m: any) => {
-          const homeStats = statsMap.get(m.home_team_id);
-          const awayStats = statsMap.get(m.away_team_id);
-          if (!homeStats || !awayStats) return;
+      matchesData?.forEach((m: any) => {
+        const homeStats = statsMap.get(m.home_team_id);
+        const awayStats = statsMap.get(m.away_team_id);
+        if (!homeStats || !awayStats) return;
 
-          const hScore = m.home_score || 0;
-          const aScore = m.away_score || 0;
+        const hScore = m.home_score || 0;
+        const aScore = m.away_score || 0;
 
-          homeStats.pg += 1;
-          awayStats.pg += 1;
-          homeStats.gf += hScore;
-          homeStats.gs += aScore;
-          homeStats.dr = homeStats.gf - homeStats.gs;
-          
-          awayStats.gf += aScore;
-          awayStats.gs += hScore;
-          awayStats.dr = awayStats.gf - awayStats.gs;
+        homeStats.pg += 1;
+        awayStats.pg += 1;
+        homeStats.gf += hScore;
+        homeStats.gs += aScore;
+        homeStats.dr = homeStats.gf - homeStats.gs;
+        
+        awayStats.gf += aScore;
+        awayStats.gs += hScore;
+        awayStats.dr = awayStats.gf - awayStats.gs;
 
-          if (hScore > aScore) {
-            homeStats.v += 1; homeStats.pt += 3; awayStats.s += 1;
-          } else if (aScore > hScore) {
-            awayStats.v += 1; awayStats.pt += 3; homeStats.s += 1;
-          } else {
-            homeStats.p += 1; homeStats.pt += 1;
-            awayStats.p += 1; awayStats.pt += 1;
-          }
+        if (hScore > aScore) {
+          homeStats.v += 1; homeStats.pt += 3; awayStats.s += 1;
+        } else if (aScore > hScore) {
+          awayStats.v += 1; awayStats.pt += 3; homeStats.s += 1;
+        } else {
+          homeStats.p += 1; homeStats.pt += 1;
+          awayStats.p += 1; awayStats.pt += 1;
+        }
 
-          if (m.status === 'LIVE' || m.status === 'SUPP' || m.status === 'RIGORI') {
-            newLiveMap.set(m.home_team_id, { matchId: m.id, score: `${hScore} - ${aScore}` });
-            newLiveMap.set(m.away_team_id, { matchId: m.id, score: `${hScore} - ${aScore}` });
-          }
-        });
+        // ✅ NON registrare partite LIVE nella mappa (così non si evidenziano)
+        // Rimuovi completamente il blocco che aggiunge a newLiveMap
+      });
 
-        const allStats = Array.from(statsMap.values());
-        const sortFn = (a: TeamStats, b: TeamStats) => b.pt - a.pt || b.dr - a.dr || b.gf - a.gf;
+      const allStats = Array.from(statsMap.values());
+      const sortFn = (a: TeamStats, b: TeamStats) => b.pt - a.pt || b.dr - a.dr || b.gf - a.gf;
 
-        setStandings({
-          gironeA: allStats.filter(t => t.girone === 'A').sort(sortFn),
-          gironeB: allStats.filter(t => t.girone === 'B').sort(sortFn),
-        });
-        setLiveMatchesMap(newLiveMap);
-      }
-      // ✅ Se siamo in fase finale, le classifiche rimangono congelate (non facciamo nulla)
+      setStandings({
+        gironeA: allStats.filter(t => t.girone === 'A').sort(sortFn),
+        gironeB: allStats.filter(t => t.girone === 'B').sort(sortFn),
+      });
+      setLiveMatchesMap(newLiveMap); // Sarà sempre vuota
 
       // 2. FASE FINALE
       const { data: phaseMatchesData, error: phaseError } = await supabase
