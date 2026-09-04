@@ -91,51 +91,45 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
   const [currentKick, setCurrentKick] = useState(0);
   const [lightState, setLightState] = useState<'none' | 'green' | 'red'>('none');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [shootoutId, setShootoutId] = useState<string | null>(null);
 
-    // ✅ Fetch e Realtime dei rigori dal database
+  // ✅ Fetch e Realtime dalla tabella penalty_shootouts
   useEffect(() => {
     const supabase = createClient();
     
-    const fetchPenalties = async () => {
+    const fetchShootout = async () => {
       const { data } = await supabase
-        .from('match_events')
-        .select('id, event_type, team_id, minute')
+        .from('penalty_shootouts')
+        .select('*')
         .eq('match_id', matchId)
-        .in('event_type', ['PENALTY_START', 'PENALTY_GOAL', 'PENALTY_MISS'])
-        .order('minute', { ascending: true });
+        .maybeSingle();
       
-      if (data && data.length > 0) {
-        const startEvent = data.find(e => e.event_type === 'PENALTY_START');
-        if (startEvent) {
-          setStarted(true);
-          setFirstKicker(startEvent.team_id === homeTeam.id ? 'home' : 'away');
-        }
+      if (data) {
+        setShootoutId(data.id);
+        setStarted(true);
+        setFirstKicker(data.first_kicker_team as 'home' | 'away');
+        setPenaltyScore({ home: data.score_home || 0, away: data.score_away || 0 });
         
-        const penaltyEvents = data.filter(e => e.event_type === 'PENALTY_GOAL' || e.event_type === 'PENALTY_MISS');
-        const newKicks = penaltyEvents.map(e => ({
-          team: (e.team_id === homeTeam.id ? 'home' : 'away') as 'home' | 'away', // ✅ Fix TypeScript
-          scored: e.event_type === 'PENALTY_GOAL',
-          kickerId: e.id
-        }));
-        
-        setKicks(newKicks);
-        setCurrentKick(newKicks.length);
-        
-        const homeScore = newKicks.filter(k => k.team === 'home' && k.scored).length;
-        const awayScore = newKicks.filter(k => k.team === 'away' && k.scored).length;
-        setPenaltyScore({ home: homeScore, away: awayScore });
+        const parsedKicks = Array.isArray(data.kicks) ? data.kicks : [];
+        setKicks(parsedKicks);
+        setCurrentKick(parsedKicks.length);
       }
     };
 
-    fetchPenalties();
+    fetchShootout();
 
     const channel = supabase
-      .channel(`penalties-${matchId}`)
+      .channel(`shootout-${matchId}`)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'match_events', filter: `match_id=eq.${matchId}` },
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'penalty_shootouts', 
+          filter: `match_id=eq.${matchId}` 
+        },
         () => {
-          fetchPenalties();
+          fetchShootout();
         }
       )
       .subscribe();
@@ -143,45 +137,60 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [matchId, homeTeam.id]);
+  }, [matchId]);
 
   const handleFirstKickerSelect = async (team: 'home' | 'away') => {
     const supabase = createClient();
-    const teamId = team === 'home' ? homeTeam.id : awayTeam.id;
     
-    await supabase.from('match_events').insert({
-      match_id: matchId,
-      event_type: 'PENALTY_START',
-      minute: 120,
-      team_id: teamId, // ✅ Questo è già valido
-      player_id: null
-    });
+    const { data, error } = await supabase
+      .from('penalty_shootouts')
+      .update({ first_kicker_team: team })
+      .eq('match_id', matchId)
+      .select()
+      .maybeSingle();
+
+    if (error) {
+      console.error('Errore aggiornamento:', error);
+      return;
+    }
+
+    if (data) {
+      setShootoutId(data.id);
+    }
     
     setFirstKicker(team);
     setStarted(true);
   };
 
   const handleKick = async (scored: boolean) => {
-    if (isProcessing) return;
+    if (isProcessing || !shootoutId) return;
     setIsProcessing(true);
     
     const kickingTeam = currentKick % 2 === 0
       ? firstKicker!
       : (firstKicker === 'home' ? 'away' : 'home');
-      
-    const kickingTeamId = kickingTeam === 'home' ? homeTeam.id : awayTeam.id;
-    const eventType = scored ? 'PENALTY_GOAL' : 'PENALTY_MISS';
+    
+    const newKick = { team: kickingTeam, scored };
+    const newKicks = [...kicks, newKick];
+    
+    const newScore = {
+      home: penaltyScore.home + (kickingTeam === 'home' && scored ? 1 : 0),
+      away: penaltyScore.away + (kickingTeam === 'away' && scored ? 1 : 0)
+    };
     
     try {
       const supabase = createClient();
-      await supabase.from('match_events').insert({
-        match_id: matchId,
-        event_type: eventType,
-        minute: 120 + currentKick,
-        team_id: kickingTeamId, // ✅ Team_id valido
-        player_id: null
-      });
-      
+      const { error } = await supabase
+        .from('penalty_shootouts')
+        .update({
+          kicks: newKicks,
+          score_home: newScore.home,
+          score_away: newScore.away
+        })
+        .eq('id', shootoutId);
+
+      if (error) throw error;
+
       setLightState(scored ? 'green' : 'red');
       setTimeout(() => {
         setLightState('none');
@@ -304,7 +313,7 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
             }`} />
           </div>
           
-          {/* ✅ PULSANTI VISIBILI SOLO PER LO STAFF (isAdmin) */}
+          {/* ✅ PULSANTI VISIBILI SOLO PER LO STAFF */}
           {isAdmin && (
             <>
               <div className="flex gap-3 mb-4">
@@ -821,15 +830,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     try {
       await supabase.from('matches').update({ status: 'SUPP' }).eq('id', match.id);
       setMatch({ ...match, status: 'SUPP' });
-
-      // ✅ Usa home_team.id invece di null per team_id
-      await supabase.from('match_events').insert({
-        match_id: match.id,
-        event_type: 'SUPPLEMENTARI_START',
-        minute: 90,
-        team_id: match.home_team.id, // ✅ Usa un team_id valido
-        player_id: null
-      });
     } catch (err) {
       console.error('Errore passaggio a supplementari:', err);
     }
@@ -837,21 +837,47 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
 
   const handlePenalties = async () => {
     if (!match) return;
-    setShowPenaltyPopup(true);
     const supabase = createClient();
-    await supabase.from('matches').update({ status: 'RIGORI' }).eq('id', match.id);
-    setMatch({ ...match, status: 'RIGORI' });
+    
+    try {
+      // 1. Aggiorna status
+      await supabase.from('matches').update({ status: 'RIGORI' }).eq('id', match.id);
+      setMatch({ ...match, status: 'RIGORI' });
+
+      // 2. Crea record in penalty_shootouts (se non esiste già)
+      const { data: existing } = await supabase
+        .from('penalty_shootouts')
+        .select('id')
+        .eq('match_id', match.id)
+        .maybeSingle();
+
+      if (!existing) {
+        await supabase.from('penalty_shootouts').insert({
+          match_id: match.id,
+          first_kicker_team: 'home', // default, verrà scelto nel popup
+          score_home: 0,
+          score_away: 0,
+          kicks: []
+        });
+      }
+
+      setShowPenaltyPopup(true);
+    } catch (err) {
+      console.error('Errore passaggio a rigori:', err);
+    }
   };
 
   const handlePenaltyEnd = async (winner: 'home' | 'away' | null) => {
     setShowPenaltyPopup(false);
     if (!match) return;
     
-    // ✅ Termina la partita SOLO se c'è un vincitore (non se chiudi con la X)
     if (winner) {
       const supabase = createClient();
       await supabase.from('matches').update({ status: 'FINITA' }).eq('id', match.id);
       setMatch({ ...match, status: 'FINITA' });
+      
+      // ✅ Pulizia: elimina il record dei rigori (opzionale)
+      await supabase.from('penalty_shootouts').delete().eq('match_id', match.id);
     }
   };
 
@@ -1074,73 +1100,70 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
 
               <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
                 <div className="space-y-4">
-
                   {events.length === 0 ? (
                     <div className="text-center py-4 text-gray-500 text-sm">Nessun evento registrato</div>
                   ) : (
-                    events.map((event, i) => {
-                      // ✅ Linea divisoria SUPPLEMENTARI
-                      if (event.event_type === 'SUPPLEMENTARI_START') {
+                    <>
+                      {/* ✅ Eventi del tempo regolamentare */}
+                      {events.map((event, i) => {
+                        const isHome = event.team_id === match.home_team.id;
+                        const playerName = event.player
+                          ? `${event.player.first_name?.[0] || ''}. ${event.player.last_name || ''}`
+                          : 'Sconosciuto';
+                        
                         return (
-                          <div key={event.id} className="flex items-center gap-3 my-4">
-                            <div className="flex-1 h-px bg-orange-400" />
-                            <span className="font-black text-xs uppercase tracking-wider whitespace-nowrap text-orange-500">
-                              Supplementari
-                            </span>
-                            <div className="flex-1 h-px bg-orange-400" />
+                          <div 
+                            key={event.id} 
+                            className={`flex items-center gap-2 ${isStaffMode ? 'cursor-pointer hover:bg-gray-50 rounded-lg px-2 py-1 -mx-2 transition-colors' : ''}`}
+                            onClick={() => isStaffMode && setEditingEvent(event)}
+                          >
+                            {isHome ? (
+                              <>
+                                <div className="flex items-center gap-2 flex-1 justify-end">
+                                  <EventIcon type={event.event_type} size={16} />
+                                  <span className="font-bold text-[#581C24] text-xs w-8 text-right">{event.minute}'</span>
+                                  <span className="font-medium text-xs truncate">{playerName}</span>
+                                </div>
+                                <div className="w-px h-8 bg-gray-300 flex-shrink-0" />
+                                <div className="flex-1" />
+                              </>
+                            ) : (
+                              <>
+                                <div className="flex-1" />
+                                <div className="w-px h-8 bg-gray-300 flex-shrink-0" />
+                                <div className="flex items-center gap-2 flex-1 justify-start">
+                                  <span className="font-medium text-xs truncate">{playerName}</span>
+                                  <span className="font-bold text-[#581C24] text-xs w-8">{event.minute}'</span>
+                                  <EventIcon type={event.event_type} size={16} />
+                                </div>
+                              </>
+                            )}
                           </div>
                         );
-                      }
-                      
-                      // ✅ Linea divisoria RIGORI
-                      if (event.event_type === 'PENALTY_START') {
-                        return (
-                          <div key={event.id} className="flex items-center gap-3 my-4">
-                            <div className="flex-1 h-px bg-purple-400" />
-                            <span className="font-black text-xs uppercase tracking-wider whitespace-nowrap text-purple-500">
-                              Calci di Rigore
-                            </span>
-                            <div className="flex-1 h-px bg-purple-400" />
-                          </div>
-                        );
-                      }
+                      })}
 
-                      // ✅ Rendering evento normale
-                      const isHome = event.team_id === match.home_team.id;
-                      const playerName = event.player
-                        ? `${event.player.first_name?.[0] || ''}. ${event.player.last_name || ''}`
-                        : 'Sconosciuto';
-                      
-                      return (
-                        <div 
-                          key={event.id} 
-                          className={`flex items-center gap-2 ${isStaffMode ? 'cursor-pointer hover:bg-gray-50 rounded-lg px-2 py-1 -mx-2 transition-colors' : ''}`}
-                          onClick={() => isStaffMode && setEditingEvent(event)}
-                        >
-                          {isHome ? (
-                            <>
-                              <div className="flex items-center gap-2 flex-1 justify-end">
-                                <EventIcon type={event.event_type} size={16} />
-                                <span className="font-bold text-[#581C24] text-xs w-8 text-right">{event.minute}'</span>
-                                <span className="font-medium text-xs truncate">{playerName}</span>
-                              </div>
-                              <div className="w-px h-8 bg-gray-300 flex-shrink-0" />
-                              <div className="flex-1" />
-                            </>
-                          ) : (
-                            <>
-                              <div className="flex-1" />
-                              <div className="w-px h-8 bg-gray-300 flex-shrink-0" />
-                              <div className="flex items-center gap-2 flex-1 justify-start">
-                                <span className="font-medium text-xs truncate">{playerName}</span>
-                                <span className="font-bold text-[#581C24] text-xs w-8">{event.minute}'</span>
-                                <EventIcon type={event.event_type} size={16} />
-                              </div>
-                            </>
-                          )}
+                      {/* ✅ Linea SUPPLEMENTARI - appare dopo tutti gli eventi se status è SUPP o RIGORI */}
+                      {(match.status === 'SUPP' || match.status === 'RIGORI') && (
+                        <div className="flex items-center gap-3 my-4">
+                          <div className="flex-1 h-px bg-orange-400" />
+                          <span className="font-black text-xs uppercase tracking-wider whitespace-nowrap text-orange-500">
+                            Supplementari
+                          </span>
+                          <div className="flex-1 h-px bg-orange-400" />
                         </div>
-                      );
-                    })
+                      )}
+
+                      {/* ✅ Linea CALCIO DI RIGORE - appare dopo i supplementari se status è RIGORI */}
+                      {match.status === 'RIGORI' && (
+                        <div className="flex items-center gap-3 my-4">
+                          <div className="flex-1 h-px bg-purple-400" />
+                          <span className="font-black text-xs uppercase tracking-wider whitespace-nowrap text-purple-500">
+                            Calci di Rigore
+                          </span>
+                          <div className="flex-1 h-px bg-purple-400" />
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
