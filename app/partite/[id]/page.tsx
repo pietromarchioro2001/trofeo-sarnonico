@@ -145,14 +145,22 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
             <p className="text-center text-sm font-bold text-gray-600 mb-4 uppercase">Chi inizia i rigori?</p>
             <div className="flex gap-4">
               <button onClick={() => handleFirstKickerSelect('home')} className="flex-1 flex flex-col items-center gap-3 p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors border-2 border-gray-200">
-                <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center">
-                  <span className="text-[10px] text-gray-500">LOGO</span>
+                <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
+                  {homeTeam.logo_url ? (
+                    <Image src={homeTeam.logo_url} alt={homeTeam.name} width={64} height={64} className="object-cover" />
+                  ) : (
+                    <span className="text-[10px] text-gray-500">LOGO</span>
+                  )}
                 </div>
                 <span className="font-bold text-sm text-[#581C24]">{homeTeam.name}</span>
               </button>
               <button onClick={() => handleFirstKickerSelect('away')} className="flex-1 flex flex-col items-center gap-3 p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors border-2 border-gray-200">
-                <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center">
-                  <span className="text-[10px] text-gray-500">LOGO</span>
+                <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
+                  {awayTeam.logo_url ? (
+                    <Image src={awayTeam.logo_url} alt={awayTeam.name} width={64} height={64} className="object-cover" />
+                  ) : (
+                    <span className="text-[10px] text-gray-500">LOGO</span>
+                  )}
                 </div>
                 <span className="font-bold text-sm text-[#581C24]">{awayTeam.name}</span>
               </button>
@@ -177,8 +185,12 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
         <div className="p-4">
           <div className="flex items-center justify-between mb-6">
             <div className="flex-1 flex flex-col items-center">
-              <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center mb-2">
-                <span className="text-[8px] text-gray-500">LOGO</span>
+              <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center mb-2 overflow-hidden">
+                {homeTeam.logo_url ? (
+                  <Image src={homeTeam.logo_url} alt={homeTeam.name} width={48} height={48} className="object-cover" />
+                ) : (
+                  <span className="text-[8px] text-gray-500">LOGO</span>
+                )}
               </div>
               <span className="font-bold text-xs text-[#581C24]">{homeTeam.name}</span>
               <div className="flex gap-1 mt-2">
@@ -193,8 +205,12 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
               <span className="text-4xl font-black text-[#581C24]">{penaltyScore.away}</span>
             </div>
             <div className="flex-1 flex flex-col items-center">
-              <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center mb-2">
-                <span className="text-[8px] text-gray-500">LOGO</span>
+              <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center mb-2 overflow-hidden">
+                {awayTeam.logo_url ? (
+                  <Image src={awayTeam.logo_url} alt={awayTeam.name} width={48} height={48} className="object-cover" />
+                ) : (
+                  <span className="text-[8px] text-gray-500">LOGO</span>
+                )}
               </div>
               <span className="font-bold text-xs text-[#581C24]">{awayTeam.name}</span>
               <div className="flex gap-1 mt-2">
@@ -732,9 +748,13 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   const handlePenaltyEnd = async (winner: 'home' | 'away' | null) => {
     setShowPenaltyPopup(false);
     if (!match) return;
-    const supabase = createClient();
-    await supabase.from('matches').update({ status: 'FINITA' }).eq('id', match.id);
-    setMatch({ ...match, status: 'FINITA' });
+    
+    // ✅ Termina la partita SOLO se c'è un vincitore (non se chiudi con la X)
+    if (winner) {
+      const supabase = createClient();
+      await supabase.from('matches').update({ status: 'FINITA' }).eq('id', match.id);
+      setMatch({ ...match, status: 'FINITA' });
+    }
   };
 
   const getStatusLabel = () => {
