@@ -1085,105 +1085,78 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
             )}
 
       {/* CRONACA */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                {isStaffMode ? (
-                  <>
-                    <AdminAddEvent 
-                      matchId={match.id}
-                      teamSide="home"
-                    />
-                    <h2 className="text-[#581C24] font-bold text-base uppercase tracking-wider text-center flex-1">Cronaca</h2>
-                    <AdminAddEvent 
-                      matchId={match.id}
-                      teamSide="away"
-                    />
-                  </>
-                ) : (
-                  <h2 className="text-[#581C24] font-bold text-base uppercase tracking-wider text-center w-full">Cronaca</h2>
-                )}
-              </div>
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          {isStaffMode ? (
+            <>
+              <AdminAddEvent 
+                matchId={match.id}
+                teamSide="home"
+              />
+              <h2 className="text-[#581C24] font-bold text-base uppercase tracking-wider text-center flex-1">Cronaca</h2>
+              <AdminAddEvent 
+                matchId={match.id}
+                teamSide="away"
+              />
+            </>
+          ) : (
+            <h2 className="text-[#581C24] font-bold text-base uppercase tracking-wider text-center w-full">Cronaca</h2>
+          )}
+        </div>
 
-              <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                <div className="space-y-4">
-                  {events.length === 0 ? (
-                    <div className="text-center py-4 text-gray-500 text-sm">Nessun evento registrato</div>
-                  ) : (
-                    <>
-                      {events.map((event, i) => {
-                        const isHome = event.team_id === match.home_team.id;
-                        const playerName = event.player
-                          ? `${event.player.first_name?.[0] || ''}. ${event.player.last_name || ''}`
-                          : 'Sconosciuto';
-                        
-                        const prevEvent = events[i - 1];
-                        
-                        // ✅ Mostra la linea quando passa a SUPP
-                        const showSuppLine = 
-                          event.phase === 'SUPP' && 
-                          (i === 0 || prevEvent?.phase !== 'SUPP');
-                        
-                        // ✅ Mostra la linea quando passa a RIGORI
-                        const showRigoriLine = 
-                          event.phase === 'RIGORI' && 
-                          (i === 0 || prevEvent?.phase !== 'RIGORI');
-                        
-                        return (
-                          <React.Fragment key={event.id}>
-                            {showSuppLine && (
-                              <div className="flex items-center gap-3 my-4">
-                                <div className="flex-1 h-px bg-orange-400" />
-                                <span className="font-black text-xs uppercase tracking-wider whitespace-nowrap text-orange-500">
-                                  Supplementari
-                                </span>
-                                <div className="flex-1 h-px bg-orange-400" />
-                              </div>
-                            )}
-                            
-                            {showRigoriLine && (
-                              <div className="flex items-center gap-3 my-4">
-                                <div className="flex-1 h-px bg-purple-400" />
-                                <span className="font-black text-xs uppercase tracking-wider whitespace-nowrap text-purple-500">
-                                  Calci di Rigore
-                                </span>
-                                <div className="flex-1 h-px bg-purple-400" />
-                              </div>
-                            )}
-                            
-                            <div 
-                              className={`flex items-center gap-2 ${isStaffMode ? 'cursor-pointer hover:bg-gray-50 rounded-lg px-2 py-1 -mx-2 transition-colors' : ''}`}
-                              onClick={() => isStaffMode && setEditingEvent(event)}
-                            >
-                              {isHome ? (
-                                <>
-                                  <div className="flex items-center gap-2 flex-1 justify-end">
-                                    <EventIcon type={event.event_type} size={16} />
-                                    <span className="font-bold text-[#581C24] text-xs w-8 text-right">{event.minute}'</span>
-                                    <span className="font-medium text-xs truncate">{playerName}</span>
-                                  </div>
-                                  <div className="w-px h-8 bg-gray-300 flex-shrink-0" />
-                                  <div className="flex-1" />
-                                </>
-                              ) : (
-                                <>
-                                  <div className="flex-1" />
-                                  <div className="w-px h-8 bg-gray-300 flex-shrink-0" />
-                                  <div className="flex items-center gap-2 flex-1 justify-start">
-                                    <span className="font-medium text-xs truncate">{playerName}</span>
-                                    <span className="font-bold text-[#581C24] text-xs w-8">{event.minute}'</span>
-                                    <EventIcon type={event.event_type} size={16} />
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                          </React.Fragment>
-                        );
-                      })}
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="space-y-4">
+            {events.length === 0 ? (
+              <div className="text-center py-4 text-gray-500 text-sm">Nessun evento registrato</div>
+            ) : (
+              <>
+                {events.map((event, i) => {
+                  const isHome = event.team_id === match.home_team.id;
+                  const playerName = event.player
+                    ? `${event.player.first_name?.[0] || ''}. ${event.player.last_name || ''}`
+                    : 'Sconosciuto';
+                  
+                  // ✅ Determina il colore della linea verticale in base allo status
+                  const lineColor = 
+                    match.status === 'RIGORI' ? 'bg-purple-400' :
+                    match.status === 'SUPP' ? 'bg-orange-400' :
+                    'bg-gray-300';
+                  
+                  return (
+                    <div 
+                      key={event.id}
+                      className={`flex items-center gap-2 ${isStaffMode ? 'cursor-pointer hover:bg-gray-50 rounded-lg px-2 py-1 -mx-2 transition-colors' : ''}`}
+                      onClick={() => isStaffMode && setEditingEvent(event)}
+                    >
+                      {isHome ? (
+                        <>
+                          <div className="flex items-center gap-2 flex-1 justify-end">
+                            <EventIcon type={event.event_type} size={16} />
+                            <span className="font-bold text-[#581C24] text-xs w-8 text-right">{event.minute}'</span>
+                            <span className="font-medium text-xs truncate">{playerName}</span>
+                          </div>
+                          <div className={`w-px h-8 flex-shrink-0 ${lineColor}`} />
+                          <div className="flex-1" />
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex-1" />
+                          <div className={`w-px h-8 flex-shrink-0 ${lineColor}`} />
+                          <div className="flex items-center gap-2 flex-1 justify-start">
+                            <span className="font-medium text-xs truncate">{playerName}</span>
+                            <span className="font-bold text-[#581C24] text-xs w-8">{event.minute}'</span>
+                            <EventIcon type={event.event_type} size={16} />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
           </>
         ) : (
           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
