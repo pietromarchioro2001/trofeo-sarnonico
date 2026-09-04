@@ -1116,23 +1116,18 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                           ? `${event.player.first_name?.[0] || ''}. ${event.player.last_name || ''}`
                           : 'Sconosciuto';
                         
-                        const prevMinute = events[i - 1]?.minute ?? null;
-                        const isLastEvent = i === events.length - 1;
+                        const prevEvent = events[i - 1];
                         
-                        // Controlla se esistono già eventi nei supplementari o ai rigori
-                        const hasSuppEvents = events.some(e => e.minute !== null && e.minute > 90 && e.minute <= 120);
-                        const hasRigoriEvents = events.some(e => e.minute !== null && e.minute > 120);
-
-                        const prevPhase = events[i - 1]?.phase || 'LIVE'; // ✅ Fallback a 'LIVE' se undefined
-
+                        // ✅ Mostra la linea quando passa a SUPP
                         const showSuppLine = 
                           event.phase === 'SUPP' && 
-                          (i === 0 || prevPhase !== 'SUPP');
-
+                          (i === 0 || prevEvent?.phase !== 'SUPP');
+                        
+                        // ✅ Mostra la linea quando passa a RIGORI
                         const showRigoriLine = 
                           event.phase === 'RIGORI' && 
-                          (i === 0 || prevPhase !== 'RIGORI');
-
+                          (i === 0 || prevEvent?.phase !== 'RIGORI');
+                        
                         return (
                           <React.Fragment key={event.id}>
                             {showSuppLine && (
