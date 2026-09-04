@@ -760,28 +760,30 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     }
   };
 
-  const handlePenalties = () => setShowPenaltyPopup(true);
+    const handlePenalties = async () => {
+      if (!match) return;
+      const supabase = createClient();
+      
+      try {
+        // 1. Mostra il popup dei rigori
+        setShowPenaltyPopup(true);
 
-  const handlePenalties = async () => {
-    if (!match) return;
-    const supabase = createClient();
-    
-    try {
-      await supabase.from('matches').update({ status: 'RIGORI' }).eq('id', match.id);
-      setMatch({ ...match, status: 'RIGORI' });
+        // 2. Aggiorna lo status a RIGORI
+        await supabase.from('matches').update({ status: 'RIGORI' }).eq('id', match.id);
+        setMatch({ ...match, status: 'RIGORI' });
 
-      // ✅ Inserisci evento "RIGORI"
-      await supabase.from('match_events').insert({
-        match_id: match.id,
-        event_type: 'RIGORI',
-        minute: 120, // Dopo i supplementari
-        team_id: null,
-        player_id: null
-      });
-    } catch (err) {
-      console.error('Errore passaggio a rigori:', err);
-    }
-  };
+        // 3. ✅ Inserisci evento "RIGORI" nel database per la linea divisoria
+        await supabase.from('match_events').insert({
+          match_id: match.id,
+          event_type: 'RIGORI',
+          minute: 120, 
+          team_id: null,
+          player_id: null
+        });
+      } catch (err) {
+        console.error('Errore passaggio a rigori:', err);
+      }
+    };
 
   const handlePenaltyEnd = async (winner: 'home' | 'away' | null) => {
     setShowPenaltyPopup(false);
