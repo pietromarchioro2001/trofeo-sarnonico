@@ -545,7 +545,6 @@ export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, matchId 
         event_type: dbEventType,
         minute: parseInt(minute),
         team_id: teamId,
-        phase: eventPhase // ✅ Nuova colonna
       });
       if (eventError) throw eventError;
 
@@ -571,8 +570,7 @@ export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, matchId 
             player_id: selectedPlayer,
             event_type: 'RED_CARD',
             minute: parseInt(minute),
-            team_id: teamId,
-            phase: eventPhase // ✅ AGGIUNGI QUESTA RIGA
+            team_id: teamId
           });
         }
 
@@ -1350,46 +1348,9 @@ export const AdminEditEvent: React.FC<AdminEditEventProps> = ({
   );
   const [selectedPlayer, setSelectedPlayer] = useState(event.player_id || '');
   const [minute, setMinute] = useState(event.minute?.toString() || '');
-  const [eventPhase, setEventPhase] = useState('LIVE'); // ✅ Nuovo stato
   const [players, setPlayers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [matchStatus, setMatchStatus] = useState(''); 
-
-    useEffect(() => {
-      const fetchPlayers = async () => {
-        const supabase = createClient();
-        
-        // ✅ Recupera anche lo status della partita
-        const { data: matchData } = await supabase
-          .from('matches')
-          .select('status')
-          .eq('id', matchId)
-          .single();
-        
-        if (matchData) {
-          setMatchStatus(matchData.status);
-        }
-        
-        const { data } = await supabase
-          .from('players')
-          .select('id, first_name, last_name, jersey_number, team_id, goals, yellow_cards, red_cards')
-          .in('team_id', [homeTeamId, awayTeamId])
-          .order('last_name', { ascending: true });
-          
-        if (data) setPlayers(data);
-      };
-      fetchPlayers();
-    }, [homeTeamId, awayTeamId, matchId]);
-
-    // ✅ Sincronizza eventPhase con lo status attuale della partita
-    useEffect(() => {
-      if (matchStatus) {
-        if (matchStatus === 'SUPP') setEventPhase('SUPP');
-        else if (matchStatus === 'RIGORI') setEventPhase('RIGORI');
-        else setEventPhase('LIVE');
-      }
-    }, [matchStatus]);
 
   const handleSave = async () => {
     if (!eventType || !selectedPlayer || !minute) {
@@ -1452,8 +1413,7 @@ export const AdminEditEvent: React.FC<AdminEditEventProps> = ({
         event_type: dbEventType,
         player_id: selectedPlayer,
         minute: parseInt(minute),
-        team_id: newTeamId,
-        phase: eventPhase // ✅ Aggiorna anche la fase
+        team_id: newTeamId
       }).eq('id', event.id);
 
       if (eventError) throw eventError;
