@@ -951,22 +951,28 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           <ArrowLeft size={20} className="text-[#581C24]" />
         </Link>
 
-        {isStaffMode && match.status !== 'FINITA' && (
-          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-            {match.status === 'PROGRAMMATA' && (
-              <button onClick={handleStartMatch} className="px-4 py-2 bg-green-600 text-white rounded-lg font-bold text-xs uppercase hover:bg-green-700 transition-colors shadow-lg">INIZIA</button>
-            )}
-            {match.status === 'LIVE' && (
-              <>
-                <button onClick={handleEndMatch} className="px-4 py-2 bg-red-600 text-white rounded-lg font-bold text-xs uppercase hover:bg-red-700 transition-colors shadow-lg">TERMINA</button>
-                {isFinalPhase && <button onClick={handleExtraTime} className="px-4 py-2 bg-orange-600 text-white rounded-lg font-bold text-xs uppercase hover:bg-orange-700 transition-colors shadow-lg">SUPPLEMENTARI</button>}
-              </>
-            )}
-            {match.status === 'SUPP' && (
-              <button onClick={handlePenalties} className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold text-xs uppercase hover:bg-purple-700 transition-colors shadow-lg">RIGORI</button>
-            )}
-          </div>
-        )}
+            {isStaffMode && match.status !== 'FINITA' && (
+            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+              {match.status === 'PROGRAMMATA' && (
+                <button onClick={handleStartMatch} className="px-4 py-2 bg-green-600 text-white rounded-lg font-bold text-xs uppercase hover:bg-green-700 transition-colors shadow-lg">INIZIA</button>
+              )}
+              {match.status === 'LIVE' && (
+                <>
+                  <button onClick={handleEndMatch} className="px-4 py-2 bg-red-600 text-white rounded-lg font-bold text-xs uppercase hover:bg-red-700 transition-colors shadow-lg">TERMINA</button>
+                  {isFinalPhase && <button onClick={handleExtraTime} className="px-4 py-2 bg-orange-600 text-white rounded-lg font-bold text-xs uppercase hover:bg-orange-700 transition-colors shadow-lg">SUPPLEMENTARI</button>}
+                </>
+              )}
+              {/* ✅ MODIFICA QUI: Mostra il pulsante sia in SUPP che in RIGORI */}
+              {(match.status === 'SUPP' || match.status === 'RIGORI') && (
+                <button 
+                  onClick={handlePenalties} 
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold text-xs uppercase hover:bg-purple-700 transition-colors shadow-lg flex items-center gap-1"
+                >
+                  {match.status === 'RIGORI' ? '📋 RIGORI' : 'RIGORI'}
+                </button>
+              )}
+            </div>
+          )}
 
         <div className="absolute top-4 right-4 flex gap-2 z-20">
           <button onClick={() => setActiveTab('media')} className="bg-white text-[#581C24] p-2 rounded-full shadow-lg hover:bg-gray-100 transition-colors">
