@@ -868,7 +868,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       if (!existing) {
         await supabase.from('penalty_shootouts').insert({
           match_id: match.id,
-          first_kicker_team: null, // ✅ IMPOTA A NULL: così il popup sa che deve chiedere
+          first_kicker_team: '', // ✅ IMPOTA A NULL: così il popup sa che deve chiedere
           score_home: 0,
           score_away: 0,
           kicks: []
