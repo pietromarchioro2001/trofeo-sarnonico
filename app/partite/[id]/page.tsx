@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, Vote, X } from 'lucide-react';
@@ -1104,65 +1105,74 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                     <div className="text-center py-4 text-gray-500 text-sm">Nessun evento registrato</div>
                   ) : (
                     <>
-                      {/* ✅ Eventi del tempo regolamentare */}
                       {events.map((event, i) => {
                         const isHome = event.team_id === match.home_team.id;
                         const playerName = event.player
                           ? `${event.player.first_name?.[0] || ''}. ${event.player.last_name || ''}`
                           : 'Sconosciuto';
                         
+                        // ✅ Mostra la linea SUPPLEMENTARI prima del primo evento > 90'
+                        const prevMinute = events[i - 1]?.minute ?? null;
+                        const showSuppLine = 
+                          event.minute !== null && event.minute > 90 && 
+                          (i === 0 || prevMinute === null || prevMinute <= 90);
+
+                        // ✅ Mostra la linea RIGORI prima del primo evento > 120'
+                        const showRigoriLine = 
+                          event.minute !== null && event.minute > 120 && 
+                          (i === 0 || prevMinute === null || prevMinute <= 120);
+                        
                         return (
-                          <div 
-                            key={event.id} 
-                            className={`flex items-center gap-2 ${isStaffMode ? 'cursor-pointer hover:bg-gray-50 rounded-lg px-2 py-1 -mx-2 transition-colors' : ''}`}
-                            onClick={() => isStaffMode && setEditingEvent(event)}
-                          >
-                            {isHome ? (
-                              <>
-                                <div className="flex items-center gap-2 flex-1 justify-end">
-                                  <EventIcon type={event.event_type} size={16} />
-                                  <span className="font-bold text-[#581C24] text-xs w-8 text-right">{event.minute}'</span>
-                                  <span className="font-medium text-xs truncate">{playerName}</span>
-                                </div>
-                                <div className="w-px h-8 bg-gray-300 flex-shrink-0" />
-                                <div className="flex-1" />
-                              </>
-                            ) : (
-                              <>
-                                <div className="flex-1" />
-                                <div className="w-px h-8 bg-gray-300 flex-shrink-0" />
-                                <div className="flex items-center gap-2 flex-1 justify-start">
-                                  <span className="font-medium text-xs truncate">{playerName}</span>
-                                  <span className="font-bold text-[#581C24] text-xs w-8">{event.minute}'</span>
-                                  <EventIcon type={event.event_type} size={16} />
-                                </div>
-                              </>
+                          <React.Fragment key={event.id}>
+                            {showSuppLine && (
+                              <div className="flex items-center gap-3 my-4">
+                                <div className="flex-1 h-px bg-orange-400" />
+                                <span className="font-black text-xs uppercase tracking-wider whitespace-nowrap text-orange-500">
+                                  Supplementari
+                                </span>
+                                <div className="flex-1 h-px bg-orange-400" />
+                              </div>
                             )}
-                          </div>
+                            
+                            {showRigoriLine && (
+                              <div className="flex items-center gap-3 my-4">
+                                <div className="flex-1 h-px bg-purple-400" />
+                                <span className="font-black text-xs uppercase tracking-wider whitespace-nowrap text-purple-500">
+                                  Calci di Rigore
+                                </span>
+                                <div className="flex-1 h-px bg-purple-400" />
+                              </div>
+                            )}
+                            
+                            <div 
+                              className={`flex items-center gap-2 ${isStaffMode ? 'cursor-pointer hover:bg-gray-50 rounded-lg px-2 py-1 -mx-2 transition-colors' : ''}`}
+                              onClick={() => isStaffMode && setEditingEvent(event)}
+                            >
+                              {isHome ? (
+                                <>
+                                  <div className="flex items-center gap-2 flex-1 justify-end">
+                                    <EventIcon type={event.event_type} size={16} />
+                                    <span className="font-bold text-[#581C24] text-xs w-8 text-right">{event.minute}'</span>
+                                    <span className="font-medium text-xs truncate">{playerName}</span>
+                                  </div>
+                                  <div className="w-px h-8 bg-gray-300 flex-shrink-0" />
+                                  <div className="flex-1" />
+                                </>
+                              ) : (
+                                <>
+                                  <div className="flex-1" />
+                                  <div className="w-px h-8 bg-gray-300 flex-shrink-0" />
+                                  <div className="flex items-center gap-2 flex-1 justify-start">
+                                    <span className="font-medium text-xs truncate">{playerName}</span>
+                                    <span className="font-bold text-[#581C24] text-xs w-8">{event.minute}'</span>
+                                    <EventIcon type={event.event_type} size={16} />
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </React.Fragment>
                         );
                       })}
-
-                      {/* ✅ Linea SUPPLEMENTARI - appare dopo tutti gli eventi se status è SUPP o RIGORI */}
-                      {(match.status === 'SUPP' || match.status === 'RIGORI') && (
-                        <div className="flex items-center gap-3 my-4">
-                          <div className="flex-1 h-px bg-orange-400" />
-                          <span className="font-black text-xs uppercase tracking-wider whitespace-nowrap text-orange-500">
-                            Supplementari
-                          </span>
-                          <div className="flex-1 h-px bg-orange-400" />
-                        </div>
-                      )}
-
-                      {/* ✅ Linea CALCIO DI RIGORE - appare dopo i supplementari se status è RIGORI */}
-                      {match.status === 'RIGORI' && (
-                        <div className="flex items-center gap-3 my-4">
-                          <div className="flex-1 h-px bg-purple-400" />
-                          <span className="font-black text-xs uppercase tracking-wider whitespace-nowrap text-purple-500">
-                            Calci di Rigore
-                          </span>
-                          <div className="flex-1 h-px bg-purple-400" />
-                        </div>
-                      )}
                     </>
                   )}
                 </div>
