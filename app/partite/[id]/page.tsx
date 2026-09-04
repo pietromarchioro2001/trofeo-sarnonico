@@ -1111,17 +1111,27 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                           ? `${event.player.first_name?.[0] || ''}. ${event.player.last_name || ''}`
                           : 'Sconosciuto';
                         
-                        // ✅ Mostra la linea SUPPLEMENTARI prima del primo evento > 90'
                         const prevMinute = events[i - 1]?.minute ?? null;
-                        const showSuppLine = 
-                          event.minute !== null && event.minute > 90 && 
-                          (i === 0 || prevMinute === null || prevMinute <= 90);
-
-                        // ✅ Mostra la linea RIGORI prima del primo evento > 120'
-                        const showRigoriLine = 
-                          event.minute !== null && event.minute > 120 && 
-                          (i === 0 || prevMinute === null || prevMinute <= 120);
+                        const isLastEvent = i === events.length - 1;
                         
+                        // Controlla se esistono già eventi nei supplementari o ai rigori
+                        const hasSuppEvents = events.some(e => e.minute !== null && e.minute > 90 && e.minute <= 120);
+                        const hasRigoriEvents = events.some(e => e.minute !== null && e.minute > 120);
+
+                        // ✅ Mostra la linea SUPPLEMENTARI se:
+                        // 1. Questo evento è > 90' e il precedente era <= 90' (o è il primo evento)
+                        // 2. OPPURE, è l'ultimo evento, non ci sono ancora eventi > 90', ma la partita è in SUPP o RIGORI
+                        const showSuppLine = 
+                          (event.minute !== null && event.minute > 90 && event.minute <= 120 && (i === 0 || prevMinute === null || prevMinute <= 90)) ||
+                          (isLastEvent && !hasSuppEvents && (match.status === 'SUPP' || match.status === 'RIGORI'));
+
+                        // ✅ Mostra la linea RIGORI se:
+                        // 1. Questo evento è > 120' e il precedente era <= 120' (o è il primo evento)
+                        // 2. OPPURE, è l'ultimo evento, non ci sono ancora eventi > 120', ma la partita è in RIGORI
+                        const showRigoriLine = 
+                          (event.minute !== null && event.minute > 120 && (i === 0 || prevMinute === null || prevMinute <= 120)) ||
+                          (isLastEvent && !hasRigoriEvents && match.status === 'RIGORI');
+
                         return (
                           <React.Fragment key={event.id}>
                             {showSuppLine && (
