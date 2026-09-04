@@ -111,13 +111,20 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
       
       if (data) {
         setShootoutId(data.id);
-        setStarted(true);
-        setFirstKicker(data.first_kicker_team as 'home' | 'away');
         setPenaltyScore({ home: data.score_home || 0, away: data.score_away || 0 });
         
         const parsedKicks = Array.isArray(data.kicks) ? data.kicks : [];
         setKicks(parsedKicks);
         setCurrentKick(parsedKicks.length);
+
+        // ✅ Mostra la schermata di scelta SOLO se first_kicker_team è ancora null
+        if (data.first_kicker_team) {
+          setStarted(true);
+          setFirstKicker(data.first_kicker_team as 'home' | 'away');
+        } else {
+          setStarted(false);
+          setFirstKicker(null);
+        }
       }
     };
 
@@ -854,14 +861,14 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       // 2. Crea record in penalty_shootouts (se non esiste già)
       const { data: existing } = await supabase
         .from('penalty_shootouts')
-        .select('id')
+        .select('id, first_kicker_team') // ✅ Aggiungi first_kicker_team alla select
         .eq('match_id', match.id)
         .maybeSingle();
 
       if (!existing) {
         await supabase.from('penalty_shootouts').insert({
           match_id: match.id,
-          first_kicker_team: 'home', // default, verrà scelto nel popup
+          first_kicker_team: null, // ✅ IMPOTA A NULL: così il popup sa che deve chiedere
           score_home: 0,
           score_away: 0,
           kicks: []
