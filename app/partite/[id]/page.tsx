@@ -52,7 +52,11 @@ export interface EventData {
   event_type: string;
   player_id: string | null;
   team_id: string | null;
-  player: EventPlayerData | null;
+  phase?: string; // ✅ Aggiungi
+  player: {
+    first_name: string;
+    last_name: string;
+  } | null;
 }
 
 interface MvpPlayerData {
@@ -459,7 +463,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
 
         const { data: eventsData, error: eventsError } = await supabase
           .from('match_events')
-          .select('id, minute, event_type, player_id, team_id, player:players(first_name, last_name)')
+          .select('id, minute, event_type, player_id, team_id, phase, player:players(first_name, last_name)')
           .eq('match_id', matchId)
           .order('minute', { ascending: true });
         if (eventsError) throw eventsError;
@@ -470,6 +474,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           event_type: e.event_type,
           player_id: e.player_id,
           team_id: e.team_id,
+          phase: e.phase || 'LIVE', // ✅ Aggiungi
           player: e.player && !Array.isArray(e.player) ? {
             first_name: e.player.first_name,
             last_name: e.player.last_name
@@ -588,7 +593,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         async () => {
           const { data: newEvents } = await supabase
             .from('match_events')
-            .select('id, minute, event_type, player_id, team_id, player:players(first_name, last_name)')
+            .select('id, minute, event_type, player_id, team_id, phase, player:players(first_name, last_name)')
             .eq('match_id', matchId)
             .order('minute', { ascending: true });
 
@@ -1118,19 +1123,13 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                         const hasSuppEvents = events.some(e => e.minute !== null && e.minute > 90 && e.minute <= 120);
                         const hasRigoriEvents = events.some(e => e.minute !== null && e.minute > 120);
 
-                        // ✅ Mostra la linea SUPPLEMENTARI se:
-                        // 1. Questo evento è > 90' e il precedente era <= 90' (o è il primo evento)
-                        // 2. OPPURE, è l'ultimo evento, non ci sono ancora eventi > 90', ma la partita è in SUPP o RIGORI
                         const showSuppLine = 
-                          (event.minute !== null && event.minute > 90 && event.minute <= 120 && (i === 0 || prevMinute === null || prevMinute <= 90)) ||
-                          (isLastEvent && !hasSuppEvents && (match.status === 'SUPP' || match.status === 'RIGORI'));
+                          event.phase === 'SUPP' && 
+                          (i === 0 || events[i - 1]?.phase !== 'SUPP');
 
-                        // ✅ Mostra la linea RIGORI se:
-                        // 1. Questo evento è > 120' e il precedente era <= 120' (o è il primo evento)
-                        // 2. OPPURE, è l'ultimo evento, non ci sono ancora eventi > 120', ma la partita è in RIGORI
                         const showRigoriLine = 
-                          (event.minute !== null && event.minute > 120 && (i === 0 || prevMinute === null || prevMinute <= 120)) ||
-                          (isLastEvent && !hasRigoriEvents && match.status === 'RIGORI');
+                          event.phase === 'RIGORI' && 
+                          (i === 0 || events[i - 1]?.phase !== 'RIGORI');
 
                         return (
                           <React.Fragment key={event.id}>

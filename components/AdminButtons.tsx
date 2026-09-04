@@ -527,19 +527,25 @@ export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, matchId 
     try {
       const supabase = createClient();
       
-      const { data: match } = await supabase.from('matches').select('id, home_team_id, away_team_id, home_score, away_score').eq('id', matchId).single();
+      const { data: match } = await supabase.from('matches').select('id, home_team_id, away_team_id, home_score, away_score, status').eq('id', matchId).single();
       if (!match) throw new Error('Partita non trovata');
 
       const teamId = teamSide === 'home' ? match.home_team_id : match.away_team_id;
       const dbEventType = eventType === 'goal' ? 'GOAL' : eventType === 'yellow' ? 'YELLOW_CARD' : 'RED_CARD';
       
-      // 1. INSERT EVENTO
+      // ✅ Determina la fase in base allo stato della partita
+      let eventPhase = 'LIVE';
+      if (match.status === 'SUPP') eventPhase = 'SUPP';
+      if (match.status === 'RIGORI') eventPhase = 'RIGORI';
+      
+      // 1. INSERT EVENTO con la fase
       const { error: eventError } = await supabase.from('match_events').insert({
         match_id: matchId,
         player_id: selectedPlayer,
         event_type: dbEventType,
         minute: parseInt(minute),
-        team_id: teamId
+        team_id: teamId,
+        phase: eventPhase // ✅ Nuova colonna
       });
       if (eventError) throw eventError;
 
@@ -557,6 +563,7 @@ export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, matchId 
         
         const yellowsInThisMatch = (matchEvents || []).filter(e => e.event_type === 'YELLOW_CARD').length;
         
+        // Nel blocco "Controllo doppio giallo nella STESSA partita"
         if (yellowsInThisMatch >= 2) {  
           shouldSuspend = true;
           await supabase.from('match_events').insert({
@@ -564,7 +571,8 @@ export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, matchId 
             player_id: selectedPlayer,
             event_type: 'RED_CARD',
             minute: parseInt(minute),
-            team_id: teamId
+            team_id: teamId,
+            phase: eventPhase // ✅ AGGIUNGI QUESTA RIGA
           });
         }
 
@@ -1342,15 +1350,27 @@ export const AdminEditEvent: React.FC<AdminEditEventProps> = ({
   );
   const [selectedPlayer, setSelectedPlayer] = useState(event.player_id || '');
   const [minute, setMinute] = useState(event.minute?.toString() || '');
+  const [eventPhase, setEventPhase] = useState('LIVE'); // ✅ Nuovo stato
   const [players, setPlayers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [matchStatus, setMatchStatus] = useState(''); 
 
     useEffect(() => {
       const fetchPlayers = async () => {
         const supabase = createClient();
         
-        // ✅ MODIFICA QUI: .order('last_name', { ascending: true })
+        // ✅ Recupera anche lo status della partita
+        const { data: matchData } = await supabase
+          .from('matches')
+          .select('status')
+          .eq('id', matchId)
+          .single();
+        
+        if (matchData) {
+          setMatchStatus(matchData.status);
+        }
+        
         const { data } = await supabase
           .from('players')
           .select('id, first_name, last_name, jersey_number, team_id, goals, yellow_cards, red_cards')
@@ -1360,7 +1380,16 @@ export const AdminEditEvent: React.FC<AdminEditEventProps> = ({
         if (data) setPlayers(data);
       };
       fetchPlayers();
-    }, [homeTeamId, awayTeamId]);
+    }, [homeTeamId, awayTeamId, matchId]);
+
+    // ✅ Sincronizza eventPhase con lo status attuale della partita
+    useEffect(() => {
+      if (matchStatus) {
+        if (matchStatus === 'SUPP') setEventPhase('SUPP');
+        else if (matchStatus === 'RIGORI') setEventPhase('RIGORI');
+        else setEventPhase('LIVE');
+      }
+    }, [matchStatus]);
 
   const handleSave = async () => {
     if (!eventType || !selectedPlayer || !minute) {
@@ -1423,7 +1452,8 @@ export const AdminEditEvent: React.FC<AdminEditEventProps> = ({
         event_type: dbEventType,
         player_id: selectedPlayer,
         minute: parseInt(minute),
-        team_id: newTeamId
+        team_id: newTeamId,
+        phase: eventPhase // ✅ Aggiorna anche la fase
       }).eq('id', event.id);
 
       if (eventError) throw eventError;
