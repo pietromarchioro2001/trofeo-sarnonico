@@ -739,11 +739,49 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   const handleExtraTime = async () => {
     if (!match || !confirm('Passare ai tempi supplementari?')) return;
     const supabase = createClient();
-    await supabase.from('matches').update({ status: 'SUPP' }).eq('id', match.id);
-    setMatch({ ...match, status: 'SUPP' });
+    
+    try {
+      // 1. Aggiorna lo status a SUPP
+      await supabase.from('matches').update({ status: 'SUPP' }).eq('id', match.id);
+      setMatch({ ...match, status: 'SUPP' });
+
+      // 2. ✅ Inserisci evento "SUPPLEMENTARI" nel database
+      await supabase.from('match_events').insert({
+        match_id: match.id,
+        event_type: 'SUPPLEMENTARI',
+        minute: 90, // O il minuto corrente se preferisci
+        team_id: null, // Nessun team specifico
+        player_id: null // Nessun giocatore
+      });
+
+    } catch (err) {
+      console.error('Errore passaggio a supplementari:', err);
+      alert('Errore nel salvataggio');
+    }
   };
 
   const handlePenalties = () => setShowPenaltyPopup(true);
+
+  const handlePenalties = async () => {
+    if (!match) return;
+    const supabase = createClient();
+    
+    try {
+      await supabase.from('matches').update({ status: 'RIGORI' }).eq('id', match.id);
+      setMatch({ ...match, status: 'RIGORI' });
+
+      // ✅ Inserisci evento "RIGORI"
+      await supabase.from('match_events').insert({
+        match_id: match.id,
+        event_type: 'RIGORI',
+        minute: 120, // Dopo i supplementari
+        team_id: null,
+        player_id: null
+      });
+    } catch (err) {
+      console.error('Errore passaggio a rigori:', err);
+    }
+  };
 
   const handlePenaltyEnd = async (winner: 'home' | 'away' | null) => {
     setShowPenaltyPopup(false);
@@ -994,6 +1032,32 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                     <div className="text-center py-4 text-gray-500 text-sm">Nessun evento registrato</div>
                   ) : (
                     events.map((event, i) => {
+                      // ✅ Se è l'evento SUPPLEMENTARI, mostra la linea divisoria
+                      if (event.event_type === 'SUPPLEMENTARI') {
+                        return (
+                          <div key={event.id} className="flex items-center gap-3 my-4">
+                            <div className="flex-1 h-px bg-orange-400" />
+                            <span className="font-black text-xs uppercase tracking-wider whitespace-nowrap text-orange-500">
+                              Supplementari
+                            </span>
+                            <div className="flex-1 h-px bg-orange-400" />
+                          </div>
+                        );
+                      }
+
+                      if (event.event_type === 'RIGORI') {
+                        return (
+                          <div key={event.id} className="flex items-center gap-3 my-4">
+                            <div className="flex-1 h-px bg-purple-400" />
+                            <span className="font-black text-xs uppercase tracking-wider whitespace-nowrap text-purple-500">
+                              Calci di Rigore
+                            </span>
+                            <div className="flex-1 h-px bg-purple-400" />
+                          </div>
+                        );
+                      }
+
+                      // Altrimenti mostra l'evento normale
                       const isHome = event.team_id === match.home_team.id;
                       const playerName = event.player
                         ? `${event.player.first_name?.[0] || ''}. ${event.player.last_name || ''}`
