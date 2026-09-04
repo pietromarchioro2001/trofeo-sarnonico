@@ -153,7 +153,7 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
       match_id: matchId,
       event_type: 'PENALTY_START',
       minute: 120,
-      team_id: teamId,
+      team_id: teamId, // ✅ Questo è già valido
       player_id: null
     });
     
@@ -178,7 +178,7 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
         match_id: matchId,
         event_type: eventType,
         minute: 120 + currentKick,
-        team_id: kickingTeamId,
+        team_id: kickingTeamId, // ✅ Team_id valido
         player_id: null
       });
       
@@ -822,12 +822,12 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       await supabase.from('matches').update({ status: 'SUPP' }).eq('id', match.id);
       setMatch({ ...match, status: 'SUPP' });
 
-      // ✅ Inserisce il marcatore per la linea divisoria
+      // ✅ Usa home_team.id invece di null per team_id
       await supabase.from('match_events').insert({
         match_id: match.id,
         event_type: 'SUPPLEMENTARI_START',
         minute: 90,
-        team_id: null,
+        team_id: match.home_team.id, // ✅ Usa un team_id valido
         player_id: null
       });
     } catch (err) {
