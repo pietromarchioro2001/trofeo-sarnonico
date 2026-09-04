@@ -218,7 +218,7 @@ export const AdminMatchControls: React.FC<AdminMatchControlsProps> = ({ matchSta
   const handlePenalties = () => { setShowPenaltyPopup(true); };
   const handleEndMatch = () => { if (confirm('Terminare la partita? Verranno calcolate classifica e statistiche.')) { onStatusChange('TERMINATA'); console.log('Partita terminata'); } };
   const handlePenaltyEnd = (winner: 'home' | 'away' | null) => { setShowPenaltyPopup(false); if (winner) console.log(`Vincitore ai rigori: ${winner === 'home' ? homeTeam.name : awayTeam.name}`); onStatusChange('TERMINATA'); };
-  const getButtonLabel = () => { if (matchStatus === 'PROGRAMMATA') return 'INIZIA'; if (matchStatus === 'LIVE') return 'TERMINA'; if (matchStatus === 'SUPP') return 'RIGORI'; return ''; };
+  const getButtonLabel = () => { if (matchStatus === 'PROGRAMMATA') return 'INIZIA'; if (matchStatus === 'LIVE') return 'TERMINA'; return ''; };
   const getExtraTimeButtonLabel = () => { if (matchStatus === 'LIVE' && isFinalPhase && currentScore.home === currentScore.away) return 'SUPPLEMENTARI'; return null; };
   const extraTimeLabel = getExtraTimeButtonLabel();
 
@@ -229,7 +229,12 @@ export const AdminMatchControls: React.FC<AdminMatchControlsProps> = ({ matchSta
           <>
             <button onClick={matchStatus === 'PROGRAMMATA' ? handleStartMatch : handleEndMatch} className={`px-4 py-2 rounded-lg font-bold text-xs uppercase transition-colors shadow-lg ${matchStatus === 'PROGRAMMATA' ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-red-600 text-white hover:bg-red-700'}`}>{getButtonLabel()}</button>
             {extraTimeLabel && <button onClick={handleExtraTime} className="px-4 py-2 bg-orange-600 text-white rounded-lg font-bold text-xs uppercase hover:bg-orange-700 transition-colors shadow-lg">{extraTimeLabel}</button>}
-            {matchStatus === 'SUPP' && <button onClick={handlePenalties} className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold text-xs uppercase hover:bg-purple-700 transition-colors shadow-lg">RIGORI</button>}
+            {/* ✅ MOSTRA PULSANTE RIGORI SIA IN SUPP CHE IN RIGORI */}
+            {(matchStatus === 'SUPP' || matchStatus === 'RIGORI') && (
+              <button onClick={handlePenalties} className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold text-xs uppercase hover:bg-purple-700 transition-colors shadow-lg">
+                {matchStatus === 'RIGORI' ? '📋 RIGORI' : 'RIGORI'}
+              </button>
+            )}
           </>
         )}
       </div>
