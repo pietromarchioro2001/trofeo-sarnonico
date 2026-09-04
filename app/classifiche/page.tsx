@@ -489,7 +489,8 @@ export default function ClassifichePage() {
                             }`}>
                               {isMatchLive && (
                                 <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[8px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm animate-pulse z-10">
-                                  <span className="w-1.5 h-1.5 bg-white rounded-full" /> LIVE
+                                  <span className="w-1.5 h-1.5 bg-white rounded-full" /> 
+                                  {match.status === 'SUPP' ? 'SUPP' : match.status === 'RIGORI' ? 'RIGORI' : 'LIVE'}
                                 </div>
                               )}
                               {/* ✅ Squadra Casa con opacità se eliminata */}
@@ -554,7 +555,8 @@ export default function ClassifichePage() {
                           }`}>
                             {isMatchLive && (
                               <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[8px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm animate-pulse z-10">
-                                <span className="w-1.5 h-1.5 bg-white rounded-full" /> LIVE
+                                <span className="w-1.5 h-1.5 bg-white rounded-full" /> 
+                                {match.status === 'SUPP' ? 'SUPP' : match.status === 'RIGORI' ? 'RIGORI' : 'LIVE'}
                               </div>
                             )}
                             {/* ✅ Squadra Casa con opacità se eliminata */}
@@ -621,7 +623,8 @@ export default function ClassifichePage() {
                         }`}>
                           {isMatchLive && (
                             <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[8px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm animate-pulse z-10">
-                              <span className="w-1.5 h-1.5 bg-white rounded-full" /> LIVE
+                              <span className="w-1.5 h-1.5 bg-white rounded-full" /> 
+                              {match.status === 'SUPP' ? 'SUPP' : match.status === 'RIGORI' ? 'RIGORI' : 'LIVE'}
                             </div>
                           )}
                           {/* ✅ Squadra Casa con opacità se eliminata */}
@@ -674,7 +677,8 @@ export default function ClassifichePage() {
                         }`}>
                           {isMatchLive && (
                             <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[8px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm animate-pulse z-10">
-                              <span className="w-1.5 h-1.5 bg-white rounded-full" /> LIVE
+                              <span className="w-1.5 h-1.5 bg-white rounded-full" /> 
+                              {match.status === 'SUPP' ? 'SUPP' : match.status === 'RIGORI' ? 'RIGORI' : 'LIVE'}
                             </div>
                           )}
                           {/* ✅ Squadra Casa con opacità se eliminata */}
