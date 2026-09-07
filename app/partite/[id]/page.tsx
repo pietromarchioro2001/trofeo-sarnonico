@@ -117,8 +117,8 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
         setKicks(parsedKicks);
         setCurrentKick(parsedKicks.length);
 
-        // ✅ Mostra la schermata di scelta SOLO se first_kicker_team è ancora null
-        if (data.first_kicker_team) {
+        // ✅ Mostra la schermata di scelta SOLO se first_kicker_team è ancora null o vuoto
+        if (data.first_kicker_team && data.first_kicker_team !== '') {
           setStarted(true);
           setFirstKicker(data.first_kicker_team as 'home' | 'away');
         } else {
@@ -130,21 +130,27 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
 
     fetchShootout();
 
+    // ✅ Canale Realtime per aggiornamenti in tempo reale
     const channel = supabase
       .channel(`shootout-${matchId}`)
       .on(
         'postgres_changes',
         { 
-          event: '*', 
+          event: '*', // Ascolta INSERT, UPDATE e DELETE
           schema: 'public', 
           table: 'penalty_shootouts', 
           filter: `match_id=eq.${matchId}` 
         },
-        () => {
-          fetchShootout();
+        (payload) => {
+          console.log(' Aggiornamento realtime ricevuto:', payload);
+          fetchShootout(); // ✅ Ricarica i dati ad ogni cambiamento
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Iscritto al canale realtime per i rigori');
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);
