@@ -197,10 +197,11 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
     
     try {
       const supabase = createClient();
+      
+      // ✅ Aggiorna subito solo il punteggio
       const { error } = await supabase
         .from('penalty_shootouts')
         .update({
-          kicks: [...kicks, newKick],  // ✅ Usa kicks corrente
           score_home: newScore.home,
           score_away: newScore.away
         })
@@ -210,14 +211,25 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
 
       setLightState(scored ? 'green' : 'red');
       
-      // ✅ Aggiorna immediatamente lo stato locale
-      setKicks(prev => [...prev, newKick]);
+      // ✅ Aggiorna subito solo il punteggio locale
       setPenaltyScore(newScore);
-      setCurrentKick(prev => prev + 1);
       
       setTimeout(() => {
         setLightState('none');
         setIsProcessing(false);
+        
+        // ✅ Dopo 3 secondi, aggiorna i kicks (bollini)
+        setKicks(prev => [...prev, newKick]);
+        setCurrentKick(prev => prev + 1);
+        
+        // ✅ Salva i kicks su Supabase
+        supabase
+          .from('penalty_shootouts')
+          .update({
+            kicks: [...kicks, newKick]
+          })
+          .eq('id', shootoutId);
+          
       }, 3000);
     } catch (err) {
       console.error('Errore salvataggio rigore:', err);
