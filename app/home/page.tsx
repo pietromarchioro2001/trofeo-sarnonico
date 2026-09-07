@@ -171,7 +171,7 @@ export default function HomePage() {
       // 3. ULTIME PARTITE
       const { data: recentMatchesData } = await supabase
         .from('matches')
-        .select('id, status, match_date, match_time, home_score, away_score, home_team_id, away_team_id')
+        .select('id, status, match_date, match_time, home_score, away_score, home_penalties, away_penalties, home_team_id, away_team_id') // ✅ Aggiunti penalty
         .eq('status', 'FINITA')
         .order('match_date', { ascending: false })
         .order('match_time', { ascending: false })
@@ -191,8 +191,8 @@ export default function HomePage() {
           match_time: match.match_time,
           home_score: match.home_score,
           away_score: match.away_score,
-          home_penalties: null,  // Opzionale: se vuoi fetchare anche questi
-          away_penalties: null,
+          home_penalties: match.home_penalties,  // ✅ Aggiungi
+          away_penalties: match.away_penalties,  // ✅ Aggiungi
           home_team: teamsData?.find(t => t.id === match.home_team_id) || null,
           away_team: teamsData?.find(t => t.id === match.away_team_id) || null,
         }));
@@ -461,6 +461,11 @@ export default function HomePage() {
                 </div>
                 <div className={`text-3xl font-bold tracking-wider font-oswald flex-shrink-0 px-3 ${isLive ? 'text-white' : 'text-[#581C24]'}`}>
                   {lastMatch.home_score ?? '-'} - {lastMatch.away_score ?? '-'}
+                  {(lastMatch.home_penalties !== null || lastMatch.away_penalties !== null) && (
+                    <div className="text-[10px] font-bold text-purple-400">
+                      dcr ({lastMatch.home_penalties}-{lastMatch.away_penalties})
+                    </div>
+                  )}
                 </div>
                 <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
                   <div className={`w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isLive ? 'bg-white/10' : 'bg-[#581C24]/10'}`}>
