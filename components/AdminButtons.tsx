@@ -1753,6 +1753,206 @@ export const AdminCreateQuarters: React.FC<AdminCreateQuartersProps> = ({ onSucc
   );
 };
 
+// ============================================================
+// Admin Create Semifinals (Crea Semifinali)
+// ============================================================
+interface AdminCreateSemifinalsProps {
+  onSuccess: () => void;
+}
+
+export const AdminCreateSemifinals: React.FC<AdminCreateSemifinalsProps> = ({ onSuccess }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [matchups, setMatchups] = useState<any[]>([]);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      const calculateSemifinals = async () => {
+        setLoading(true);
+        setError('');
+        const supabase = createClient();
+        
+        // 1. Prendi tutte le partite dei Quarti FINITE
+        const { data: quarters } = await supabase
+          .from('matches')
+          .select('id, home_score, away_score, home_penalties, away_penalties, status, home_team_id, away_team_id')
+          .eq('phase', 'QUARTI')
+          .eq('status', 'FINITA')
+          .order('id', { ascending: true }); // Ordina per abbinare Q1 vs Q2 e Q3 vs Q4
+
+        if (!quarters || quarters.length < 4) {
+          setError('⚠️ Completa tutte e 4 le partite dei Quarti di Finale prima di procedere.');
+          setLoading(false);
+          return;
+        }
+
+        // 2. Recupera i dati delle squadre
+        const teamIds = Array.from(new Set(quarters.flatMap(q => [q.home_team_id, q.away_team_id])));
+        const { data: teams } = await supabase
+          .from('teams')
+          .select('id, name, logo_url')
+          .in('id', teamIds);
+
+        // 3. Funzione helper per determinare il vincitore
+        const getWinner = (q: any) => {
+          if (q.home_score > q.away_score) return teams?.find(t => t.id === q.home_team_id);
+          if (q.away_score > q.home_score) return teams?.find(t => t.id === q.away_team_id);
+          
+          // Se pari, controlla i rigori
+          const hPen = q.home_penalties ?? 0;
+          const aPen = q.away_penalties ?? 0;
+          if (hPen > aPen) return teams?.find(t => t.id === q.home_team_id);
+          if (aPen > hPen) return teams?.find(t => t.id === q.away_team_id);
+          
+          return null; // Caso improbabile
+        };
+
+        // 4. Crea gli abbinamenti: Vincitore Q1 vs Vincitore Q2, Vincitore Q3 vs Vincitore Q4
+        const winner1 = getWinner(quarters[0]);
+        const winner2 = getWinner(quarters[1]);
+        const winner3 = getWinner(quarters[2]);
+        const winner4 = getWinner(quarters[3]);
+
+        setMatchups([
+          { home: winner1, away: winner2, date: '', time: '' },
+          { home: winner3, away: winner4, date: '', time: '' }
+        ]);
+        setLoading(false);
+      };
+      calculateSemifinals();
+    }
+  }, [isOpen]);
+
+  const handleSave = async () => {
+    if (matchups.some(m => !m.date || !m.time)) {
+      alert('⚠️ Compila data e ora per tutte le semifinali!');
+      return;
+    }
+
+    setLoading(true);
+    const supabase = createClient();
+    const matchesToInsert = matchups.map(m => ({
+      home_team_id: m.home?.id,
+      away_team_id: m.away?.id,
+      match_date: m.date,
+      match_time: m.time,
+      status: 'PROGRAMMATA',
+      phase: 'SEMIFINALI'
+    }));
+
+    const { error } = await supabase.from('matches').insert(matchesToInsert);
+
+    if (error) {
+      console.error(error);
+      alert('Errore nel salvataggio delle semifinali.');
+    } else {
+      alert('✅ Semifinali create con successo!');
+      setIsOpen(false);
+      onSuccess();
+    }
+    setLoading(false);
+  };
+
+  return (
+    <>
+      <button 
+        onClick={() => setIsOpen(true)} 
+        className="w-full py-3 bg-[#581C24] text-white font-black rounded-xl shadow-lg hover:bg-[#581C24]/90 transition-colors text-sm uppercase tracking-wider flex items-center justify-center gap-2"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+        CREA SEMIFINALI
+      </button>
+
+      {isOpen && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="bg-[#581C24] p-4 flex items-center justify-between flex-shrink-0">
+              <h2 className="text-lg font-black text-white uppercase tracking-wider">Crea Semifinali</h2>
+              <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/20 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto flex-1">
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className="w-10 h-10 border-4 border-[#581C24] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                  <p className="text-sm text-gray-600 font-bold">Calcolo vincitori Quarti...</p>
+                </div>
+              ) : error ? (
+                <div className="text-center py-8 text-red-600 font-bold text-sm">{error}</div>
+              ) : (
+                <div className="space-y-4">
+                  {matchups.map((match, idx) => (
+                    <div key={idx} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="flex items-center gap-3 flex-1 w-full sm:w-auto justify-center sm:justify-start">
+                          <div className="flex flex-col items-center w-20">
+                            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center border border-gray-200 overflow-hidden mb-1">
+                              {match.home?.logo_url ? <Image src={match.home.logo_url} alt="" width={40} height={40} className="object-cover" /> : <span className="text-[6px]">LOGO</span>}
+                            </div>
+                            <span className="text-[10px] font-bold text-[#581C24] uppercase text-center leading-tight">{match.home?.name || 'TBD'}</span>
+                          </div>
+                          <span className="text-xl font-black text-gray-400">-</span>
+                          <div className="flex flex-col items-center w-20">
+                            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center border border-gray-200 overflow-hidden mb-1">
+                              {match.away?.logo_url ? <Image src={match.away.logo_url} alt="" width={40} height={40} className="object-cover" /> : <span className="text-[6px]">LOGO</span>}
+                            </div>
+                            <span className="text-[10px] font-bold text-[#581C24] uppercase text-center leading-tight">{match.away?.name || 'TBD'}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 w-full sm:w-auto justify-center">
+                          <input 
+                            type="date" 
+                            value={match.date}
+                            onChange={(e) => {
+                              const newMatchups = [...matchups];
+                              newMatchups[idx].date = e.target.value;
+                              setMatchups(newMatchups);
+                            }}
+                            className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-bold focus:ring-2 focus:ring-[#581C24] outline-none"
+                          />
+                          <input 
+                            type="time" 
+                            value={match.time}
+                            onChange={(e) => {
+                              const newMatchups = [...matchups];
+                              newMatchups[idx].time = e.target.value;
+                              setMatchups(newMatchups);
+                            }}
+                            className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-bold focus:ring-2 focus:ring-[#581C24] outline-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {!error && (
+              <div className="p-4 border-t border-gray-200 flex gap-3 flex-shrink-0 bg-white">
+                <button onClick={() => setIsOpen(false)} className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 font-bold rounded-lg hover:bg-gray-50 transition-colors text-sm uppercase">
+                  Annulla
+                </button>
+                <button 
+                  onClick={handleSave} 
+                  disabled={loading}
+                  className="flex-1 px-4 py-2.5 bg-[#581C24] text-white font-bold rounded-lg hover:bg-[#581C24]/90 transition-colors text-sm shadow-md uppercase disabled:opacity-50"
+                >
+                  {loading ? 'Salvataggio...' : 'SALVA'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
 interface AdminSaveAlboDoroProps {
   onSave: (data: AlboDoroData) => void;
   currentYear: number;

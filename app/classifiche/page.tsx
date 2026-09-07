@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
 import { createClient } from '@/lib/supabase/client';
-import { AdminCreateQuarters } from '@/components/AdminButtons';
+import { AdminCreateQuarters, AdminCreateSemifinals } from '@/components/AdminButtons';
 
 // Tipi corretti per Supabase
 interface Team {
@@ -482,11 +482,29 @@ export default function ClassifichePage() {
                       </div>
                     ) : (
                       phaseMatches.filter(m => m.phase === 'QUARTI').map((match) => {
-                        const isMatchLive = match.status === 'LIVE' || match.status === 'SUPP' || match.status === 'RIGORI';
-                        const isFinished = match.status === 'FINITA';
-                        // ✅ Determina chi ha perso
-                        const homeLost = isFinished && (match.home_score ?? 0) < (match.away_score ?? 0);
-                        const awayLost = isFinished && (match.away_score ?? 0) < (match.home_score ?? 0);
+                      const isMatchLive = match.status === 'LIVE' || match.status === 'SUPP' || match.status === 'RIGORI';
+                      const isFinished = match.status === 'FINITA';
+                      
+                      // ✅ LOGICA AVANZATA PER DETERMINARE CHI HA PERSO (gestisce anche i rigori)
+                      let homeWon = false;
+                      let awayWon = false;
+                      
+                      if (isFinished) {
+                        if (match.home_score! > match.away_score!) {
+                          homeWon = true;
+                        } else if (match.away_score! > match.home_score!) {
+                          awayWon = true;
+                        } else {
+                          // Se il punteggio è pari, controlla i rigori
+                          const hPen = match.home_penalties ?? 0;
+                          const aPen = match.away_penalties ?? 0;
+                          if (hPen > aPen) homeWon = true;
+                          else if (aPen > hPen) awayWon = true;
+                        }
+                      }
+                      
+                      const homeLost = isFinished && !homeWon;
+                      const awayLost = isFinished && !awayWon;
                         
                         return (
                           <Link key={match.id} href={`/partite/${match.id}`} className="block relative">
@@ -548,13 +566,37 @@ export default function ClassifichePage() {
               )}
 
               {phaseSubTab === 'semifinali' && (
-                <div className="relative max-w-[220px] mx-auto">
-                  {phaseMatches.filter(m => m.phase === 'SEMIFINALI').map((match, idx) => {
+              <div className="relative max-w-[220px] mx-auto">
+                {/* ✅ PULSANTE PER CREARE LE SEMIFINALI (visibile solo allo staff e se non esistono ancora) */}
+                {isStaffMode && phaseMatches.filter(m => m.phase === 'SEMIFINALI').length === 0 && (
+                  <div className="mb-8">
+                    <AdminCreateSemifinals onSuccess={() => fetchData()} />
+                  </div>
+                )}
+
+                {phaseMatches.filter(m => m.phase === 'SEMIFINALI').length === 0 && !isStaffMode ? (
+                  <div className="text-center py-8 text-gray-500 text-sm font-bold uppercase">
+                    Semifinali non ancora programmate
+                  </div>
+                ) : (
+                  phaseMatches.filter(m => m.phase === 'SEMIFINALI').map((match, idx) => {
                     const isMatchLive = match.status === 'LIVE' || match.status === 'SUPP' || match.status === 'RIGORI';
                     const isFinished = match.status === 'FINITA';
-                    // ✅ Determina chi ha perso
-                    const homeLost = isFinished && (match.home_score ?? 0) < (match.away_score ?? 0);
-                    const awayLost = isFinished && (match.away_score ?? 0) < (match.home_score ?? 0);
+
+                    let homeWon = false;
+                    let awayWon = false;
+                    if (isFinished) {
+                      if (match.home_score! > match.away_score!) homeWon = true;
+                      else if (match.away_score! > match.home_score!) awayWon = true;
+                      else {
+                        const hPen = match.home_penalties ?? 0;
+                        const aPen = match.away_penalties ?? 0;
+                        if (hPen > aPen) homeWon = true;
+                        else if (aPen > hPen) awayWon = true;
+                      }
+                    }
+                    const homeLost = isFinished && !homeWon;
+                    const awayLost = isFinished && !awayWon;
                     
                     return (
                       <div key={match.id} className={`relative ${idx === 0 ? 'mb-32' : ''}`}>
@@ -616,10 +658,10 @@ export default function ClassifichePage() {
                         </Link>
                       </div>
                     );
-                  })}
-                </div>
-              )}
-
+                  }) // ✅ CORRETTO: chiudi la map con })
+                )}
+              </div>
+            )}
               {phaseSubTab === 'finale' && (
                 <div className="relative max-w-[220px] mx-auto pt-8 pb-32">
                   {phaseMatches.some(m => m.phase === 'FINALE' || m.phase === 'FINALE_3_4') && (
