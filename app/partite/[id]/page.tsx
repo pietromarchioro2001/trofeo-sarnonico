@@ -157,7 +157,7 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
     const { data, error } = await supabase
       .from('penalty_shootouts')
       .update({ first_kicker_team: team })
-      .eq('match_id', matchId)
+      .eq('match_id', matchId)  // ✅ Corretto per penalty_shootouts
       .select()
       .maybeSingle();
 
@@ -171,7 +171,10 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
     }
     
     // ✅ CAMBIA STATUS A RIGORI SOLO ORA
-    await supabase.from('matches').update({ status: 'RIGORI' }).eq('match_id', matchId);
+    await supabase
+      .from('matches')
+      .update({ status: 'RIGORI' })
+      .eq('id', matchId);  // ✅ Usa 'id' non 'match_id'!
     
     setFirstKicker(team);
     setStarted(true);
