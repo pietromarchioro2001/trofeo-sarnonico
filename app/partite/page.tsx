@@ -60,8 +60,8 @@ export default function PartitePage() {
             status,
             home_score,
             away_score,
-            home_penalties,    // ✅ AGGIUNGI
-            away_penalties,    // ✅ AGGIUNGI
+            home_penalties,
+            away_penalties,
             home_team_id,
             away_team_id
           `)
@@ -306,8 +306,8 @@ export default function PartitePage() {
                         {isScheduled ? '-' : `${match.home_score ?? 0} - ${match.away_score ?? 0}`}
                       </div>
                       {/* ✅ Mostra DCR se ci sono i penalty */}
-                      {(match.home_penalties !== null || match.away_penalties !== null) && (
-                        <div className="text-[10px] font-bold text-purple-500">
+                      {match.home_penalties !== null && match.away_penalties !== null && (
+                        <div className="text-[10px] font-bold text-purple-500 -mt-1">
                           dcr ({match.home_penalties}-{match.away_penalties})
                         </div>
                       )}
