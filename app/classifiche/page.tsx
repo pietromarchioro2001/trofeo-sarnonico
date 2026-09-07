@@ -518,7 +518,7 @@ export default function ClassifichePage() {
                               
                               {/* ✅ Mostra DCR tra le due righe SOLO se entrambi i penalty sono presenti */}
                               {match.home_penalties !== null && match.away_penalties !== null && (
-                                <div className="text-[10px] font-bold text-purple-500 text-right mr-10 -my-1">
+                                <div className="text-[10px] font-bold text-purple-500 text-right mr-8 -my-1">
                                   dcr ({match.home_penalties}-{match.away_penalties})
                                 </div>
                               )}
@@ -592,7 +592,7 @@ export default function ClassifichePage() {
                             
                             {/* ✅ Mostra DCR tra le due righe SOLO se entrambi i penalty sono presenti */}
                             {match.home_penalties !== null && match.away_penalties !== null && (
-                              <div className="text-[10px] font-bold text-purple-500 text-right mr-10 -my-1">
+                              <div className="text-[10px] font-bold text-purple-500 text-right mr-8 -my-1">
                                 dcr ({match.home_penalties}-{match.away_penalties})
                               </div>
                             )}
@@ -668,7 +668,7 @@ export default function ClassifichePage() {
                           
                           {/* ✅ Mostra DCR tra le due righe SOLO se entrambi i penalty sono presenti */}
                           {match.home_penalties !== null && match.away_penalties !== null && (
-                            <div className="text-[10px] font-bold text-purple-500 text-right mr-10 -my-1">
+                            <div className="text-[10px] font-bold text-purple-500 text-right mr-8 -my-1">
                               dcr ({match.home_penalties}-{match.away_penalties})
                             </div>
                           )}
@@ -730,7 +730,7 @@ export default function ClassifichePage() {
                           
                           {/* ✅ Mostra DCR tra le due righe SOLO se entrambi i penalty sono presenti */}
                           {match.home_penalties !== null && match.away_penalties !== null && (
-                            <div className="text-[10px] font-bold text-purple-500 text-right mr-10 -my-1">
+                            <div className="text-[10px] font-bold text-purple-500 text-right mr-8 -my-1">
                               dcr ({match.home_penalties}-{match.away_penalties})
                             </div>
                           )}
