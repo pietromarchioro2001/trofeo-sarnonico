@@ -20,6 +20,8 @@ interface MatchData {
   id: string;
   home_score: number | null;
   away_score: number | null;
+  home_penalties: number | null;  // ✅ AGGIUNGI
+  away_penalties: number | null;  // ✅ AGGIUNGI
   status: string;
   phase: string;
   match_date: string | null;
@@ -77,7 +79,7 @@ interface PenaltyShootoutPopupProps {
   homeTeam: { id: string; name: string; logo_url: string | null };
   awayTeam: { id: string; name: string; logo_url: string | null };
   isAdmin: boolean;
-  onClose: (winner: 'home' | 'away' | null) => void;
+  onClose: (winner: 'home' | 'away' | null, score?: { home: number; away: number }) => void; // ✅ Rendi score opzionale con ?
 }
 
 // ==================== COMPONENTE POPUP RIGORI ====================
@@ -275,7 +277,7 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
       : penaltyScore.away > penaltyScore.home
         ? 'away'
         : null;
-    onClose(winner);
+    onClose(winner, penaltyScore); // ✅ Passa anche il punteggio
   };
 
   const getTeamKicks = (team: 'home' | 'away') =>
@@ -291,7 +293,7 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
           <div className="bg-[#581C24] p-4 flex items-center justify-between">
             <h2 className="text-lg font-black text-white uppercase tracking-wider">Calci di Rigore</h2>
-            <button onClick={() => onClose(null)} className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/20">
+            <button onClick={() => onClose(null, { home: 0, away: 0 })} className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/20">
               <X size={20} />
             </button>
           </div>
@@ -483,7 +485,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       try {
         const { data: matchData, error: matchError } = await supabase
           .from('matches')
-          .select('id, home_score, away_score, status, phase, match_date, match_time, home_team_id, away_team_id')
+          .select('id, home_score, away_score, home_penalties, away_penalties, status, phase, match_date, match_time, home_team_id, away_team_id')
           .eq('id', matchId)
           .maybeSingle(); 
           
@@ -942,12 +944,27 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     }
   };
 
-    const handlePenaltyEnd = async (winner: 'home' | 'away' | null) => {
+  const handlePenaltyEnd = async (
+    winner: 'home' | 'away' | null, 
+    score?: { home: number; away: number }  // ✅ Aggiungi ? per renderlo opzionale
+  ) => {
     setShowPenaltyPopup(false);
     
-    // ✅ Aggiunto controllo '&& match' per evitare l'errore TypeScript
-    if (winner && match) {
+    // ✅ Controlla che score esista prima di usarlo
+    if (winner && match && score) {
+      const supabase = createClient();
+      
+      await supabase
+        .from('matches')
+        .update({ 
+          status: 'FINITA',
+          home_penalties: score.home,
+          away_penalties: score.away
+        })
+        .eq('id', match.id);
+      
       console.log(`Vincitore ai rigori: ${winner === 'home' ? match.home_team.name : match.away_team.name}`);
+      console.log(`Risultato rigori: ${score.home}-${score.away}`);
     }
   };
 
@@ -1014,18 +1031,19 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           <ArrowLeft size={20} className="text-[#581C24]" />
         </Link>
 
-            {isStaffMode && match.status !== 'FINITA' && (
+          {isStaffMode && match.status !== 'FINITA' && (
             <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 flex gap-2">
               {match.status === 'PROGRAMMATA' && (
                 <button onClick={handleStartMatch} className="px-4 py-2 bg-green-600 text-white rounded-lg font-bold text-xs uppercase hover:bg-green-700 transition-colors shadow-lg">INIZIA</button>
               )}
-              {match.status === 'LIVE' && (
-                <>
-                  <button onClick={handleEndMatch} className="px-4 py-2 bg-red-600 text-white rounded-lg font-bold text-xs uppercase hover:bg-red-700 transition-colors shadow-lg">TERMINA</button>
-                  {isFinalPhase && <button onClick={handleExtraTime} className="px-4 py-2 bg-orange-600 text-white rounded-lg font-bold text-xs uppercase hover:bg-orange-700 transition-colors shadow-lg">SUPPLEMENTARI</button>}
-                </>
+              {/* ✅ TERMINA visibile sia in LIVE che in SUPP */}
+              {(match.status === 'LIVE' || match.status === 'SUPP') && (
+                <button onClick={handleEndMatch} className="px-4 py-2 bg-red-600 text-white rounded-lg font-bold text-xs uppercase hover:bg-red-700 transition-colors shadow-lg">TERMINA</button>
               )}
-              {/* ✅ MODIFICA QUI: Mostra il pulsante sia in SUPP che in RIGORI */}
+              {match.status === 'LIVE' && isFinalPhase && (
+                <button onClick={handleExtraTime} className="px-4 py-2 bg-orange-600 text-white rounded-lg font-bold text-xs uppercase hover:bg-orange-700 transition-colors shadow-lg">SUPPLEMENTARI</button>
+              )}
+              {/* ✅ RIGORI visibile sia in SUPP che in RIGORI */}
               {(match.status === 'SUPP' || match.status === 'RIGORI') && (
                 <button 
                   onClick={handlePenalties} 
@@ -1060,6 +1078,13 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
               <div className={`text-4xl font-black tracking-wider font-oswald ${isLiveStatus ? 'text-white animate-pulse' : 'text-[#581C24]'}`}>
                 {match.home_score ?? 0} - {match.away_score ?? 0}
               </div>
+
+              {/* ✅ Mostra DCR se ci sono i penalty */}
+              {(match.home_penalties !== null || match.away_penalties !== null) && (
+                <div className="text-sm font-bold text-purple-400 mt-1">
+                  dcr ({match.home_penalties}-{match.away_penalties})
+                </div>
+              )}
               <div className={`text-[9px] font-bold uppercase tracking-wider mt-0.5 ${getStatusColor()}`}>{getStatusLabel()}</div>
               <div className="text-[10px] text-gray-500 mt-1">{formatDate(match.match_date)} • {match.match_time || '--:--'}</div>
             </div>
@@ -1411,7 +1436,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           homeTeam={{ id: match.home_team.id, name: match.home_team.name, logo_url: match.home_team.logo_url }}
           awayTeam={{ id: match.away_team.id, name: match.away_team.name, logo_url: match.away_team.logo_url }}
           isAdmin={false}
-          onClose={() => setShowPenaltyPopupUser(false)}
+          onClose={() => setShowPenaltyPopupUser(false)} // ✅ Per l'utente non serve passare score
         />
       )}
     </div>
