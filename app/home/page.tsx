@@ -459,10 +459,13 @@ export default function HomePage() {
                   </div>
                   <span className="font-bold text-sm text-center truncate w-full">{lastMatch?.home_team?.name}</span>
                 </div>
-                <div className={`text-3xl font-bold tracking-wider font-oswald flex-shrink-0 px-3 ${isLive ? 'text-white' : 'text-[#581C24]'}`}>
-                  {lastMatch.home_score ?? '-'} - {lastMatch.away_score ?? '-'}
-                  {(lastMatch.home_penalties !== null || lastMatch.away_penalties !== null) && (
-                    <div className="text-[10px] font-bold text-purple-400">
+                <div className={`flex flex-col items-center justify-center flex-shrink-0 px-3 gap-1`}>
+                  <div className={`text-3xl font-bold tracking-wider font-oswald ${isLive ? 'text-white' : 'text-[#581C24]'}`}>
+                    {lastMatch.home_score ?? '-'} - {lastMatch.away_score ?? '-'}
+                  </div>
+                  {/* ✅ Mostra DCR SOLO se ci sono i penalty (entrambi diversi da null) */}
+                  {lastMatch.home_penalties !== null && lastMatch.away_penalties !== null && (
+                    <div className="text-[10px] font-bold text-purple-400 -mt-1">
                       dcr ({lastMatch.home_penalties}-{lastMatch.away_penalties})
                     </div>
                   )}
