@@ -227,6 +227,11 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
     kicks.filter(kick => kick.team === team);
 
   if (!started || !firstKicker) {
+    // ✅ Se non è admin e non è stato scelto chi inizia, non mostrare il popup
+    if (!isAdmin) {
+      return null;
+    }
+
     return (
       <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
