@@ -515,6 +515,14 @@ export default function ClassifichePage() {
                                 </div>
                                 <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.home_score ?? '-'}</span>
                               </div>
+                              
+                              {/* ✅ Mostra DCR tra le due righe SOLO se entrambi i penalty sono presenti */}
+                              {match.home_penalties !== null && match.away_penalties !== null && (
+                                <div className="text-[10px] font-bold text-purple-500 text-center -my-1">
+                                  dcr ({match.home_penalties}-{match.away_penalties})
+                                </div>
+                              )}
+                              
                               {/* ✅ Squadra Trasferta con opacità se eliminata */}
                               <div className={`flex items-center justify-between transition-opacity ${
                                 awayLost ? 'opacity-30' : ''
@@ -529,11 +537,6 @@ export default function ClassifichePage() {
                                 </div>
                                 <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.away_score ?? '-'}</span>
                               </div>
-                              {(match.home_penalties !== null || match.away_penalties !== null) && (
-                                <div className="text-[10px] font-bold text-purple-500 text-center mt-1">
-                                  dcr ({match.home_penalties}-{match.away_penalties})
-                                </div>
-                              )}
                             </div>
                             <div className="absolute top-1/2 -right-12 w-12 h-px bg-gray-300" />
                           </Link>
@@ -586,6 +589,14 @@ export default function ClassifichePage() {
                               </div>
                               <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.home_score ?? '-'}</span>
                             </div>
+                            
+                            {/* ✅ Mostra DCR tra le due righe SOLO se entrambi i penalty sono presenti */}
+                            {match.home_penalties !== null && match.away_penalties !== null && (
+                              <div className="text-[10px] font-bold text-purple-500 text-center -my-1">
+                                dcr ({match.home_penalties}-{match.away_penalties})
+                              </div>
+                            )}
+                            
                             {/* ✅ Squadra Trasferta con opacità se eliminata */}
                             <div className={`flex items-center justify-between transition-opacity ${
                               awayLost ? 'opacity-30' : ''
@@ -600,11 +611,6 @@ export default function ClassifichePage() {
                               </div>
                               <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.away_score ?? '-'}</span>
                             </div>
-                            {(match.home_penalties !== null || match.away_penalties !== null) && (
-                              <div className="text-[10px] font-bold text-purple-500 text-center mt-1">
-                                dcr ({match.home_penalties}-{match.away_penalties})
-                              </div>
-                            )}
                           </div>
                           <div className="absolute top-1/2 -right-12 w-12 h-px bg-gray-300" />
                         </Link>
@@ -659,6 +665,14 @@ export default function ClassifichePage() {
                             </div>
                             <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.home_score ?? '-'}</span>
                           </div>
+                          
+                          {/* ✅ Mostra DCR tra le due righe SOLO se entrambi i penalty sono presenti */}
+                          {match.home_penalties !== null && match.away_penalties !== null && (
+                            <div className="text-[10px] font-bold text-purple-500 text-center -my-1">
+                              dcr ({match.home_penalties}-{match.away_penalties})
+                            </div>
+                          )}
+                          
                           {/* ✅ Squadra Trasferta con opacità se eliminata */}
                           <div className={`flex items-center justify-between transition-opacity ${
                             awayLost ? 'opacity-30' : ''
@@ -673,11 +687,6 @@ export default function ClassifichePage() {
                             </div>
                             <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.away_score ?? '-'}</span>
                           </div>
-                          {(match.home_penalties !== null || match.away_penalties !== null) && (
-                            <div className="text-[10px] font-bold text-purple-500 text-center mt-1">
-                              dcr ({match.home_penalties}-{match.away_penalties})
-                            </div>
-                          )}
                         </div>
                         <div className="absolute left-1/2 -bottom-16 w-px h-16 bg-gray-300 -translate-x-1/2" />
                       </Link>
@@ -718,6 +727,14 @@ export default function ClassifichePage() {
                             </div>
                             <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.home_score ?? '-'}</span>
                           </div>
+                          
+                          {/* ✅ Mostra DCR tra le due righe SOLO se entrambi i penalty sono presenti */}
+                          {match.home_penalties !== null && match.away_penalties !== null && (
+                            <div className="text-[10px] font-bold text-purple-500 text-center -my-1">
+                              dcr ({match.home_penalties}-{match.away_penalties})
+                            </div>
+                          )}
+                          
                           {/* ✅ Squadra Trasferta con opacità se eliminata */}
                           <div className={`flex items-center justify-between transition-opacity ${
                             awayLost ? 'opacity-30' : ''
@@ -732,11 +749,6 @@ export default function ClassifichePage() {
                             </div>
                             <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.away_score ?? '-'}</span>
                           </div>
-                          {(match.home_penalties !== null || match.away_penalties !== null) && (
-                            <div className="text-[10px] font-bold text-purple-500 text-center mt-1">
-                              dcr ({match.home_penalties}-{match.away_penalties})
-                            </div>
-                          )}
                         </div>
                       </Link>
                     );
