@@ -30,6 +30,8 @@ interface MatchSummary {
   match_time: string | null;
   home_score: number | null;
   away_score: number | null;
+  home_penalties: number | null;  // ✅ AGGIUNGI
+  away_penalties: number | null;  // ✅ AGGIUNGI
   home_team: TeamData | null;
   away_team: TeamData | null;
 }
@@ -96,8 +98,8 @@ export default function HomePage() {
       // 1. ULTIMA PARTITA
       const { data: lastMatchArray } = await supabase
         .from('matches')
-        .select('id, status, match_date, match_time, home_score, away_score, home_team_id, away_team_id')
-        .or('status.eq.LIVE,status.eq.SUPP,status.eq.RIGORI,status.eq.FINITA') // ✅ Aggiunti SUPP e RIGORI
+        .select('id, status, match_date, match_time, home_score, away_score, home_penalties, away_penalties, home_team_id, away_team_id') // ✅ Aggiunti penalties
+        .or('status.eq.LIVE,status.eq.SUPP,status.eq.RIGORI,status.eq.FINITA')
         .order('match_date', { ascending: false })
         .order('match_time', { ascending: false })
         .limit(1);
@@ -112,7 +114,18 @@ export default function HomePage() {
         const homeTeam = teamsData?.find(t => t.id === match.home_team_id) || null;
         const awayTeam = teamsData?.find(t => t.id === match.away_team_id) || null;
         
-        setLastMatch({ ...match, home_team: homeTeam as TeamData, away_team: awayTeam as TeamData });
+        setLastMatch({
+          id: match.id,
+          status: match.status,
+          match_date: match.match_date,
+          match_time: match.match_time,
+          home_score: match.home_score,
+          away_score: match.away_score,
+          home_penalties: match.home_penalties,
+          away_penalties: match.away_penalties,
+          home_team: homeTeam as TeamData,
+          away_team: awayTeam as TeamData
+        });
       }
 
       // 2. PROSSIMA PARTITA
@@ -139,7 +152,18 @@ export default function HomePage() {
         const homeTeam = teamsData?.find(t => t.id === nextMatch.home_team_id) || null;
         const awayTeam = teamsData?.find(t => t.id === nextMatch.away_team_id) || null;
         
-        setNextMatch({ ...nextMatch, home_team: homeTeam as TeamData, away_team: awayTeam as TeamData });
+        setNextMatch({
+          id: nextMatch.id,
+          status: nextMatch.status,
+          match_date: nextMatch.match_date,
+          match_time: nextMatch.match_time,
+          home_score: nextMatch.home_score,
+          away_score: nextMatch.away_score,
+          home_penalties: null,  // Le partite future non hanno penalty
+          away_penalties: null,
+          home_team: homeTeam as TeamData,
+          away_team: awayTeam as TeamData
+        });
       } else {
         console.warn('⚠️ Nessuna partita PROGRAMMATA trovata');
       }
@@ -167,6 +191,8 @@ export default function HomePage() {
           match_time: match.match_time,
           home_score: match.home_score,
           away_score: match.away_score,
+          home_penalties: null,  // Opzionale: se vuoi fetchare anche questi
+          away_penalties: null,
           home_team: teamsData?.find(t => t.id === match.home_team_id) || null,
           away_team: teamsData?.find(t => t.id === match.away_team_id) || null,
         }));
@@ -478,7 +504,9 @@ export default function HomePage() {
                   </div>
                   <span className="font-bold text-xs text-center">{nextMatch?.home_team?.name}</span>
                 </div>
-                <div className="flex flex-col items-center justify-center"><span className="text-[#D4AF37] font-bold text-xl">VS</span></div>
+                <div className="flex flex-col items-center justify-center flex-shrink-0 px-3">
+                  <span className="text-2xl font-black text-[#D4AF37]">VS</span>
+                </div>
                 <div className="flex flex-col items-center gap-1">
                   <div className="w-11 h-11 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {nextMatch?.away_team?.logo_url ? (

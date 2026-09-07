@@ -34,6 +34,8 @@ interface MatchData {
   status: string;
   home_score: number | null;
   away_score: number | null;
+  home_penalties: number | null;  // ✅ AGGIUNGI
+  away_penalties: number | null;  // ✅ AGGIUNGI
   home_team: {
     id: string;
     name: string;
@@ -179,7 +181,7 @@ export default function ClassifichePage() {
       // 2. FASE FINALE
       const { data: phaseMatchesData, error: phaseError } = await supabase
         .from('matches')
-        .select('id, match_key, phase, status, home_score, away_score, home_team_id, away_team_id')
+        .select('id, match_key, phase, status, home_score, away_score, home_penalties, away_penalties, home_team_id, away_team_id') // ✅ Aggiunti penalty
         .in('phase', ['QUARTI', 'SEMIFINALI', 'FINALE', 'FINALE_3_4'])
         .order('match_key', { ascending: true });
 
@@ -200,8 +202,14 @@ export default function ClassifichePage() {
       }
 
       const mappedPhaseMatches: MatchData[] = (phaseMatchesData || []).map((m: any) => ({
-        id: m.id, match_key: m.match_key, phase: m.phase, status: m.status,
-        home_score: m.home_score, away_score: m.away_score,
+        id: m.id,
+        match_key: m.match_key,
+        phase: m.phase,
+        status: m.status,
+        home_score: m.home_score,
+        away_score: m.away_score,
+        home_penalties: m.home_penalties,  // ✅ AGGIUNGI
+        away_penalties: m.away_penalties,  // ✅ AGGIUNGI
         home_team: phaseTeamsData.find((t: any) => t.id === m.home_team_id) || null,
         away_team: phaseTeamsData.find((t: any) => t.id === m.away_team_id) || null,
       }));
@@ -521,6 +529,11 @@ export default function ClassifichePage() {
                                 </div>
                                 <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.away_score ?? '-'}</span>
                               </div>
+                              {(match.home_penalties !== null || match.away_penalties !== null) && (
+                                <div className="text-[10px] font-bold text-purple-500 text-center mt-1">
+                                  dcr ({match.home_penalties}-{match.away_penalties})
+                                </div>
+                              )}
                             </div>
                             <div className="absolute top-1/2 -right-12 w-12 h-px bg-gray-300" />
                           </Link>
@@ -587,6 +600,11 @@ export default function ClassifichePage() {
                               </div>
                               <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.away_score ?? '-'}</span>
                             </div>
+                            {(match.home_penalties !== null || match.away_penalties !== null) && (
+                              <div className="text-[10px] font-bold text-purple-500 text-center mt-1">
+                                dcr ({match.home_penalties}-{match.away_penalties})
+                              </div>
+                            )}
                           </div>
                           <div className="absolute top-1/2 -right-12 w-12 h-px bg-gray-300" />
                         </Link>
@@ -655,6 +673,11 @@ export default function ClassifichePage() {
                             </div>
                             <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.away_score ?? '-'}</span>
                           </div>
+                          {(match.home_penalties !== null || match.away_penalties !== null) && (
+                            <div className="text-[10px] font-bold text-purple-500 text-center mt-1">
+                              dcr ({match.home_penalties}-{match.away_penalties})
+                            </div>
+                          )}
                         </div>
                         <div className="absolute left-1/2 -bottom-16 w-px h-16 bg-gray-300 -translate-x-1/2" />
                       </Link>
@@ -709,6 +732,11 @@ export default function ClassifichePage() {
                             </div>
                             <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.away_score ?? '-'}</span>
                           </div>
+                          {(match.home_penalties !== null || match.away_penalties !== null) && (
+                            <div className="text-[10px] font-bold text-purple-500 text-center mt-1">
+                              dcr ({match.home_penalties}-{match.away_penalties})
+                            </div>
+                          )}
                         </div>
                       </Link>
                     );

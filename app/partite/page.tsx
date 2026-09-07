@@ -16,6 +16,8 @@ interface MatchData {
   status: string;
   home_score: number | null;
   away_score: number | null;
+  home_penalties: number | null;  // ✅ AGGIUNGI
+  away_penalties: number | null;  // ✅ AGGIUNGI
   home_team: { name: string; logo_url: string | null; girone?: 'A' | 'B' } | null;
   away_team: { name: string; logo_url: string | null; girone?: 'A' | 'B' } | null;
 }
@@ -58,6 +60,8 @@ export default function PartitePage() {
             status,
             home_score,
             away_score,
+            home_penalties,    // ✅ AGGIUNGI
+            away_penalties,    // ✅ AGGIUNGI
             home_team_id,
             away_team_id
           `)
@@ -70,7 +74,7 @@ export default function PartitePage() {
         const teamIds = Array.from(
           new Set(
             (matchesData || [])
-              .flatMap(m => [m.home_team_id, m.away_team_id])
+              .flatMap((m: any) => [m.home_team_id, m.away_team_id])  // ✅ Aggiungi (m: any)
               .filter(Boolean)
           )
         );
@@ -100,6 +104,8 @@ export default function PartitePage() {
             status: m.status,
             home_score: m.home_score,
             away_score: m.away_score,
+            home_penalties: m.home_penalties, 
+            away_penalties: m.away_penalties,
             home_team: homeTeam,
             away_team: awayTeam
           };
@@ -299,6 +305,12 @@ export default function PartitePage() {
                       }`}>
                         {isScheduled ? '-' : `${match.home_score ?? 0} - ${match.away_score ?? 0}`}
                       </div>
+                      {/* ✅ Mostra DCR se ci sono i penalty */}
+                      {(match.home_penalties !== null || match.away_penalties !== null) && (
+                        <div className="text-[10px] font-bold text-purple-500">
+                          dcr ({match.home_penalties}-{match.away_penalties})
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex flex-col items-center gap-1.5 flex-1">
