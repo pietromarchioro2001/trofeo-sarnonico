@@ -204,8 +204,8 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
     try {
       const supabase = createClient();
       
-      // ✅ Aggiorna subito solo il punteggio
-      const { error } = await supabase
+      // ✅ Aggiorna prima solo il punteggio
+      const { error: scoreError } = await supabase
         .from('penalty_shootouts')
         .update({
           score_home: newScore.home,
@@ -213,29 +213,35 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
         })
         .eq('id', shootoutId);
 
-      if (error) throw error;
+      if (scoreError) throw scoreError;
 
       setLightState(scored ? 'green' : 'red');
-      
-      // ✅ Aggiorna subito solo il punteggio locale
       setPenaltyScore(newScore);
       
-      setTimeout(() => {
+      setTimeout(async () => {
         setLightState('none');
         setIsProcessing(false);
         
-        // ✅ Dopo 3 secondi, aggiorna i kicks (bollini)
-        setKicks(prev => [...prev, newKick]);
-        setCurrentKick(prev => prev + 1);
+        // ✅ Aggiungi il kick e salva SUBITO su Supabase
+        const updatedKicks = [...kicks, newKick];
         
-        // ✅ Salva i kicks su Supabase
-        supabase
+        const { error: kicksError } = await supabase
           .from('penalty_shootouts')
-          .update({
-            kicks: [...kicks, newKick]
+          .update({ 
+            kicks: updatedKicks  // ✅ Salva l'array completo
           })
           .eq('id', shootoutId);
-          
+        
+        if (kicksError) {
+          console.error('Errore salvataggio kicks:', kicksError);
+        } else {
+          console.log('✅ Kicks salvati:', updatedKicks);
+        }
+        
+        // ✅ Aggiorna lo stato locale
+        setKicks(updatedKicks);
+        setCurrentKick(prev => prev + 1);
+        
       }, 3000);
     } catch (err) {
       console.error('Errore salvataggio rigore:', err);
