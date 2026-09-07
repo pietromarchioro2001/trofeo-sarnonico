@@ -190,11 +190,14 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
     if (isProcessing || !shootoutId) return;
     setIsProcessing(true);
     
-    const kickingTeam = currentKick % 2 === 0
+    // ✅ 1. LOGICA CORRETTA PER I TURNI: 
+    // Se il numero di tiri già effettuati è pari, tira la prima squadra. Altrimenti l'altra.
+    const kickingTeam = (kicks.length % 2 === 0)
       ? firstKicker!
       : (firstKicker === 'home' ? 'away' : 'home');
     
     const newKick = { team: kickingTeam, scored };
+    const updatedKicks = [...kicks, newKick];
     
     const newScore = {
       home: penaltyScore.home + (kickingTeam === 'home' && scored ? 1 : 0),
@@ -204,9 +207,7 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
     try {
       const supabase = createClient();
       
-      // ✅ 1. Aggiorna TUTTO subito su Supabase (punteggio + kicks)
-      const updatedKicks = [...kicks, newKick];
-      
+      // ✅ 2. Aggiorna TUTTO subito su Supabase
       const { error } = await supabase
         .from('penalty_shootouts')
         .update({
@@ -218,16 +219,15 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
 
       if (error) throw error;
 
-      // ✅ 2. Aggiorna subito lo stato locale per l'animazione
+      // ✅ 3. Aggiornamento UI IMMEDIATO: Accendi il bollino centrale
       setPenaltyScore(newScore);
       setLightState(scored ? 'green' : 'red');
       
-      // ✅ 3. Dopo 3 secondi, mostra i pallini e sblocca i pulsanti
+      // ✅ 4. Dopo 3 secondi: spegni il centrale e mostra i pallini sotto le squadre
       setTimeout(() => {
         setLightState('none');
         setIsProcessing(false);
-        setKicks(updatedKicks);
-        setCurrentKick(prev => prev + 1);
+        setKicks(updatedKicks); // Ora appaiono i pallini sotto le squadre
       }, 3000);
       
     } catch (err) {
