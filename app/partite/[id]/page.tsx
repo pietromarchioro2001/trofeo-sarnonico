@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -97,6 +97,10 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
   const [lightState, setLightState] = useState<'none' | 'green' | 'red'>('none');
   const [isProcessing, setIsProcessing] = useState(false);
   const [shootoutId, setShootoutId] = useState<string | null>(null);
+  
+  // ✅ Nuovi stati per tracciare i tiri
+  const [isInitialized, setIsInitialized] = useState(false);
+  const prevKicksLengthRef = useRef(0);
 
   // ✅ Fetch e Realtime dalla tabella penalty_shootouts
   useEffect(() => {
@@ -111,12 +115,9 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
       
       if (data) {
         setShootoutId(data.id);
-        setPenaltyScore({ home: data.score_home || 0, away: data.score_away || 0 });
-        
         const parsedKicks = Array.isArray(data.kicks) ? data.kicks : [];
-        setKicks(parsedKicks);
-        setCurrentKick(parsedKicks.length);
-
+        const newLength = parsedKicks.length;
+        
         // ✅ Mostra la schermata di scelta SOLO se first_kicker_team è ancora null o vuoto
         if (data.first_kicker_team && data.first_kicker_team !== '') {
           setStarted(true);
@@ -124,6 +125,46 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
         } else {
           setStarted(false);
           setFirstKicker(null);
+        }
+
+        // ✅ Logica per distinguere primo caricamento da nuovi tiri
+        if (!isInitialized) {
+          // Primo caricamento: mostra tutto senza animazione
+          setKicks(parsedKicks);
+          setCurrentKick(newLength);
+          setPenaltyScore({ home: data.score_home || 0, away: data.score_away || 0 });
+          prevKicksLengthRef.current = newLength;
+          setIsInitialized(true);
+        } else {
+          const prevLength = prevKicksLengthRef.current;
+          
+          if (newLength > prevLength) {
+            // ✅ Nuovi tiri rilevati!
+            if (isAdmin) {
+              // Admin ha già visto l'animazione localmente, aggiorna solo i dati
+              setKicks(parsedKicks);
+              setCurrentKick(newLength);
+              setPenaltyScore({ home: data.score_home || 0, away: data.score_away || 0 });
+            } else {
+              // ✅ Utente: mostra animazione del bollino centrale
+              const lastKick = parsedKicks[parsedKicks.length - 1];
+              setLightState(lastKick.scored ? 'green' : 'red');
+              setPenaltyScore({ home: data.score_home || 0, away: data.score_away || 0 });
+              
+              setTimeout(() => {
+                setLightState('none');
+                setKicks(parsedKicks);
+                setCurrentKick(newLength);
+              }, 3000);
+            }
+          } else {
+            // Nessun nuovo tiro, aggiorna silenziosamente
+            setKicks(parsedKicks);
+            setCurrentKick(newLength);
+            setPenaltyScore({ home: data.score_home || 0, away: data.score_away || 0 });
+          }
+          
+          prevKicksLengthRef.current = newLength;
         }
       }
     };
@@ -136,26 +177,21 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
       .on(
         'postgres_changes',
         { 
-          event: '*', // Ascolta INSERT, UPDATE e DELETE
+          event: '*',
           schema: 'public', 
           table: 'penalty_shootouts', 
           filter: `match_id=eq.${matchId}` 
         },
-        (payload) => {
-          console.log(' Aggiornamento realtime ricevuto:', payload);
-          fetchShootout(); // ✅ Ricarica i dati ad ogni cambiamento
+        () => {
+          fetchShootout();
         }
       )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log('✅ Iscritto al canale realtime per i rigori');
-        }
-      });
+      .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [matchId]);
+  }, [matchId, isInitialized, isAdmin]);
 
   const handleFirstKickerSelect = async (team: 'home' | 'away') => {
     const supabase = createClient();
@@ -163,7 +199,7 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
     const { data, error } = await supabase
       .from('penalty_shootouts')
       .update({ first_kicker_team: team })
-      .eq('match_id', matchId)  // ✅ Corretto per penalty_shootouts
+      .eq('match_id', matchId)
       .select()
       .maybeSingle();
 
@@ -176,11 +212,10 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
       setShootoutId(data.id);
     }
     
-    // ✅ CAMBIA STATUS A RIGORI SOLO ORA
     await supabase
       .from('matches')
       .update({ status: 'RIGORI' })
-      .eq('id', matchId);  // ✅ Usa 'id' non 'match_id'!
+      .eq('id', matchId);
     
     setFirstKicker(team);
     setStarted(true);
@@ -190,8 +225,6 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
     if (isProcessing || !shootoutId) return;
     setIsProcessing(true);
     
-    // ✅ 1. LOGICA CORRETTA PER I TURNI: 
-    // Se il numero di tiri già effettuati è pari, tira la prima squadra. Altrimenti l'altra.
     const kickingTeam = (kicks.length % 2 === 0)
       ? firstKicker!
       : (firstKicker === 'home' ? 'away' : 'home');
@@ -207,7 +240,6 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
     try {
       const supabase = createClient();
       
-      // ✅ 2. Aggiorna TUTTO subito su Supabase
       const { error } = await supabase
         .from('penalty_shootouts')
         .update({
@@ -219,15 +251,16 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
 
       if (error) throw error;
 
-      // ✅ 3. Aggiornamento UI IMMEDIATO: Accendi il bollino centrale
+      // ✅ Aggiornamento UI IMMEDIATO per l'admin
       setPenaltyScore(newScore);
       setLightState(scored ? 'green' : 'red');
+      prevKicksLengthRef.current = updatedKicks.length; // ✅ Aggiorna il ref per evitare doppie animazioni
       
-      // ✅ 4. Dopo 3 secondi: spegni il centrale e mostra i pallini sotto le squadre
       setTimeout(() => {
         setLightState('none');
         setIsProcessing(false);
-        setKicks(updatedKicks); // Ora appaiono i pallini sotto le squadre
+        setKicks(updatedKicks);
+        setCurrentKick(prev => prev + 1);
       }, 3000);
       
     } catch (err) {
@@ -249,7 +282,6 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
     kicks.filter(kick => kick.team === team);
 
   if (!started || !firstKicker) {
-    // ✅ Se non è admin e non è stato scelto chi inizia, non mostrare il popup
     if (!isAdmin) {
       return null;
     }
@@ -259,11 +291,9 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
           <div className="bg-[#581C24] p-4 flex items-center justify-between">
             <h2 className="text-lg font-black text-white uppercase tracking-wider">Calci di Rigore</h2>
-            {isAdmin && (
-              <button onClick={() => onClose(null)} className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/20">
-                <X size={20} />
-              </button>
-            )}
+            <button onClick={() => onClose(null)} className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/20">
+              <X size={20} />
+            </button>
           </div>
           <div className="p-6">
             <p className="text-center text-sm font-bold text-gray-600 mb-4 uppercase">Chi inizia i rigori?</p>
@@ -300,11 +330,10 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
         <div className="bg-[#581C24] p-4 flex items-center justify-between">
           <h2 className="text-lg font-black text-white uppercase tracking-wider">Calci di Rigore</h2>
-          {isAdmin && (
-            <button onClick={() => onClose(null)} className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/20">
-              <X size={20} />
-            </button>
-          )}
+          {/* ✅ X visibile per tutti (admin e utente) */}
+          <button onClick={() => onClose(null)} className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/20">
+            <X size={20} />
+          </button>
         </div>
         <div className="p-4">
           <div className="flex items-center justify-between mb-6">
@@ -352,7 +381,6 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
             }`} />
           </div>
           
-          {/* ✅ PULSANTI VISIBILI SOLO PER LO STAFF */}
           {isAdmin && (
             <>
               <div className="flex gap-3 mb-4">
@@ -441,6 +469,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   const [selectedPlayer, setSelectedPlayer] = useState<MatchPlayerData | null>(null);
   const [showPenaltyPopup, setShowPenaltyPopup] = useState(false);
   const [editingEvent, setEditingEvent] = useState<EventData | null>(null);
+  const [showPenaltyPopupUser, setShowPenaltyPopupUser] = useState(false);
 
   // Fetch dati iniziali
   useEffect(() => {
@@ -724,6 +753,13 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       supabase.removeChannel(votesChannel);
     };
   }, [match?.id, mvpPlayers.length, isVotingClosed]);
+
+  // ✅ AGGIUNGI QUESTO useEffect dentro MatchDetailPage
+  useEffect(() => {
+    if (match?.status === 'RIGORI') {
+      setShowPenaltyPopupUser(true);
+    }
+  }, [match?.status]);
 
   const handleSaveMvpCandidates = async (playerIds: string[]) => {
     if (!match) return;
@@ -1357,7 +1393,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         />
       )}
 
-      {/* POPUP RIGORI */}
+      {/* POPUP RIGORI ADMIN */}
       {isStaffMode && showPenaltyPopup && (
         <PenaltyShootoutPopup
           matchId={match.id}
@@ -1367,13 +1403,15 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           onClose={handlePenaltyEnd}
         />
       )}
-      {!isStaffMode && match.status === 'RIGORI' && (
+      
+      {/* ✅ POPUP RIGORI UTENTE - chiudibile ma si riapre automaticamente */}
+      {!isStaffMode && showPenaltyPopupUser && match.status === 'RIGORI' && (
         <PenaltyShootoutPopup
           matchId={match.id}
           homeTeam={{ id: match.home_team.id, name: match.home_team.name, logo_url: match.home_team.logo_url }}
           awayTeam={{ id: match.away_team.id, name: match.away_team.name, logo_url: match.away_team.logo_url }}
           isAdmin={false}
-          onClose={() => {}}
+          onClose={() => setShowPenaltyPopupUser(false)}
         />
       )}
     </div>
