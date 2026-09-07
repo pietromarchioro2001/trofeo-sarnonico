@@ -170,6 +170,9 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
       setShootoutId(data.id);
     }
     
+    // ✅ CAMBIA STATUS A RIGORI SOLO ORA
+    await supabase.from('matches').update({ status: 'RIGORI' }).eq('match_id', matchId);
+    
     setFirstKicker(team);
     setStarted(true);
   };
@@ -859,28 +862,26 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     const supabase = createClient();
     
     try {
-      // 1. Aggiorna status
-      await supabase.from('matches').update({ status: 'RIGORI' }).eq('id', match.id);
-      setMatch({ ...match, status: 'RIGORI' });
-
-      // 2. Crea record in penalty_shootouts (se non esiste già)
+      // ✅ NON cambiare status qui, lo faremo dopo quando scelgono la squadra
+      
+      // Crea record in penalty_shootouts (se non esiste già)
       const { data: existing } = await supabase
         .from('penalty_shootouts')
-        .select('id, first_kicker_team') // ✅ Aggiungi first_kicker_team alla select
+        .select('id, first_kicker_team')
         .eq('match_id', match.id)
         .maybeSingle();
 
       if (!existing) {
         await supabase.from('penalty_shootouts').insert({
           match_id: match.id,
-          first_kicker_team: '', // ✅ IMPOTA A NULL: così il popup sa che deve chiedere
+          first_kicker_team: '', // Stringa vuota = deve scegliere
           score_home: 0,
           score_away: 0,
           kicks: []
         });
       }
 
-      setShowPenaltyPopup(true);
+      setShowPenaltyPopup(true); // ✅ Apri solo il popup
     } catch (err) {
       console.error('Errore passaggio a rigori:', err);
     }
@@ -888,15 +889,11 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
 
   const handlePenaltyEnd = async (winner: 'home' | 'away' | null) => {
     setShowPenaltyPopup(false);
-    if (!match) return;
+    // ✅ NON cambiare status qui, l'admin cliccherà "Termina" manualmente
     
     if (winner) {
-      const supabase = createClient();
-      await supabase.from('matches').update({ status: 'FINITA' }).eq('id', match.id);
-      setMatch({ ...match, status: 'FINITA' });
-      
-      // ✅ Pulizia: elimina il record dei rigori (opzionale)
-      await supabase.from('penalty_shootouts').delete().eq('match_id', match.id);
+      // Opzionale: salva il vincitore da qualche parte
+      console.log(`Vincitore ai rigori: ${winner === 'home' ? match.home_team.name : match.away_team.name}`);
     }
   };
 
