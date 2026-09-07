@@ -472,6 +472,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   const [showPenaltyPopup, setShowPenaltyPopup] = useState(false);
   const [editingEvent, setEditingEvent] = useState<EventData | null>(null);
   const [showPenaltyPopupUser, setShowPenaltyPopupUser] = useState(false);
+  const [penaltyKicks, setPenaltyKicks] = useState<{ team: 'home' | 'away'; scored: boolean }[]>([]);
 
   // Fetch dati iniziali
   useEffect(() => {
@@ -547,6 +548,16 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         }));
         setEvents(typedEvents);
         setMatchEvents(typedEvents);
+
+        const { data: penaltyData } = await supabase
+          .from('penalty_shootouts')
+          .select('kicks')
+          .eq('match_id', matchId)
+          .maybeSingle();
+
+        if (penaltyData && penaltyData.kicks) {
+          setPenaltyKicks(Array.isArray(penaltyData.kicks) ? penaltyData.kicks : []);
+        }
 
         const { data: candidatesData, error: candidatesError } = await supabase
           .from('mvp_candidates')
@@ -699,10 +710,29 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       )
       .subscribe();
 
+    const penaltyChannel = supabase
+      .channel(`penalty-${matchId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'penalty_shootouts',
+          filter: `match_id=eq.${matchId}`,
+        },
+        async (payload) => {
+          const newKicks = payload.new.kicks || [];
+          setPenaltyKicks(Array.isArray(newKicks) ? newKicks : []);
+        }
+      )
+      .subscribe();
+
+    // E nel cleanup:
     return () => {
       supabase.removeChannel(matchChannel);
       supabase.removeChannel(eventsChannel);
       supabase.removeChannel(playersChannel);
+      supabase.removeChannel(penaltyChannel); // ✅ Aggiungi questo
     };
   }, [params.id]);
 
@@ -1252,6 +1282,49 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           </div>
         </div>
       </div>
+
+      {/* ✅ RIQUADRI PENALTY - Visibili solo se ci sono stati rigori */}
+      {penaltyKicks.length > 0 && (
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          {/* Casa */}
+          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+            <div className="text-xs font-bold text-[#581C24] uppercase mb-2 text-center">
+              {match.home_team.name}
+            </div>
+            <div className="flex flex-wrap gap-1 justify-center">
+              {penaltyKicks
+                .filter((kick) => kick.team === 'home')
+                .map((kick, idx) => (
+                  <div
+                    key={idx}
+                    className={`w-3 h-3 rounded-full ${
+                      kick.scored ? 'bg-green-500' : 'bg-red-600'
+                    }`}
+                  />
+                ))}
+            </div>
+          </div>
+
+          {/* Trasferta */}
+          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+            <div className="text-xs font-bold text-[#581C24] uppercase mb-2 text-center">
+              {match.away_team.name}
+            </div>
+            <div className="flex flex-wrap gap-1 justify-center">
+              {penaltyKicks
+                .filter((kick) => kick.team === 'away')
+                .map((kick, idx) => (
+                  <div
+                    key={idx}
+                    className={`w-3 h-3 rounded-full ${
+                      kick.scored ? 'bg-green-500' : 'bg-red-600'
+                    }`}
+                  />
+                ))}
+            </div>
+          </div>
+        </div>
+      )}
           </>
         ) : (
           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
