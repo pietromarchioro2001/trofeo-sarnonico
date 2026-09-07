@@ -189,7 +189,6 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
       : (firstKicker === 'home' ? 'away' : 'home');
     
     const newKick = { team: kickingTeam, scored };
-    const newKicks = [...kicks, newKick];
     
     const newScore = {
       home: penaltyScore.home + (kickingTeam === 'home' && scored ? 1 : 0),
@@ -201,7 +200,7 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
       const { error } = await supabase
         .from('penalty_shootouts')
         .update({
-          kicks: newKicks,
+          kicks: [...kicks, newKick],  // ✅ Usa kicks corrente
           score_home: newScore.home,
           score_away: newScore.away
         })
@@ -210,6 +209,12 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
       if (error) throw error;
 
       setLightState(scored ? 'green' : 'red');
+      
+      // ✅ Aggiorna immediatamente lo stato locale
+      setKicks(prev => [...prev, newKick]);
+      setPenaltyScore(newScore);
+      setCurrentKick(prev => prev + 1);
+      
       setTimeout(() => {
         setLightState('none');
         setIsProcessing(false);
