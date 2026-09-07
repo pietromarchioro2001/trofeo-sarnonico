@@ -887,12 +887,11 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     }
   };
 
-  const handlePenaltyEnd = async (winner: 'home' | 'away' | null) => {
+    const handlePenaltyEnd = async (winner: 'home' | 'away' | null) => {
     setShowPenaltyPopup(false);
-    // ✅ NON cambiare status qui, l'admin cliccherà "Termina" manualmente
     
-    if (winner) {
-      // Opzionale: salva il vincitore da qualche parte
+    // ✅ Aggiunto controllo '&& match' per evitare l'errore TypeScript
+    if (winner && match) {
       console.log(`Vincitore ai rigori: ${winner === 'home' ? match.home_team.name : match.away_team.name}`);
     }
   };
