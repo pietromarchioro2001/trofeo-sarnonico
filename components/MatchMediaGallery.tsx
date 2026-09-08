@@ -6,6 +6,7 @@ import { X, Camera } from 'lucide-react';
 
 interface MatchMediaGalleryProps {
   matchId: string;
+  isStaffMode?: boolean;
 }
 
 export default function MatchMediaGallery({ matchId }: MatchMediaGalleryProps) {

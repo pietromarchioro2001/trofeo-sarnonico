@@ -1,180 +1,247 @@
 'use client';
-import { useState, useRef } from 'react';
-import imageCompression from 'browser-image-compression';
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
-import { Upload, X, Image as ImageIcon } from 'lucide-react';
+import { X, Camera, Download, Trash2, Check } from 'lucide-react';
 
-interface MatchMediaUploadProps {
+interface MatchMediaGalleryProps {
   matchId: string;
-  onClose: () => void;
-  onUploadComplete: () => void;
+  isStaffMode?: boolean;
 }
 
-export default function MatchMediaUpload({ matchId, onClose, onUploadComplete }: MatchMediaUploadProps) {
-  const [uploading, setUploading] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+export default function MatchMediaGallery({ matchId, isStaffMode = false }: MatchMediaGalleryProps) {
+  const [photos, setPhotos] = useState<Array<{ url: string; name: string }>>([]);
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedForDeletion, setSelectedForDeletion] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
+  const supabase = createClient();
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
+  useEffect(() => {
+    fetchPhotos();
+  }, [matchId]);
 
-    // Mostra anteprima
-    const urls = files.map(file => URL.createObjectURL(file));
-    setSelectedFiles(files);
-    setPreviewUrls(urls);
+  const fetchPhotos = async () => {
+    setLoading(true);
+    
+    const { data } = await supabase.storage
+      .from('tournament-files')
+      .list(matchId, {
+        limit: 100,
+        offset: 0,
+        sortBy: { column: 'created_at', order: 'desc' }
+      });
+
+    if (data) {
+      const photosWithData = await Promise.all(
+        data.map(async (file) => {
+          const { data: urlData } = supabase.storage
+            .from('tournament-files')
+            .getPublicUrl(`${matchId}/${file.name}`);
+          return {
+            url: urlData.publicUrl,
+            name: file.name
+          };
+        })
+      );
+      setPhotos(photosWithData);
+    }
+    
+    setLoading(false);
   };
 
-  const handleUpload = async () => {
-    if (selectedFiles.length === 0) return;
+  const handleDownloadAll = async () => {
+    if (photos.length === 0) return;
     
-    setUploading(true);
-    setUploadProgress(0);
-    const supabase = createClient();
-    let uploadedCount = 0;
+    // Crea un ZIP virtuale scaricando tutte le foto
+    const JSZip = (await import('jszip')).default;
+    const zip = new JSZip();
+    
+    const folder = zip.folder(`foto-partita-${matchId}`);
+    
+    for (const photo of photos) {
+      const response = await fetch(photo.url);
+      const blob = await response.blob();
+      folder?.file(photo.name, blob);
+    }
+    
+    const content = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(content);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `foto-partita-${matchId}.zip`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
+  const toggleSelection = (photoName: string) => {
+    const newSelection = new Set(selectedForDeletion);
+    if (newSelection.has(photoName)) {
+      newSelection.delete(photoName);
+    } else {
+      newSelection.add(photoName);
+    }
+    setSelectedForDeletion(newSelection);
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedForDeletion.size === 0) return;
+    
+    if (!confirm(`Eliminare ${selectedForDeletion.size} foto selezionate?`)) return;
+    
+    setDeleting(true);
+    
     try {
-      for (const file of selectedFiles) {
-        // Comprimi immagine
-        const options = {
-          maxSizeMB: 1,
-          maxWidthOrHeight: 1920,
-          useWebWorker: true,
-        };
-
-        const compressedFile = await imageCompression(file, options);
-        
-        // Genera nome file unico
-        const fileExt = file.name.split('.').pop() || 'jpg';
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = `${matchId}/${fileName}`;
-
-        // Upload a Supabase
-        const { error } = await supabase.storage
-          .from('tournament-files')
-          .upload(filePath, compressedFile, {
-            cacheControl: '3600',
-            upsert: false
-          });
-
-        if (error) {
-          console.error('Errore upload:', error);
-          alert(`Errore nel caricamento di ${file.name}`);
-          continue;
-        }
-
-        uploadedCount++;
-        setUploadProgress(Math.round((uploadedCount / selectedFiles.length) * 100));
-      }
-
-      alert(`✅ ${uploadedCount} foto caricate con successo!`);
-      onUploadComplete();
-      onClose();
+      const pathsToDelete = Array.from(selectedForDeletion).map(name => `${matchId}/${name}`);
+      
+      const { error } = await supabase.storage
+        .from('tournament-files')
+        .remove(pathsToDelete);
+      
+      if (error) throw error;
+      
+      alert(`✅ ${selectedForDeletion.size} foto eliminate con successo!`);
+      setSelectedForDeletion(new Set());
+      await fetchPhotos();
     } catch (err) {
-      console.error('Errore upload:', err);
-      alert('Errore durante il caricamento');
+      console.error('Errore eliminazione:', err);
+      alert('Errore nell\'eliminazione delle foto');
     } finally {
-      setUploading(false);
+      setDeleting(false);
     }
   };
 
-  const removeFile = (index: number) => {
-    URL.revokeObjectURL(previewUrls[index]);
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-    setPreviewUrls(prev => prev.filter((_, i) => i !== index));
-  };
+  if (loading) {
+    return (
+      <div className="text-center py-8">
+        <div className="w-8 h-8 border-4 border-[#581C24] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+        <p className="text-xs text-gray-500 font-bold">Caricamento foto...</p>
+      </div>
+    );
+  }
+
+  if (photos.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <Camera className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+        <p className="text-sm text-gray-500 font-bold uppercase">Nessuna foto</p>
+        <p className="text-xs text-gray-400 mt-1">Le foto della partita appariranno qui</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" onClick={(e) => e.stopPropagation()}>
-        <div className="bg-[#581C24] p-4 flex items-center justify-between">
-          <h2 className="text-lg font-black text-white uppercase tracking-wider flex items-center gap-2">
-            <ImageIcon size={20} />
-            Carica Foto
-          </h2>
-          <button onClick={onClose} className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/20">
-            <X size={20} />
-          </button>
-        </div>
-
-        <div className="p-6 space-y-4">
-          {/* Area upload */}
-          <div
-            onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-[#581C24] hover:bg-[#581C24]/5 transition-colors"
-          >
-            <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-sm font-bold text-gray-600 uppercase">Clicca per selezionare foto</p>
-            <p className="text-xs text-gray-400 mt-1">Puoi selezionare più foto contemporaneamente</p>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-          </div>
-
-          {/* Anteprima */}
-          {previewUrls.length > 0 && (
-            <div className="space-y-3">
-              <p className="text-xs font-bold text-gray-600 uppercase">
-                {previewUrls.length} foto selezionate
-              </p>
-              <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto">
-                {previewUrls.map((url, idx) => (
-                  <div key={idx} className="relative aspect-square rounded-lg overflow-hidden group">
-                    <img src={url} alt="" className="w-full h-full object-cover" />
-                    <button
-                      onClick={() => removeFile(idx)}
-                      className="absolute top-1 right-1 p-1 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X size={12} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Barra progresso */}
-          {uploading && (
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs font-bold text-gray-600">
-                <span>Caricamento...</span>
-                <span>{uploadProgress}%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-[#581C24] h-2 rounded-full transition-all"
-                  style={{ width: `${uploadProgress}%` }}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="p-4 border-t border-gray-200 flex gap-3">
+    <>
+      {/* Header con azioni */}
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm text-gray-600 font-bold">
+          {photos.length} {photos.length === 1 ? 'foto' : 'foto'}
+        </p>
+        
+        <div className="flex gap-2">
+          {/* Pulsante Download per tutti */}
           <button
-            onClick={onClose}
-            disabled={uploading}
-            className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 font-bold rounded-lg hover:bg-gray-50 transition-colors text-sm uppercase disabled:opacity-50"
+            onClick={handleDownloadAll}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#581C24] text-white rounded-lg text-xs font-bold hover:bg-[#581C24]/90 transition-colors"
           >
-            Annulla
+            <Download size={14} />
+            Scarica tutte
           </button>
-          <button
-            onClick={handleUpload}
-            disabled={uploading || selectedFiles.length === 0}
-            className="flex-1 px-4 py-2.5 bg-[#581C24] text-white font-bold rounded-lg hover:bg-[#581C24]/90 transition-colors text-sm shadow-md uppercase disabled:opacity-50"
-          >
-            {uploading ? 'Caricamento...' : `Carica ${selectedFiles.length} foto`}
-          </button>
+          
+          {/* Pulsante modalità selezione per staff */}
+          {isStaffMode && (
+            <>
+              {selectedForDeletion.size > 0 ? (
+                <button
+                  onClick={handleDeleteSelected}
+                  disabled={deleting}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-colors disabled:opacity-50"
+                >
+                  <Trash2 size={14} />
+                  Elimina ({selectedForDeletion.size})
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    // Attiva modalità selezione - per ora selezioniamo tutte
+                    const allNames = new Set(photos.map(p => p.name));
+                    setSelectedForDeletion(allNames);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-600 text-white rounded-lg text-xs font-bold hover:bg-gray-700 transition-colors"
+                >
+                  <Check size={14} />
+                  Seleziona
+                </button>
+              )}
+            </>
+          )}
         </div>
       </div>
-    </div>
+
+      {/* Griglia foto */}
+      <div className="grid grid-cols-3 gap-2">
+        {photos.map((photo, idx) => {
+          const isSelected = selectedForDeletion.has(photo.name);
+          
+          return (
+            <div
+              key={idx}
+              className={`relative aspect-square rounded-lg overflow-hidden cursor-pointer group ${
+                isSelected ? 'ring-4 ring-red-500 ring-offset-2' : ''
+              }`}
+              onClick={() => isStaffMode ? toggleSelection(photo.name) : setSelectedPhoto(photo.url)}
+            >
+              <Image
+                src={photo.url}
+                alt={`Foto ${idx + 1}`}
+                fill
+                className="object-cover"
+              />
+              
+              {/* Overlay selezione per staff */}
+              {isStaffMode && (
+                <div className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity ${
+                  isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                }`}>
+                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+                    {isSelected ? (
+                      <Check size={20} className="text-green-600" />
+                    ) : (
+                      <div className="w-5 h-5 border-2 border-white rounded" />
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {/* Overlay hover per utenti normali */}
+              {!isStaffMode && (
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Modal fullscreen */}
+      {selectedPhoto && !isStaffMode && (
+        <div
+          className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4"
+          onClick={() => setSelectedPhoto(null)}
+        >
+          <button
+            className="absolute top-4 right-4 p-2 bg-white/20 rounded-full text-white hover:bg-white/30 transition-colors z-10"
+            onClick={() => setSelectedPhoto(null)}
+          >
+            <X size={24} />
+          </button>
+          <Image
+            src={selectedPhoto}
+            alt=""
+            fill
+            className="object-contain"
+          />
+        </div>
+      )}
+    </>
   );
 }
