@@ -181,9 +181,10 @@ export default function ClassifichePage() {
       // 2. FASE FINALE
       const { data: phaseMatchesData, error: phaseError } = await supabase
         .from('matches')
-        .select('id, match_key, phase, status, home_score, away_score, home_penalties, away_penalties, home_team_id, away_team_id') // ✅ Aggiunti penalty
+        .select('id, match_key, phase, status, home_score, away_score, home_penalties, away_penalties, home_team_id, away_team_id')
         .in('phase', ['QUARTI', 'SEMIFINALI', 'FINALE', 'FINALE_3_4'])
-        .order('match_key', { ascending: true });
+        .order('match_key', { ascending: true }) // ✅ Ordina per match_key
+        .order('id', { ascending: true }); // Fallback su id
 
       if (phaseError) throw phaseError;
 

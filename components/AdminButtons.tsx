@@ -1609,10 +1609,10 @@ export const AdminCreateQuarters: React.FC<AdminCreateQuartersProps> = ({ onSucc
 
           // Abbinamenti: 1A-4B, 2B-3A, 2A-3B, 1B-4A
           const newMatchups = [
-            { home: groupA[0], away: groupB[3], date: '', time: '' },
-            { home: groupB[1], away: groupA[2], date: '', time: '' },
-            { home: groupA[1], away: groupB[2], date: '', time: '' },
-            { home: groupB[0], away: groupA[3], date: '', time: '' },
+            { home: groupA[0], away: groupB[3], date: '', time: '' }, // 1A vs 4B
+            { home: groupB[1], away: groupA[2], date: '', time: '' }, // 2B vs 3A
+            { home: groupA[1], away: groupB[2], date: '', time: '' }, // 2A vs 3B
+            { home: groupB[0], away: groupA[3], date: '', time: '' }, // 1B vs 4A
           ];
           setMatchups(newMatchups);
         }
