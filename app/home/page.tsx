@@ -26,12 +26,13 @@ interface TeamData {
 interface MatchSummary {
   id: string;
   status: string;
+  phase: string;             // ✅ AGGIUNGI QUESTO
   match_date: string | null;
   match_time: string | null;
   home_score: number | null;
   away_score: number | null;
-  home_penalties: number | null;  // ✅ AGGIUNGI
-  away_penalties: number | null;  // ✅ AGGIUNGI
+  home_penalties: number | null;
+  away_penalties: number | null;
   home_team: TeamData | null;
   away_team: TeamData | null;
 }
@@ -98,7 +99,7 @@ export default function HomePage() {
       // 1. ULTIMA PARTITA
       const { data: lastMatchArray } = await supabase
         .from('matches')
-        .select('id, status, match_date, match_time, home_score, away_score, home_penalties, away_penalties, home_team_id, away_team_id') // ✅ Aggiunti penalties
+        .select('id, status, phase, match_date, match_time, home_score, away_score, home_penalties, away_penalties, home_team_id, away_team_id') // ✅ Aggiunto phase
         .or('status.eq.LIVE,status.eq.SUPP,status.eq.RIGORI,status.eq.FINITA')
         .order('match_date', { ascending: false })
         .order('match_time', { ascending: false })
@@ -117,6 +118,7 @@ export default function HomePage() {
         setLastMatch({
           id: match.id,
           status: match.status,
+          phase: match.phase,          // ✅ AGGIUNGI QUESTO
           match_date: match.match_date,
           match_time: match.match_time,
           home_score: match.home_score,
