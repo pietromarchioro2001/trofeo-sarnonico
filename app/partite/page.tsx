@@ -308,7 +308,7 @@ export default function PartitePage() {
                     </div>
 
                     <div className="px-3.5 flex flex-col items-center justify-center gap-1">
-                      <span className={`text-sm font-black ${isLive ? 'text-white' : 'text-gray-700'}`}>
+                      <span className={`text-xs font-bold mb-1 ${isLive ? 'text-white/70' : 'text-gray-400'}`}>
                         {match.match_time || '--:--'}
                       </span>
                       <div className={`text-2xl font-black tracking-wider ${
