@@ -476,6 +476,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   const [editingEvent, setEditingEvent] = useState<EventData | null>(null);
   const [showPenaltyPopupUser, setShowPenaltyPopupUser] = useState(false);
   const [showMediaUpload, setShowMediaUpload] = useState(false);
+  const [showMediaGallery, setShowMediaGallery] = useState(false);
   const [penaltyKicks, setPenaltyKicks] = useState<{ team: 'home' | 'away'; scored: boolean }[]>([]);
 
   // Fetch dati iniziali
@@ -731,12 +732,33 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       )
       .subscribe();
 
+    // Realtime storage per le foto
+    const pollInterval = setInterval(async () => {
+      const { data } = await supabase.storage
+        .from('tournament-files')
+        .list(matchId, {
+          limit: 100,
+          sortBy: { column: 'created_at', order: 'desc' }
+        });
+      
+      // MatchMediaGallery si aggiornerà automaticamente quando i dati cambiano
+    }, 3000);
+
+    // Nel cleanup:
+    return () => {
+      supabase.removeChannel(matchChannel);
+      supabase.removeChannel(eventsChannel);
+      supabase.removeChannel(playersChannel);
+      supabase.removeChannel(penaltyChannel);
+      clearInterval(pollInterval); // ✅ Aggiungi questo
+    };
+
     // E nel cleanup:
     return () => {
       supabase.removeChannel(matchChannel);
       supabase.removeChannel(eventsChannel);
       supabase.removeChannel(playersChannel);
-      supabase.removeChannel(penaltyChannel); // ✅ Aggiungi questo
+      supabase.removeChannel(penaltyChannel); 
     };
   }, [params.id]);
 
@@ -1091,14 +1113,10 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
 
         <div className="absolute top-4 right-4 flex gap-2 z-20">
           <button 
-            onClick={() => setActiveTab('media')} 
-            className={`bg-white text-[#581C24] p-2 rounded-full shadow-lg hover:bg-gray-100 transition-colors ${
-              activeTab === 'media' ? 'bg-[#581C24] text-white' : ''
-            }`}
+            onClick={() => setShowMediaGallery(true)}
+            className="bg-white text-[#581C24] p-2 rounded-full shadow-lg hover:bg-gray-100 transition-colors"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
+            <Camera size={20} />
           </button>
         </div>
       </div>
@@ -1145,7 +1163,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         <div className="bg-white rounded-full p-1 shadow-sm flex">
           <button onClick={() => setActiveTab('diretta')} className={`flex-1 py-2.5 rounded-full font-bold text-sm uppercase tracking-wider transition-all ${activeTab === 'diretta' ? 'bg-[#581C24] text-white shadow-md' : 'text-[#581C24] hover:bg-gray-50'}`}>Diretta</button>
           <button onClick={() => setActiveTab('giocatori')} className={`flex-1 py-2.5 rounded-full font-bold text-sm uppercase tracking-wider transition-all ${activeTab === 'giocatori' ? 'bg-[#581C24] text-white shadow-md' : 'text-[#581C24] hover:bg-gray-50'}`}>Giocatori</button>
-          <button onClick={() => setActiveTab('media')} className={`flex-1 py-2.5 rounded-full font-bold text-sm uppercase tracking-wider transition-all ${activeTab === 'media' ? 'bg-[#581C24] text-white shadow-md' : 'text-[#581C24] hover:bg-gray-50'}`}>Media</button>
         </div>
       </div>
 
@@ -1504,16 +1521,39 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         />
       )}
 
-      {/* POPUP UPLOAD MEDIA */}
-      {isStaffMode && showMediaUpload && (
-        <MatchMediaUpload
-          matchId={match.id}
-          onClose={() => setShowMediaUpload(false)}
-          onUploadComplete={() => {
-            // Forza il refresh della galleria
-            setShowMediaUpload(false);
-          }}
-        />
+      {/* POPUP GALLERIA MEDIA FULLSCREEN */}
+      {showMediaGallery && (
+        <div className="fixed inset-0 bg-black/95 z-[100] flex flex-col" onClick={() => setShowMediaGallery(false)}>
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 bg-[#581C24]">
+            <h2 className="text-white font-black text-lg uppercase tracking-wider">Foto Partita</h2>
+            <div className="flex items-center gap-3">
+              {isStaffMode && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowMediaUpload(true);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-white text-[#581C24] rounded-lg font-bold text-xs uppercase hover:bg-gray-100 transition-colors"
+                >
+                  <Plus size={16} />
+                  Aggiungi
+                </button>
+              )}
+              <button 
+                onClick={() => setShowMediaGallery(false)}
+                className="p-2 bg-white/20 rounded-full text-white hover:bg-white/30 transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+          </div>
+          
+          {/* Contenuto */}
+          <div className="flex-1 overflow-y-auto p-4" onClick={(e) => e.stopPropagation()}>
+            <MatchMediaGallery matchId={match.id} />
+          </div>
+        </div>
       )}
     </div>
   );
