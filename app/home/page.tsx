@@ -403,7 +403,7 @@ export default function HomePage() {
           <button onClick={() => setIsMenuOpen(true)} className="absolute top-3 left-3 z-20 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg">
             <svg className="w-5 h-5 text-[#581C24]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" /></svg>
           </button>
-          {(isStaffMode || isCaptain) && (
+          {(isStaffMode || isCaptainMode) && (
             <div className="absolute top-3 right-3 z-20">
               {isStaffMode ? (
                 <div className="bg-[#581C24] text-white w-8 h-8 rounded-full flex items-center justify-center font-black text-sm shadow-lg border-2 border-white/20">S</div>
