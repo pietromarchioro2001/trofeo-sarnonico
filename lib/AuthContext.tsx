@@ -1,30 +1,70 @@
-// lib/AuthContext.tsx
 'use client';
-import { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface AuthContextType {
   isStaffMode: boolean;
-  enableStaffMode: () => void;
-  disableStaffMode: () => void;
+  isCaptainMode: boolean;
+  isBarMode: boolean;
+  accessRole: string | null;
+  accessTeamId: string | null;
+  enableAccess: (role: string, teamId?: string) => void;
+  disableAccess: () => void;
 }
 
-const AuthContext = createContext<AuthContextType>({
-  isStaffMode: false,
-  enableStaffMode: () => {},
-  disableStaffMode: () => {},
-});
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [isStaffMode, setIsStaffMode] = useState(false);
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [accessRole, setAccessRole] = useState<string | null>(null);
+  const [accessTeamId, setAccessTeamId] = useState<string | null>(null);
 
-  const enableStaffMode = () => setIsStaffMode(true);
-  const disableStaffMode = () => setIsStaffMode(false);
+  useEffect(() => {
+    const role = localStorage.getItem('access_role');
+    const teamId = localStorage.getItem('access_team_id');
+    if (role) {
+      setAccessRole(role);
+      setAccessTeamId(teamId);
+    }
+  }, []);
+
+  const enableAccess = (role: string, teamId?: string) => {
+    localStorage.setItem('access_role', role);
+    if (teamId) localStorage.setItem('access_team_id', teamId);
+    setAccessRole(role);
+    setAccessTeamId(teamId || null);
+  };
+
+  const disableAccess = () => {
+    localStorage.removeItem('access_code');
+    localStorage.removeItem('access_role');
+    localStorage.removeItem('access_team_id');
+    localStorage.removeItem('staffCode');
+    localStorage.removeItem('captainCode');
+    localStorage.removeItem('barPassword');
+    setAccessRole(null);
+    setAccessTeamId(null);
+  };
 
   return (
-    <AuthContext.Provider value={{ isStaffMode, enableStaffMode, disableStaffMode }}>
+    <AuthContext.Provider
+      value={{
+        isStaffMode: accessRole === 'staff',
+        isCaptainMode: accessRole === 'captain',
+        isBarMode: accessRole === 'bar',
+        accessRole,
+        accessTeamId,
+        enableAccess,
+        disableAccess,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
-export const useAuth = () => useContext(AuthContext);
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}

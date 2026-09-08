@@ -68,7 +68,7 @@ const SoccerShoe = ({ size = 16, className = "" }: { size?: number, className?: 
 );
 
 export default function HomePage() {
-  const { isStaffMode, disableStaffMode } = useAuth();
+  const { isStaffMode, disableAccess } = useAuth();
   const router = useRouter();
   
   const [isCaptain, setIsCaptain] = useState(false);
@@ -347,7 +347,7 @@ export default function HomePage() {
   }, [fetchHomeData]);
 
   const handleLogout = () => {
-    disableStaffMode();
+    disableAccess();  // ✅ NUOVO - usa il nuovo metodo del context
     localStorage.removeItem('isCaptain');
     localStorage.removeItem('captainTeamId');
     localStorage.removeItem('captainTeamName');
