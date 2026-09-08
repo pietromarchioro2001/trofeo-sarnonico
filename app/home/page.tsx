@@ -133,7 +133,7 @@ export default function HomePage() {
       // 2. PROSSIMA PARTITA
       const { data: nextMatchArray, error: nextError } = await supabase
         .from('matches')
-        .select('id, status, match_date, match_time, home_score, away_score, home_team_id, away_team_id')
+        .select('id, status, phase, match_date, match_time, home_score, away_score, home_team_id, away_team_id') // ✅ Aggiunto phase
         .eq('status', 'PROGRAMMATA')
         .order('match_date', { ascending: true })
         .order('match_time', { ascending: true })
@@ -157,11 +157,12 @@ export default function HomePage() {
         setNextMatch({
           id: nextMatch.id,
           status: nextMatch.status,
+          phase: nextMatch.phase,          // ✅ AGGIUNGI QUESTO
           match_date: nextMatch.match_date,
           match_time: nextMatch.match_time,
           home_score: nextMatch.home_score,
           away_score: nextMatch.away_score,
-          home_penalties: null,  // Le partite future non hanno penalty
+          home_penalties: null,
           away_penalties: null,
           home_team: homeTeam as TeamData,
           away_team: awayTeam as TeamData
@@ -173,7 +174,7 @@ export default function HomePage() {
       // 3. ULTIME PARTITE
       const { data: recentMatchesData } = await supabase
         .from('matches')
-        .select('id, status, match_date, match_time, home_score, away_score, home_penalties, away_penalties, home_team_id, away_team_id') // ✅ Aggiunti penalty
+        .select('id, status, phase, match_date, match_time, home_score, away_score, home_penalties, away_penalties, home_team_id, away_team_id') // ✅ Aggiunto phase
         .eq('status', 'FINITA')
         .order('match_date', { ascending: false })
         .order('match_time', { ascending: false })
@@ -189,12 +190,13 @@ export default function HomePage() {
         const mappedMatches: MatchSummary[] = recentMatchesData.map(match => ({
           id: match.id,
           status: match.status,
+          phase: match.phase,          // ✅ AGGIUNGI QUESTO
           match_date: match.match_date,
           match_time: match.match_time,
           home_score: match.home_score,
           away_score: match.away_score,
-          home_penalties: match.home_penalties,  // ✅ Aggiungi
-          away_penalties: match.away_penalties,  // ✅ Aggiungi
+          home_penalties: match.home_penalties,
+          away_penalties: match.away_penalties,
           home_team: teamsData?.find(t => t.id === match.home_team_id) || null,
           away_team: teamsData?.find(t => t.id === match.away_team_id) || null,
         }));
