@@ -60,11 +60,32 @@ export default function CapitaniPage() {
     }
   };
 
-  const handleClearCredentials = () => {
+    const handleClearCredentials = () => {
+    // Pulisci TUTTO il localStorage relativo all'accesso
+    localStorage.removeItem('access_code');
+    localStorage.removeItem('captainCode');
+    localStorage.removeItem('captainTeamId');
+    localStorage.removeItem('captainTeamName');
+    localStorage.removeItem('isCaptain');
+    
+    // Chiama disableAccess del contesto
     disableAccess();
+    
+    // Resetta stato locale
     setCode('');
     setRememberMe(false);
+    setError('');
+    
+    // Forza reload della pagina per resettare tutto
+    window.location.href = '/capitani';
   };
+
+  useEffect(() => {
+    // Debug: controlla cosa c'è nel localStorage
+    console.log('isCaptainMode:', isCaptainMode);
+    console.log('localStorage captainTeamId:', localStorage.getItem('captainTeamId'));
+    console.log('localStorage access_code:', localStorage.getItem('access_code'));
+  }, [isCaptainMode]);
 
   if (isCaptainMode) {
     return (
