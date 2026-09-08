@@ -4,6 +4,7 @@ import BottomNav from '@/components/BottomNav';
 import { Oswald, Montserrat } from 'next/font/google';
 import { AuthProvider } from '@/lib/AuthContext';
 import ForceHomeOnLoad from '@/components/ForceHomeOnLoad';
+import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 
 // 1. Configurazione Font
 const oswald = Oswald({ 
@@ -58,6 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ForceHomeOnLoad />
           {children}
           <BottomNav />
+          <PWAInstallPrompt />
         </AuthProvider>
       </body>
     </html>
