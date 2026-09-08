@@ -8,6 +8,9 @@ import { ArrowLeft, Vote, X } from 'lucide-react';
 import { AdminMVPSelector, AdminStopVoting, AdminAddEvent, AdminEditEvent } from '@/components/AdminButtons';
 import { useAuth } from '@/lib/AuthContext';
 import { createClient } from '@/lib/supabase/client';
+import MatchMediaUpload from '@/components/MatchMediaUpload';
+import MatchMediaGallery from '@/components/MatchMediaGallery';
+import { Camera, Plus } from 'lucide-react';
 
 // ==================== TIPI DATI ====================
 interface TeamData {
@@ -472,6 +475,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   const [showPenaltyPopup, setShowPenaltyPopup] = useState(false);
   const [editingEvent, setEditingEvent] = useState<EventData | null>(null);
   const [showPenaltyPopupUser, setShowPenaltyPopupUser] = useState(false);
+  const [showMediaUpload, setShowMediaUpload] = useState(false);
   const [penaltyKicks, setPenaltyKicks] = useState<{ team: 'home' | 'away'; scored: boolean }[]>([]);
 
   // Fetch dati iniziali
@@ -1086,8 +1090,15 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           )}
 
         <div className="absolute top-4 right-4 flex gap-2 z-20">
-          <button onClick={() => setActiveTab('media')} className="bg-white text-[#581C24] p-2 rounded-full shadow-lg hover:bg-gray-100 transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+          <button 
+            onClick={() => setActiveTab('media')} 
+            className={`bg-white text-[#581C24] p-2 rounded-full shadow-lg hover:bg-gray-100 transition-colors ${
+              activeTab === 'media' ? 'bg-[#581C24] text-white' : ''
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
           </button>
         </div>
       </div>
@@ -1134,10 +1145,11 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         <div className="bg-white rounded-full p-1 shadow-sm flex">
           <button onClick={() => setActiveTab('diretta')} className={`flex-1 py-2.5 rounded-full font-bold text-sm uppercase tracking-wider transition-all ${activeTab === 'diretta' ? 'bg-[#581C24] text-white shadow-md' : 'text-[#581C24] hover:bg-gray-50'}`}>Diretta</button>
           <button onClick={() => setActiveTab('giocatori')} className={`flex-1 py-2.5 rounded-full font-bold text-sm uppercase tracking-wider transition-all ${activeTab === 'giocatori' ? 'bg-[#581C24] text-white shadow-md' : 'text-[#581C24] hover:bg-gray-50'}`}>Giocatori</button>
+          <button onClick={() => setActiveTab('media')} className={`flex-1 py-2.5 rounded-full font-bold text-sm uppercase tracking-wider transition-all ${activeTab === 'media' ? 'bg-[#581C24] text-white shadow-md' : 'text-[#581C24] hover:bg-gray-50'}`}>Media</button>
         </div>
       </div>
 
-      {/* CONTENUTO */}
+            {/* CONTENUTO */}
       <div className="px-4">
         {activeTab === 'diretta' ? (
           <>
@@ -1209,169 +1221,136 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
               </div>
             )}
 
-      {/* CRONACA */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          {isStaffMode ? (
-            <>
-              <AdminAddEvent 
-                matchId={match.id}
-                teamSide="home"
-              />
-              <h2 className="text-[#581C24] font-bold text-base uppercase tracking-wider text-center flex-1">Cronaca</h2>
-              <AdminAddEvent 
-                matchId={match.id}
-                teamSide="away"
-              />
-            </>
-          ) : (
-            <h2 className="text-[#581C24] font-bold text-base uppercase tracking-wider text-center w-full">Cronaca</h2>
-          )}
-        </div>
+            {/* CRONACA */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                {isStaffMode ? (
+                  <>
+                    <AdminAddEvent matchId={match.id} teamSide="home" />
+                    <h2 className="text-[#581C24] font-bold text-base uppercase tracking-wider text-center flex-1">Cronaca</h2>
+                    <AdminAddEvent matchId={match.id} teamSide="away" />
+                  </>
+                ) : (
+                  <h2 className="text-[#581C24] font-bold text-base uppercase tracking-wider text-center w-full">Cronaca</h2>
+                )}
+              </div>
 
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <div className="space-y-4">
-            {events.length === 0 ? (
-              <div className="text-center py-4 text-gray-500 text-sm">Nessun evento registrato</div>
-            ) : (
-              <>
-                {events.map((event, i) => {
-                  const isHome = event.team_id === match.home_team.id;
-                  const playerName = event.player
-                    ? `${event.player.first_name?.[0] || ''}. ${event.player.last_name || ''}`
-                    : 'Sconosciuto';
-                  
-                  // ✅ Determina il colore della linea verticale in base allo status
-                  const lineColor = 
-                    event.phase === 'RIGORI' ? 'bg-purple-400' :
-                    event.phase === 'SUPP' ? 'bg-orange-400' :
-                    'bg-gray-300';
-                  
-                  return (
-                    <div 
-                      key={event.id}
-                      className={`flex items-center gap-2 ${isStaffMode ? 'cursor-pointer hover:bg-gray-50 rounded-lg px-2 py-1 -mx-2 transition-colors' : ''}`}
-                      onClick={() => isStaffMode && setEditingEvent(event)}
-                    >
-                      {isHome ? (
-                        <>
-                          <div className="flex items-center gap-2 flex-1 justify-end">
-                            <EventIcon type={event.event_type} size={16} />
-                            <span className="font-bold text-[#581C24] text-xs w-8 text-right">{event.minute}'</span>
-                            <span className="font-medium text-xs truncate">{playerName}</span>
+              <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                <div className="space-y-4">
+                  {events.length === 0 ? (
+                    <div className="text-center py-4 text-gray-500 text-sm">Nessun evento registrato</div>
+                  ) : (
+                    <>
+                      {events.map((event, i) => {
+                        const isHome = event.team_id === match.home_team.id;
+                        const playerName = event.player
+                          ? `${event.player.first_name?.[0] || ''}. ${event.player.last_name || ''}`
+                          : 'Sconosciuto';
+                        
+                        const lineColor = 
+                          event.phase === 'RIGORI' ? 'bg-purple-400' :
+                          event.phase === 'SUPP' ? 'bg-orange-400' :
+                          'bg-gray-300';
+                        
+                        return (
+                          <div 
+                            key={event.id}
+                            className={`flex items-center gap-2 ${isStaffMode ? 'cursor-pointer hover:bg-gray-50 rounded-lg px-2 py-1 -mx-2 transition-colors' : ''}`}
+                            onClick={() => isStaffMode && setEditingEvent(event)}
+                          >
+                            {isHome ? (
+                              <>
+                                <div className="flex items-center gap-2 flex-1 justify-end">
+                                  <EventIcon type={event.event_type} size={16} />
+                                  <span className="font-bold text-[#581C24] text-xs w-8 text-right">{event.minute}'</span>
+                                  <span className="font-medium text-xs truncate">{playerName}</span>
+                                </div>
+                                <div className={`w-px h-8 flex-shrink-0 ${lineColor}`} />
+                                <div className="flex-1" />
+                              </>
+                            ) : (
+                              <>
+                                <div className="flex-1" />
+                                <div className={`w-px h-8 flex-shrink-0 ${lineColor}`} />
+                                <div className="flex items-center gap-2 flex-1 justify-start">
+                                  <span className="font-medium text-xs truncate">{playerName}</span>
+                                  <span className="font-bold text-[#581C24] text-xs w-8">{event.minute}'</span>
+                                  <EventIcon type={event.event_type} size={16} />
+                                </div>
+                              </>
+                            )}
                           </div>
-                          <div className={`w-px h-8 flex-shrink-0 ${lineColor}`} />
-                          <div className="flex-1" />
-                        </>
-                      ) : (
-                        <>
-                          <div className="flex-1" />
-                          <div className={`w-px h-8 flex-shrink-0 ${lineColor}`} />
-                          <div className="flex items-center gap-2 flex-1 justify-start">
-                            <span className="font-medium text-xs truncate">{playerName}</span>
-                            <span className="font-bold text-[#581C24] text-xs w-8">{event.minute}'</span>
-                            <EventIcon type={event.event_type} size={16} />
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
-              </>
+                        );
+                      })}
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* ✅ RIQUADRI PENALTY - Visibili solo se ci sono stati rigori */}
+            {penaltyKicks.length > 0 && (
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                  <div className="text-xs font-bold text-[#581C24] uppercase mb-2 text-center">{match.home_team.name}</div>
+                  <div className="flex flex-wrap gap-1 justify-center">
+                    {penaltyKicks.filter((kick) => kick.team === 'home').map((kick, idx) => (
+                      <div key={idx} className={`w-3 h-3 rounded-full ${kick.scored ? 'bg-green-500' : 'bg-red-600'}`} />
+                    ))}
+                  </div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                  <div className="text-xs font-bold text-[#581C24] uppercase mb-2 text-center">{match.away_team.name}</div>
+                  <div className="flex flex-wrap gap-1 justify-center">
+                    {penaltyKicks.filter((kick) => kick.team === 'away').map((kick, idx) => (
+                      <div key={idx} className={`w-3 h-3 rounded-full ${kick.scored ? 'bg-green-500' : 'bg-red-600'}`} />
+                    ))}
+                  </div>
+                </div>
+              </div>
             )}
-          </div>
-        </div>
-      </div>
-
-      {/* ✅ RIQUADRI PENALTY - Visibili solo se ci sono stati rigori */}
-      {penaltyKicks.length > 0 && (
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          {/* Casa */}
-          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-            <div className="text-xs font-bold text-[#581C24] uppercase mb-2 text-center">
-              {match.home_team.name}
-            </div>
-            <div className="flex flex-wrap gap-1 justify-center">
-              {penaltyKicks
-                .filter((kick) => kick.team === 'home')
-                .map((kick, idx) => (
-                  <div
-                    key={idx}
-                    className={`w-3 h-3 rounded-full ${
-                      kick.scored ? 'bg-green-500' : 'bg-red-600'
-                    }`}
-                  />
-                ))}
-            </div>
-          </div>
-
-          {/* Trasferta */}
-          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-            <div className="text-xs font-bold text-[#581C24] uppercase mb-2 text-center">
-              {match.away_team.name}
-            </div>
-            <div className="flex flex-wrap gap-1 justify-center">
-              {penaltyKicks
-                .filter((kick) => kick.team === 'away')
-                .map((kick, idx) => (
-                  <div
-                    key={idx}
-                    className={`w-3 h-3 rounded-full ${
-                      kick.scored ? 'bg-green-500' : 'bg-red-600'
-                    }`}
-                  />
-                ))}
-            </div>
-          </div>
-        </div>
-      )}
           </>
-        ) : (
+        ) : activeTab === 'giocatori' ? (
           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
             <div className="flex gap-4">
               <div className="flex-1">
                 <h3 className="text-[#581C24] font-bold text-sm uppercase tracking-wider mb-3 text-center border-b border-gray-200 pb-2">{match.home_team.name}</h3>
                 <div className="space-y-2">
-                  {homePlayers
-                    .sort((a, b) => a.last_name.localeCompare(b.last_name)) // ✅ Ordinamento alfabetico per cognome
-                    .map((player) => {
-                      // ✅ Calcola statistiche SOLO di questa partita
-                      const playerEvents = matchEvents.filter(e => e.player_id === player.id);
-                      const goals = playerEvents.filter(e => e.event_type === 'GOAL').length;
-                      const yellowCards = playerEvents.filter(e => e.event_type === 'YELLOW_CARD').length;
-                      const redCards = playerEvents.filter(e => e.event_type === 'RED_CARD').length;
-                      
-                      return (
-                        <div key={player.id} onClick={() => setSelectedPlayer(player)} className="flex items-center gap-2 py-1.5 px-1 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors group">
-                          <span className="font-bold text-xs text-gray-400 w-6 group-hover:text-[#581C24] transition-colors">{player.jersey_number || '-'}</span>
-                          <span className="font-medium text-xs flex-1 truncate group-hover:text-[#581C24] transition-colors">{player.first_name?.[0] || ''}. {player.last_name}</span>
-                          
-                          {/* ✅ SEZIONE STICKER CON MOLTIPLICATORE - attaccata al nome */}
-                          {(goals > 0 || yellowCards > 0 || redCards > 0) && (
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                              {goals > 0 && (
-                                <div className="flex items-center gap-0.5">
-                                  <EventIcon type="GOAL" size={14} />
-                                  {goals > 1 && <span className="text-[9px] font-black text-[#581C24]">x{goals}</span>}
-                                </div>
-                              )}
-                              {yellowCards > 0 && (
-                                <div className="flex items-center gap-0.5">
-                                  <EventIcon type="YELLOW_CARD" size={14} />
-                                  {yellowCards > 1 && <span className="text-[9px] font-black text-yellow-700">x{yellowCards}</span>}
-                                </div>
-                              )}
-                              {redCards > 0 && (
-                                <div className="flex items-center gap-0.5">
-                                  <EventIcon type="RED_CARD" size={14} />
-                                  {redCards > 1 && <span className="text-[9px] font-black text-red-700">x{redCards}</span>}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                  {homePlayers.sort((a, b) => a.last_name.localeCompare(b.last_name)).map((player) => {
+                    const playerEvents = matchEvents.filter(e => e.player_id === player.id);
+                    const goals = playerEvents.filter(e => e.event_type === 'GOAL').length;
+                    const yellowCards = playerEvents.filter(e => e.event_type === 'YELLOW_CARD').length;
+                    const redCards = playerEvents.filter(e => e.event_type === 'RED_CARD').length;
+                    
+                    return (
+                      <div key={player.id} onClick={() => setSelectedPlayer(player)} className="flex items-center gap-2 py-1.5 px-1 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors group">
+                        <span className="font-bold text-xs text-gray-400 w-6 group-hover:text-[#581C24] transition-colors">{player.jersey_number || '-'}</span>
+                        <span className="font-medium text-xs flex-1 truncate group-hover:text-[#581C24] transition-colors">{player.first_name?.[0] || ''}. {player.last_name}</span>
+                        {(goals > 0 || yellowCards > 0 || redCards > 0) && (
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            {goals > 0 && (
+                              <div className="flex items-center gap-0.5">
+                                <EventIcon type="GOAL" size={14} />
+                                {goals > 1 && <span className="text-[9px] font-black text-[#581C24]">x{goals}</span>}
+                              </div>
+                            )}
+                            {yellowCards > 0 && (
+                              <div className="flex items-center gap-0.5">
+                                <EventIcon type="YELLOW_CARD" size={14} />
+                                {yellowCards > 1 && <span className="text-[9px] font-black text-yellow-700">x{yellowCards}</span>}
+                              </div>
+                            )}
+                            {redCards > 0 && (
+                              <div className="flex items-center gap-0.5">
+                                <EventIcon type="RED_CARD" size={14} />
+                                {redCards > 1 && <span className="text-[9px] font-black text-red-700">x{redCards}</span>}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
               
@@ -1380,49 +1359,61 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
               <div className="flex-1">
                 <h3 className="text-[#581C24] font-bold text-sm uppercase tracking-wider mb-3 text-center border-b border-gray-200 pb-2">{match.away_team.name}</h3>
                 <div className="space-y-2">
-                  {awayPlayers
-                    .sort((a, b) => a.last_name.localeCompare(b.last_name)) // ✅ Ordinamento alfabetico per cognome
-                    .map((player) => {
-                      // ✅ Calcola statistiche SOLO di questa partita
-                      const playerEvents = matchEvents.filter(e => e.player_id === player.id);
-                      const goals = playerEvents.filter(e => e.event_type === 'GOAL').length;
-                      const yellowCards = playerEvents.filter(e => e.event_type === 'YELLOW_CARD').length;
-                      const redCards = playerEvents.filter(e => e.event_type === 'RED_CARD').length;
-                      
-                      return (
-                        <div key={player.id} onClick={() => setSelectedPlayer(player)} className="flex items-center gap-2 py-1.5 px-1 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors group">
-                          <span className="font-bold text-xs text-gray-400 w-6 group-hover:text-[#581C24] transition-colors">{player.jersey_number || '-'}</span>
-                          <span className="font-medium text-xs flex-1 truncate group-hover:text-[#581C24] transition-colors">{player.first_name?.[0] || ''}. {player.last_name}</span>
-                          
-                          {/* ✅ SEZIONE STICKER CON MOLTIPLICATORE - attaccata al nome */}
-                          {(goals > 0 || yellowCards > 0 || redCards > 0) && (
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                              {goals > 0 && (
-                                <div className="flex items-center gap-0.5">
-                                  <EventIcon type="GOAL" size={14} />
-                                  {goals > 1 && <span className="text-[9px] font-black text-[#581C24]">x{goals}</span>}
-                                </div>
-                              )}
-                              {yellowCards > 0 && (
-                                <div className="flex items-center gap-0.5">
-                                  <EventIcon type="YELLOW_CARD" size={14} />
-                                  {yellowCards > 1 && <span className="text-[9px] font-black text-yellow-700">x{yellowCards}</span>}
-                                </div>
-                              )}
-                              {redCards > 0 && (
-                                <div className="flex items-center gap-0.5">
-                                  <EventIcon type="RED_CARD" size={14} />
-                                  {redCards > 1 && <span className="text-[9px] font-black text-red-700">x{redCards}</span>}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                  {awayPlayers.sort((a, b) => a.last_name.localeCompare(b.last_name)).map((player) => {
+                    const playerEvents = matchEvents.filter(e => e.player_id === player.id);
+                    const goals = playerEvents.filter(e => e.event_type === 'GOAL').length;
+                    const yellowCards = playerEvents.filter(e => e.event_type === 'YELLOW_CARD').length;
+                    const redCards = playerEvents.filter(e => e.event_type === 'RED_CARD').length;
+                    
+                    return (
+                      <div key={player.id} onClick={() => setSelectedPlayer(player)} className="flex items-center gap-2 py-1.5 px-1 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors group">
+                        <span className="font-bold text-xs text-gray-400 w-6 group-hover:text-[#581C24] transition-colors">{player.jersey_number || '-'}</span>
+                        <span className="font-medium text-xs flex-1 truncate group-hover:text-[#581C24] transition-colors">{player.first_name?.[0] || ''}. {player.last_name}</span>
+                        {(goals > 0 || yellowCards > 0 || redCards > 0) && (
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            {goals > 0 && (
+                              <div className="flex items-center gap-0.5">
+                                <EventIcon type="GOAL" size={14} />
+                                {goals > 1 && <span className="text-[9px] font-black text-[#581C24]">x{goals}</span>}
+                              </div>
+                            )}
+                            {yellowCards > 0 && (
+                              <div className="flex items-center gap-0.5">
+                                <EventIcon type="YELLOW_CARD" size={14} />
+                                {yellowCards > 1 && <span className="text-[9px] font-black text-yellow-700">x{yellowCards}</span>}
+                              </div>
+                            )}
+                            {redCards > 0 && (
+                              <div className="flex items-center gap-0.5">
+                                <EventIcon type="RED_CARD" size={14} />
+                                {redCards > 1 && <span className="text-[9px] font-black text-red-700">x{redCards}</span>}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
+          </div>
+        ) : (
+          /* ✅ CONTENUTO TAB MEDIA */
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-[#581C24] font-bold text-base uppercase tracking-wider">Foto Partita</h2>
+              {isStaffMode && (
+                <button
+                  onClick={() => setShowMediaUpload(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-[#581C24] text-white rounded-lg font-bold text-xs uppercase hover:bg-[#581C24]/90 transition-colors shadow-md"
+                >
+                  <Plus size={16} />
+                  Aggiungi Foto
+                </button>
+              )}
+            </div>
+            <MatchMediaGallery matchId={match.id} />
           </div>
         )}
       </div>
@@ -1510,6 +1501,18 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           awayTeam={{ id: match.away_team.id, name: match.away_team.name, logo_url: match.away_team.logo_url }}
           isAdmin={false}
           onClose={() => setShowPenaltyPopupUser(false)} // ✅ Per l'utente non serve passare score
+        />
+      )}
+
+      {/* POPUP UPLOAD MEDIA */}
+      {isStaffMode && showMediaUpload && (
+        <MatchMediaUpload
+          matchId={match.id}
+          onClose={() => setShowMediaUpload(false)}
+          onUploadComplete={() => {
+            // Forza il refresh della galleria
+            setShowMediaUpload(false);
+          }}
         />
       )}
     </div>
