@@ -1776,10 +1776,10 @@ export const AdminCreateSemifinals: React.FC<AdminCreateSemifinalsProps> = ({ on
         // 1. Prendi tutte le partite dei Quarti FINITE
         const { data: quarters } = await supabase
           .from('matches')
-          .select('id, home_score, away_score, home_penalties, away_penalties, status, home_team_id, away_team_id')
+          .select('id, home_score, away_score, home_penalties, away_penalties, status, home_team_id, away_team_id, match_key')
           .eq('phase', 'QUARTI')
           .eq('status', 'FINITA')
-          .order('id', { ascending: true }); // Ordina per abbinare Q1 vs Q2 e Q3 vs Q4
+          .order('match_key', { ascending: true }); // ✅ ORDINA PER match_key (Q1, Q2, Q3, Q4)
 
         if (!quarters || quarters.length < 4) {
           setError('⚠️ Completa tutte e 4 le partite dei Quarti di Finale prima di procedere.');
