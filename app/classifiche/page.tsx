@@ -214,18 +214,31 @@ export default function ClassifichePage() {
         home_team: phaseTeamsData.find((t: any) => t.id === m.home_team_id) || null,
         away_team: phaseTeamsData.find((t: any) => t.id === m.away_team_id) || null,
       }));
-      setPhaseMatches(mappedPhaseMatches);
-      // ✅ CONTROLLA SE ESISTE LA FASE FINALE
-      const hasFinal = mappedPhaseMatches.length > 0;
-      setHasFinalPhase(hasFinal);
       
-      // Se c'è la fase finale, imposta come default
-      if (hasFinal) {
+      setPhaseMatches(mappedPhaseMatches);
+      
+      // ✅ CONTROLLA QUALI FASI SONO PRESENTI NEL DATABASE
+      const hasFinals = mappedPhaseMatches.some(m => m.phase === 'FINALE' || m.phase === 'FINALE_3_4');
+      const hasSemis = mappedPhaseMatches.some(m => m.phase === 'SEMIFINALI');
+      const hasQuarters = mappedPhaseMatches.some(m => m.phase === 'QUARTI');
+      const hasAnyPhase = hasFinals || hasSemis || hasQuarters;
+
+      setHasFinalPhase(hasAnyPhase);
+
+      if (hasAnyPhase) {
         setActiveTab('fase-finale');
-        // Salva nel localStorage per le visite successive
         localStorage.setItem('classifiche_default_tab', 'fase-finale');
+
+        // ✅ LOGICA DI PRIORITÀ: Mostra la fase più avanzata disponibile
+        if (hasFinals) {
+          setPhaseSubTab('finale');
+        } else if (hasSemis) {
+          setPhaseSubTab('semifinali');
+        } else {
+          setPhaseSubTab('quarti');
+        }
       } else {
-        // Altrimenti controlla se c'era un salvataggio precedente
+        // Fallback se non c'è nessuna fase finale
         const savedTab = localStorage.getItem('classifiche_default_tab');
         if (savedTab === 'fase-finale') {
           setActiveTab('fase-finale');
