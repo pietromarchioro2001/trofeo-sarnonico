@@ -504,9 +504,19 @@ export default function HomePage() {
 
         {nextMatch && (
           <Link href={`/partite/${nextMatch.id}`} className="block">
-            <div className="bg-white rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow">
+            <div className={`${
+              nextMatch.phase === 'FINALE' ? 'bg-gradient-to-br from-[#F9E4A8] to-[#E8D49A] border-2 border-[#C9B037]' :
+              nextMatch.phase === 'FINALE_3_4' ? 'bg-gradient-to-br from-[#E8C8A8] to-[#D4B494] border-2 border-[#B87333]' :
+              'bg-white'
+            } rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow`}>
               <div className="flex items-center justify-between mb-5">
-                <h3 className="text-[#581C24] font-bold text-xs uppercase tracking-wide">PROSSIMA PARTITA</h3>
+                <h3 className={`${
+                  nextMatch.phase === 'FINALE' || nextMatch.phase === 'FINALE_3_4' ? 'text-[#581C24]' : 'text-[#581C24]'
+                } font-bold text-xs uppercase tracking-wide`}>
+                  {nextMatch.phase === 'FINALE' ? ' FINALE 1°-2° POSTO' :
+                  nextMatch.phase === 'FINALE_3_4' ? '🥉 FINALE 3°-4° POSTO' :
+                  'PROSSIMA PARTITA'}
+                </h3>
                 <div className="flex items-center gap-1.5 text-[9px] text-gray-600">
                   <div className="flex items-center gap-0.5">
                     <CalendarDays className="w-3 h-3 flex-shrink-0" />
