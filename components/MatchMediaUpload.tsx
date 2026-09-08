@@ -225,7 +225,7 @@ export default function MatchMediaGallery({ matchId, isStaffMode = false }: Matc
       {/* Modal fullscreen */}
       {selectedPhoto && !isStaffMode && (
         <div
-          className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/95 z-[110] flex items-center justify-center p-4"
           onClick={() => setSelectedPhoto(null)}
         >
           <button
