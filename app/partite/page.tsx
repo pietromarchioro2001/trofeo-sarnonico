@@ -260,29 +260,23 @@ export default function PartitePage() {
                         ? 'bg-gradient-to-br from-[#E8C8A8] to-[#D4B494] border-[#B87333]'
                         : 'bg-white border-gray-100'
                 }`}>
-                  <div className="flex items-center justify-between mb-2.5">
-                    {isLive && (
-                      <span className="bg-red-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" /> 
-                        {match.status === 'SUPP' ? 'SUPP' : match.status === 'RIGORI' ? 'RIGORI' : 'LIVE'}
-                      </span>
-                    )}
-                    {!isLive && !isScheduled && (
-                      <span className={`text-sm font-bold ${isLive ? 'text-white' : 'text-black'}`}>Risultato</span>
-                    )}
-                    {isScheduled && <span className="text-gray-500 text-sm font-bold">In programma</span>}
-                    
-                    <div className="flex-1" />
-                    
-                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
+                  <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-bold text-[#581C24]">
+                    {isScheduled ? 'In programma' : 'Risultato'}
+                  </span>
+                  
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                       isLive ? 'bg-white/20 text-white' : 
                       match.phase === 'FINALE' ? 'bg-[#FFD700] text-[#581C24]' :
                       match.phase === 'FINALE_3_4' ? 'bg-[#CD7F32] text-white' :
                       'bg-gray-100 text-[#581C24]'
                     }`}>
-                      {match.phase === 'FINALE' ? 'FINALE 1-2' : 
-                      match.phase === 'FINALE_3_4' ? 'FINALE 3-4' :
-                      match.phase === 'GIRONI' ? `GIRONE ${match.home_team?.girone || 'A'}` : match.phase}
+                      {match.phase === 'GIRONI' ? `GIRONE ${match.home_team?.girone || 'A'}` : 
+                      match.phase === 'SEMIFINALI' ? 'SEMIFINALI' :
+                      match.phase === 'FINALE' ? 'FINALE 1-2' :
+                      match.phase === 'FINALE_3_4' ? 'FINALE 3-4' : 
+                      match.phase}
                     </span>
 
                     {isStaffMode && (
@@ -292,6 +286,7 @@ export default function PartitePage() {
                       />
                     )}
                   </div>
+                </div>
 
                   <div className="flex items-center justify-between">
                     <div className="flex flex-col items-center gap-1.5 flex-1">
