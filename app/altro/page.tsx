@@ -84,16 +84,13 @@ const MENU_ITEMS: { id: SectionId; title: string; restricted: boolean; icon: JSX
 ];
 
 export default function AltroPage() {
-  const { isStaffMode } = useAuth();
+  // ✅ USA IL NUOVO AUTH CONTEXT
+  const { isStaffMode, isCaptainMode, accessTeamId } = useAuth();
   const [openSection, setOpenSection] = useState<SectionId | null>(null);
-  const [isCaptain, setIsCaptain] = useState(false);
-  const [userTeamId, setUserTeamId] = useState('');
   const [loading, setLoading] = useState(true);
   
-  // ✅ NUOVO: Stato per sapere se siamo in fase finale
   const [isTournamentLocked, setIsTournamentLocked] = useState(false);
 
-  // Stati dati
   const [teamsLiberatorie, setTeamsLiberatorie] = useState<TeamLiberatorie[]>([]);
   const [templateDoc, setTemplateDoc] = useState<UploadedDocument | undefined>(undefined);
   const [alboDoro, setAlboDoro] = useState<AlboDoroData | null>(null);
@@ -108,12 +105,7 @@ export default function AltroPage() {
     whatsapp: '+39 333 1234567'
   });
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setIsCaptain(localStorage.getItem('isCaptain') === 'true');
-      setUserTeamId(localStorage.getItem('captainTeamId') || '');
-    }
-  }, []);
+  // ❌ RIMOSSO: useEffect che leggeva localStorage per isCaptain e captainTeamId
 
   useEffect(() => {
     const fetchAltroData = async () => {
@@ -171,7 +163,7 @@ export default function AltroPage() {
           }
         }
 
-        // 3. ✅ CONTROLLO BLOCCO FASE FINALE
+        // 3. CONTROLLO BLOCCO FASE FINALE
         const { count: finalPhaseCount } = await supabase
           .from('matches')
           .select('*', { count: 'exact', head: true })
@@ -223,7 +215,8 @@ export default function AltroPage() {
     setOpenSection(openSection === sectionId ? null : sectionId);
   };
 
-  const showRestricted = isStaffMode || isCaptain;
+  // ✅ LOGICA AGGIORNATA: mostra sezioni riservate a staff O capitani
+  const showRestricted = isStaffMode || isCaptainMode;
 
   if (loading) {
     return (
@@ -274,10 +267,10 @@ export default function AltroPage() {
                         teams={teamsLiberatorie}
                         templateDoc={templateDoc}
                         userRole={isStaffMode ? 'staff' : 'captain'}
-                        userTeamId={userTeamId}
+                        userTeamId={accessTeamId || ''}
                         onUpdate={setTeamsLiberatorie}
                         onTemplateUpload={setTemplateDoc}
-                        isTournamentLocked={isTournamentLocked} // ✅ Passiamo lo stato di blocco
+                        isTournamentLocked={isTournamentLocked}
                       />
                     </div>
                   )}

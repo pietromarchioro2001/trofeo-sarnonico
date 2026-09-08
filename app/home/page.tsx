@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect, useCallback } from 'react';
 import { Trophy, CalendarDays, Clock, ChevronRight } from 'lucide-react';
-import { useAuth } from '@/lib/AuthContext';
+import { useAuth } from '@/lib/AuthContext'; // ✅ Assicurati che sia importato
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
@@ -68,7 +68,7 @@ const SoccerShoe = ({ size = 16, className = "" }: { size?: number, className?: 
 );
 
 export default function HomePage() {
-  const { isStaffMode, disableAccess } = useAuth();
+  const { isStaffMode, isCaptainMode, disableAccess } = useAuth();
   const router = useRouter();
   
   const [isCaptain, setIsCaptain] = useState(false);

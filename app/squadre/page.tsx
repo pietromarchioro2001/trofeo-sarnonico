@@ -7,17 +7,16 @@ import { AdminSquadreButton } from '@/components/AdminButtons';
 import { createClient } from '@/lib/supabase/client';
 import { AlertTriangle } from 'lucide-react';
 
-// Tipo per le squadre da Supabase
 interface Team {
   id: string;
   name: string;
   girone: 'A' | 'B';
   logo_url: string | null;
-  hasSuspendedPlayers: boolean; // ✅ Nuovo flag per l'avviso
+  hasSuspendedPlayers: boolean;
 }
 
 export default function SquadrePage() {
-  const { isStaffMode } = useAuth();
+  const { isStaffMode, isCaptainMode, accessTeamId } = useAuth();
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +26,6 @@ export default function SquadrePage() {
       try {
         const supabase = createClient();
         
-        // ✅ Query aggiornata per includere lo stato di squalifica dei giocatori
         const { data, error } = await supabase
           .from('teams')
           .select(`
@@ -41,7 +39,6 @@ export default function SquadrePage() {
 
         if (error) throw error;
 
-        // ✅ Mappiamo i dati per creare il flag hasSuspendedPlayers
         const mappedTeams: Team[] = (data || []).map((team: any) => ({
           id: team.id,
           name: team.name,
@@ -124,62 +121,75 @@ export default function SquadrePage() {
             <p className="text-gray-500 font-bold">Nessuna squadra trovata</p>
           </div>
         ) : (
-          teams.map((team) => (
-            <Link
-              key={team.id}
-              href={`/squadre/${team.id}`}
-              className="block"
-            >
-              <div className="bg-white rounded-xl p-3 shadow-md border border-gray-100 flex items-center gap-3 hover:shadow-lg transition-shadow">
-                {/* Logo squadra */}
-                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                  {team.logo_url ? (
-                    <Image
-                      src={team.logo_url}
-                      alt={team.name}
-                      width={48}
-                      height={48}
-                      className="object-cover"
-                    />
-                  ) : (
-                    <span className="text-[8px] text-gray-400">LOGO</span>
-                  )}
-                </div>
-                
-                {/* ✅ Nome squadra e eventuale avviso (senza alterare il layout) */}
-                <div className="flex items-center gap-2 flex-1">
-                  <span className="font-bold text-sm text-[#581C24] uppercase tracking-wide truncate">
-                    {team.name}
+          teams.map((team) => {
+            // ✅ Verifica se questa è la squadra del capitano
+            const isMyTeam = isCaptainMode && accessTeamId === team.id;
+
+            return (
+              <Link
+                key={team.id}
+                href={`/squadre/${team.id}`}
+                className="block"
+              >
+                <div className={`bg-white rounded-xl p-3 shadow-md border flex items-center gap-3 hover:shadow-lg transition-shadow ${
+                  isMyTeam ? 'border-blue-400 ring-2 ring-blue-200' : 'border-gray-100'
+                }`}>
+                  {/* Logo squadra */}
+                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {team.logo_url ? (
+                      <Image
+                        src={team.logo_url}
+                        alt={team.name}
+                        width={48}
+                        height={48}
+                        className="object-cover"
+                      />
+                    ) : (
+                      <span className="text-[8px] text-gray-400">LOGO</span>
+                    )}
+                  </div>
+                  
+                  {/* Nome squadra e eventuale avviso */}
+                  <div className="flex items-center gap-2 flex-1">
+                    <span className="font-bold text-sm text-[#581C24] uppercase tracking-wide truncate">
+                      {team.name}
+                    </span>
+                    {team.hasSuspendedPlayers && (
+                      <AlertTriangle 
+                        className="w-4 h-4 text-red-600 flex-shrink-0" 
+                      />
+                    )}
+                    {/* ✅ Badge "LA TUA SQUADRA" per il capitano */}
+                    {isMyTeam && (
+                      <span className="text-[9px] font-black text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full uppercase">
+                        Tua
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Girone badge */}
+                  <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded flex-shrink-0">
+                    {team.girone}
                   </span>
-                  {team.hasSuspendedPlayers && (
-                    <AlertTriangle 
-                      className="w-4 h-4 text-red-600 flex-shrink-0" 
+                  
+                  {/* Freccia */}
+                  <svg
+                    className="w-5 h-5 text-gray-400 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
                     />
-                  )}
+                  </svg>
                 </div>
-                
-                {/* Girone badge */}
-                <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded flex-shrink-0">
-                  {team.girone}
-                </span>
-                
-                {/* Freccia */}
-                <svg
-                  className="w-5 h-5 text-gray-400 flex-shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </div>
-            </Link>
-          ))
+              </Link>
+            );
+          })
         )}
       </div>
     </div>
