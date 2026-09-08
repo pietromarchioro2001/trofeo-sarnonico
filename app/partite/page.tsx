@@ -252,7 +252,13 @@ export default function PartitePage() {
             return (
               <Link key={match.id} href={`/partite/${match.id}`} className="block no-underline">
                 <div className={`rounded-xl p-3.5 shadow-sm border transition-all hover:shadow-md ${
-                  isLive ? 'bg-[#581C24] border-[#581C24] shadow-[0_0_20px_rgba(88,28,36,0.3)]' : 'bg-white border-gray-100'
+                  isLive 
+                    ? 'bg-[#581C24] border-[#581C24] shadow-[0_0_20px_rgba(88,28,36,0.3)]' 
+                    : match.phase === 'FINALE' 
+                      ? 'bg-gradient-to-br from-[#F9E4A8] to-[#E8D49A] border-[#C9B037]'
+                      : match.phase === 'FINALE_3_4'
+                        ? 'bg-gradient-to-br from-[#E8C8A8] to-[#D4B494] border-[#B87333]'
+                        : 'bg-white border-gray-100'
                 }`}>
                   <div className="flex items-center justify-between mb-2.5">
                     {isLive && (
@@ -269,9 +275,14 @@ export default function PartitePage() {
                     <div className="flex-1" />
                     
                     <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
-                      isLive ? 'bg-white/20 text-white' : 'bg-gray-100 text-[#581C24]'
+                      isLive ? 'bg-white/20 text-white' : 
+                      match.phase === 'FINALE' ? 'bg-[#FFD700] text-[#581C24]' :
+                      match.phase === 'FINALE_3_4' ? 'bg-[#CD7F32] text-white' :
+                      'bg-gray-100 text-[#581C24]'
                     }`}>
-                      {match.phase === 'GIRONI' ? `GIRONE ${match.home_team?.girone || 'A'}` : match.phase}
+                      {match.phase === 'FINALE' ? 'FINALE 1-2' : 
+                      match.phase === 'FINALE_3_4' ? 'FINALE 3-4' :
+                      match.phase === 'GIRONI' ? `GIRONE ${match.home_team?.girone || 'A'}` : match.phase}
                     </span>
 
                     {isStaffMode && (

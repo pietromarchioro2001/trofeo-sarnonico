@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
 import { createClient } from '@/lib/supabase/client';
-import { AdminCreateQuarters, AdminCreateSemifinals } from '@/components/AdminButtons';
+import { AdminCreateQuarters, AdminCreateSemifinals, AdminCreateFinals } from '@/components/AdminButtons';
 
 // Tipi corretti per Supabase
 interface Team {
@@ -214,7 +214,7 @@ export default function ClassifichePage() {
         home_team: phaseTeamsData.find((t: any) => t.id === m.home_team_id) || null,
         away_team: phaseTeamsData.find((t: any) => t.id === m.away_team_id) || null,
       }));
-      
+
       setPhaseMatches(mappedPhaseMatches);
       
       // ✅ CONTROLLA QUALI FASI SONO PRESENTI NEL DATABASE
@@ -677,140 +677,180 @@ export default function ClassifichePage() {
               </div>
             )}
               {phaseSubTab === 'finale' && (
-                <div className="relative max-w-[220px] mx-auto pt-8 pb-32">
-                  {phaseMatches.some(m => m.phase === 'FINALE' || m.phase === 'FINALE_3_4') && (
-                    <>
-                      <div className="absolute -left-12 top-24 w-6 h-px bg-gray-300" />
-                      <div className="absolute -left-6 top-24 w-px h-[165px] bg-gray-300" />
-                      <div className="absolute -left-12 top-[260px] w-6 h-px bg-gray-300" />
-                      <div className="absolute -left-6 top-[180px] w-6 h-px bg-gray-300" />
-                    </>
-                  )}
+              <div className="relative max-w-[220px] mx-auto pt-8 pb-32">
+                {/* ✅ PULSANTE PER CREARE LE FINALI (visibile solo allo staff e se non esistono ancora) */}
+                {isStaffMode && phaseMatches.filter(m => m.phase === 'FINALE' || m.phase === 'FINALE_3_4').length === 0 && (
+                  <div className="mb-8">
+                    <AdminCreateFinals onSuccess={() => fetchData()} />
+                  </div>
+                )}
 
-                  {phaseMatches.filter(m => m.phase === 'FINALE').map((match) => {
-                    const isMatchLive = match.status === 'LIVE' || match.status === 'SUPP' || match.status === 'RIGORI';
-                    const isFinished = match.status === 'FINITA';
-                    // ✅ Determina chi ha perso
-                    const homeLost = isFinished && (match.home_score ?? 0) < (match.away_score ?? 0);
-                    const awayLost = isFinished && (match.away_score ?? 0) < (match.home_score ?? 0);
-                    
-                    return (
-                      <Link key={match.id} href={`/partite/${match.id}`} className="block relative translate-y-[110px]">
-                        <div className={`rounded-xl shadow-md border-2 p-3 transition-shadow relative ${
-                          isMatchLive
-                            ? 'bg-[#581C24] text-white border-[#581C24] shadow-[0_0_20px_rgba(88,28,36,0.4)]'
-                            : 'bg-gradient-to-br from-[#F9E4A8] to-[#E8D49A] border-[#C9B037] hover:shadow-lg'
-                        }`}>
-                          {isMatchLive && (
-                            <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[8px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm animate-pulse z-10">
-                              <span className="w-1.5 h-1.5 bg-white rounded-full" /> 
-                              {match.status === 'SUPP' ? 'SUPP' : match.status === 'RIGORI' ? 'RIGORI' : 'LIVE'}
-                            </div>
-                          )}
-                          {/* ✅ Squadra Casa con opacità se eliminata */}
-                          <div className={`flex items-center justify-between mb-2 transition-opacity ${
-                            homeLost ? 'opacity-30' : ''
-                          }`}>
-                            <div className="flex items-center gap-2 flex-1">
-                              <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isMatchLive ? 'bg-white/10' : 'bg-white/80'}`}>
-                                {match.home_team?.logo_url ? (
-                                  <Image src={match.home_team.logo_url} alt={match.home_team.name} width={24} height={24} className="object-cover" />
-                                ) : <span className={`text-[6px] ${isMatchLive ? 'text-white/70' : 'text-gray-400'}`}>L</span>}
-                              </div>
-                              <span className={`font-bold text-xs uppercase truncate ${isMatchLive ? 'text-white' : 'text-[#000000]'}`}>{match.home_team?.name || 'TBD'}</span>
-                            </div>
-                            <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.home_score ?? '-'}</span>
-                          </div>
-                          
-                          {/* ✅ Mostra DCR tra le due righe SOLO se entrambi i penalty sono presenti */}
-                          {match.home_penalties !== null && match.away_penalties !== null && (
-                            <div className="text-[10px] font-bold text-purple-500 text-right mr-8 -my-1">
-                              dcr ({match.home_penalties}-{match.away_penalties})
-                            </div>
-                          )}
-                          
-                          {/* ✅ Squadra Trasferta con opacità se eliminata */}
-                          <div className={`flex items-center justify-between transition-opacity ${
-                            awayLost ? 'opacity-30' : ''
-                          }`}>
-                            <div className="flex items-center gap-2 flex-1">
-                              <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isMatchLive ? 'bg-white/10' : 'bg-white/80'}`}>
-                                {match.away_team?.logo_url ? (
-                                  <Image src={match.away_team.logo_url} alt={match.away_team.name} width={24} height={24} className="object-cover" />
-                                ) : <span className={`text-[6px] ${isMatchLive ? 'text-white/70' : 'text-gray-400'}`}>L</span>}
-                              </div>
-                              <span className={`font-bold text-xs uppercase truncate ${isMatchLive ? 'text-white' : 'text-[#000000]'}`}>{match.away_team?.name || 'TBD'}</span>
-                            </div>
-                            <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.away_score ?? '-'}</span>
-                          </div>
-                        </div>
-                        <div className="absolute left-1/2 -bottom-16 w-px h-16 bg-gray-300 -translate-x-1/2" />
-                      </Link>
-                    );
-                  })}
+                {phaseMatches.filter(m => m.phase === 'FINALE' || m.phase === 'FINALE_3_4').length === 0 && !isStaffMode ? (
+                  <div className="text-center py-8 text-gray-500 text-sm font-bold uppercase">
+                    Finali non ancora programmate
+                  </div>
+                ) : (
+                  <>
+                    {/* Linee del bracket */}
+                    {phaseMatches.some(m => m.phase === 'FINALE' || m.phase === 'FINALE_3_4') && (
+                      <>
+                        <div className="absolute -left-12 top-24 w-6 h-px bg-gray-300" />
+                        <div className="absolute -left-6 top-24 w-px h-[165px] bg-gray-300" />
+                        <div className="absolute -left-12 top-[260px] w-6 h-px bg-gray-300" />
+                        <div className="absolute -left-6 top-[180px] w-6 h-px bg-gray-300" />
+                      </>
+                    )}
 
-                  {phaseMatches.filter(m => m.phase === 'FINALE_3_4').map((match) => {
-                    const isMatchLive = match.status === 'LIVE' || match.status === 'SUPP' || match.status === 'RIGORI';
-                    const isFinished = match.status === 'FINITA';
-                    // ✅ Determina chi ha perso
-                    const homeLost = isFinished && (match.home_score ?? 0) < (match.away_score ?? 0);
-                    const awayLost = isFinished && (match.away_score ?? 0) < (match.home_score ?? 0);
-                    
-                    return (
-                      <Link key={match.id} href={`/partite/${match.id}`} className="block relative translate-y-[160px]">
-                        <div className={`rounded-xl shadow-md border-2 p-3 transition-shadow relative ${
-                          isMatchLive
-                            ? 'bg-[#581C24] text-white border-[#581C24] shadow-[0_0_20px_rgba(88,28,36,0.4)]'
-                            : 'bg-gradient-to-br from-[#E8C8A8] to-[#D4B494] border-[#B87333] hover:shadow-lg'
-                        }`}>
-                          {isMatchLive && (
-                            <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[8px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm animate-pulse z-10">
-                              <span className="w-1.5 h-1.5 bg-white rounded-full" /> 
-                              {match.status === 'SUPP' ? 'SUPP' : match.status === 'RIGORI' ? 'RIGORI' : 'LIVE'}
-                            </div>
-                          )}
-                          {/* ✅ Squadra Casa con opacità se eliminata */}
-                          <div className={`flex items-center justify-between mb-2 transition-opacity ${
-                            homeLost ? 'opacity-30' : ''
+                    {/* ✅ FINALE 1-2 POSTO */}
+                    {phaseMatches.filter(m => m.phase === 'FINALE').map((match) => {
+                      const isMatchLive = match.status === 'LIVE' || match.status === 'SUPP' || match.status === 'RIGORI';
+                      const isFinished = match.status === 'FINITA';
+                      
+                      let homeWon = false;
+                      let awayWon = false;
+                      if (isFinished) {
+                        if (match.home_score! > match.away_score!) homeWon = true;
+                        else if (match.away_score! > match.home_score!) awayWon = true;
+                        else {
+                          const hPen = match.home_penalties ?? 0;
+                          const aPen = match.away_penalties ?? 0;
+                          if (hPen > aPen) homeWon = true;
+                          else if (aPen > hPen) awayWon = true;
+                        }
+                      }
+                      const homeLost = isFinished && !homeWon;
+                      const awayLost = isFinished && !awayWon;
+                      
+                      return (
+                        <Link key={match.id} href={`/partite/${match.id}`} className="block relative translate-y-[110px]">
+                          <div className={`rounded-xl shadow-md border-2 p-3 transition-shadow relative ${
+                            isMatchLive
+                              ? 'bg-[#581C24] text-white border-[#581C24] shadow-[0_0_20px_rgba(88,28,36,0.4)]'
+                              : 'bg-gradient-to-br from-[#F9E4A8] to-[#E8D49A] border-[#C9B037] hover:shadow-lg'
                           }`}>
-                            <div className="flex items-center gap-2 flex-1">
-                              <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isMatchLive ? 'bg-white/10' : 'bg-white/80'}`}>
-                                {match.home_team?.logo_url ? (
-                                  <Image src={match.home_team.logo_url} alt={match.home_team.name} width={24} height={24} className="object-cover" />
-                                ) : <span className={`text-[6px] ${isMatchLive ? 'text-white/70' : 'text-gray-400'}`}>L</span>}
+                            {isMatchLive && (
+                              <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[8px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm animate-pulse z-10">
+                                <span className="w-1.5 h-1.5 bg-white rounded-full" /> 
+                                {match.status === 'SUPP' ? 'SUPP' : match.status === 'RIGORI' ? 'RIGORI' : 'LIVE'}
                               </div>
-                              <span className={`font-bold text-xs uppercase truncate ${isMatchLive ? 'text-white' : 'text-[#000000]'}`}>{match.home_team?.name || 'TBD'}</span>
+                            )}
+                            {/* ✅ Etichetta FINALE 1-2 */}
+                            {!isMatchLive && (
+                              <div className="absolute -top-2 -right-2 bg-[#FFD700] text-[#581C24] text-[8px] font-black px-2 py-0.5 rounded-full shadow-sm border border-[#C9B037] z-10">
+                                FINALE 1-2
+                              </div>
+                            )}
+                            <div className={`flex items-center justify-between mb-2 transition-opacity ${homeLost ? 'opacity-30' : ''}`}>
+                              <div className="flex items-center gap-2 flex-1">
+                                <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isMatchLive ? 'bg-white/10' : 'bg-white/80'}`}>
+                                  {match.home_team?.logo_url ? (
+                                    <Image src={match.home_team.logo_url} alt={match.home_team.name} width={24} height={24} className="object-cover" />
+                                  ) : <span className={`text-[6px] ${isMatchLive ? 'text-white/70' : 'text-gray-400'}`}>L</span>}
+                                </div>
+                                <span className={`font-bold text-xs uppercase truncate ${isMatchLive ? 'text-white' : 'text-[#000000]'}`}>{match.home_team?.name || 'TBD'}</span>
+                              </div>
+                              <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.home_score ?? '-'}</span>
                             </div>
-                            <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.home_score ?? '-'}</span>
+                            
+                            {match.home_penalties !== null && match.away_penalties !== null && (
+                              <div className="text-[10px] font-bold text-purple-500 text-right mr-8 -my-1">
+                                dcr ({match.home_penalties}-{match.away_penalties})
+                              </div>
+                            )}
+                            
+                            <div className={`flex items-center justify-between transition-opacity ${awayLost ? 'opacity-30' : ''}`}>
+                              <div className="flex items-center gap-2 flex-1">
+                                <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isMatchLive ? 'bg-white/10' : 'bg-white/80'}`}>
+                                  {match.away_team?.logo_url ? (
+                                    <Image src={match.away_team.logo_url} alt={match.away_team.name} width={24} height={24} className="object-cover" />
+                                  ) : <span className={`text-[6px] ${isMatchLive ? 'text-white/70' : 'text-gray-400'}`}>L</span>}
+                                </div>
+                                <span className={`font-bold text-xs uppercase truncate ${isMatchLive ? 'text-white' : 'text-[#000000]'}`}>{match.away_team?.name || 'TBD'}</span>
+                              </div>
+                              <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.away_score ?? '-'}</span>
+                            </div>
                           </div>
-                          
-                          {/* ✅ Mostra DCR tra le due righe SOLO se entrambi i penalty sono presenti */}
-                          {match.home_penalties !== null && match.away_penalties !== null && (
-                            <div className="text-[10px] font-bold text-purple-500 text-right mr-8 -my-1">
-                              dcr ({match.home_penalties}-{match.away_penalties})
-                            </div>
-                          )}
-                          
-                          {/* ✅ Squadra Trasferta con opacità se eliminata */}
-                          <div className={`flex items-center justify-between transition-opacity ${
-                            awayLost ? 'opacity-30' : ''
+                          <div className="absolute left-1/2 -bottom-16 w-px h-16 bg-gray-300 -translate-x-1/2" />
+                        </Link>
+                      );
+                    })}
+
+                    {/* ✅ FINALE 3-4 POSTO */}
+                    {phaseMatches.filter(m => m.phase === 'FINALE_3_4').map((match) => {
+                      const isMatchLive = match.status === 'LIVE' || match.status === 'SUPP' || match.status === 'RIGORI';
+                      const isFinished = match.status === 'FINITA';
+                      
+                      let homeWon = false;
+                      let awayWon = false;
+                      if (isFinished) {
+                        if (match.home_score! > match.away_score!) homeWon = true;
+                        else if (match.away_score! > match.home_score!) awayWon = true;
+                        else {
+                          const hPen = match.home_penalties ?? 0;
+                          const aPen = match.away_penalties ?? 0;
+                          if (hPen > aPen) homeWon = true;
+                          else if (aPen > hPen) awayWon = true;
+                        }
+                      }
+                      const homeLost = isFinished && !homeWon;
+                      const awayLost = isFinished && !awayWon;
+                      
+                      return (
+                        <Link key={match.id} href={`/partite/${match.id}`} className="block relative translate-y-[160px]">
+                          <div className={`rounded-xl shadow-md border-2 p-3 transition-shadow relative ${
+                            isMatchLive
+                              ? 'bg-[#581C24] text-white border-[#581C24] shadow-[0_0_20px_rgba(88,28,36,0.4)]'
+                              : 'bg-gradient-to-br from-[#E8C8A8] to-[#D4B494] border-[#B87333] hover:shadow-lg'
                           }`}>
-                            <div className="flex items-center gap-2 flex-1">
-                              <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isMatchLive ? 'bg-white/10' : 'bg-white/80'}`}>
-                                {match.away_team?.logo_url ? (
-                                  <Image src={match.away_team.logo_url} alt={match.away_team.name} width={24} height={24} className="object-cover" />
-                                ) : <span className={`text-[6px] ${isMatchLive ? 'text-white/70' : 'text-gray-400'}`}>L</span>}
+                            {isMatchLive && (
+                              <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[8px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm animate-pulse z-10">
+                                <span className="w-1.5 h-1.5 bg-white rounded-full" /> 
+                                {match.status === 'SUPP' ? 'SUPP' : match.status === 'RIGORI' ? 'RIGORI' : 'LIVE'}
                               </div>
-                              <span className={`font-bold text-xs uppercase truncate ${isMatchLive ? 'text-white' : 'text-[#000000]'}`}>{match.away_team?.name || 'TBD'}</span>
+                            )}
+                            {/* ✅ Etichetta FINALE 3-4 */}
+                            {!isMatchLive && (
+                              <div className="absolute -top-2 -right-2 bg-[#CD7F32] text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-sm border border-[#8B5A2B] z-10">
+                                FINALE 3-4
+                              </div>
+                            )}
+                            <div className={`flex items-center justify-between mb-2 transition-opacity ${homeLost ? 'opacity-30' : ''}`}>
+                              <div className="flex items-center gap-2 flex-1">
+                                <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isMatchLive ? 'bg-white/10' : 'bg-white/80'}`}>
+                                  {match.home_team?.logo_url ? (
+                                    <Image src={match.home_team.logo_url} alt={match.home_team.name} width={24} height={24} className="object-cover" />
+                                  ) : <span className={`text-[6px] ${isMatchLive ? 'text-white/70' : 'text-gray-400'}`}>L</span>}
+                                </div>
+                                <span className={`font-bold text-xs uppercase truncate ${isMatchLive ? 'text-white' : 'text-[#000000]'}`}>{match.home_team?.name || 'TBD'}</span>
+                              </div>
+                              <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.home_score ?? '-'}</span>
                             </div>
-                            <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.away_score ?? '-'}</span>
+                            
+                            {match.home_penalties !== null && match.away_penalties !== null && (
+                              <div className="text-[10px] font-bold text-purple-500 text-right mr-8 -my-1">
+                                dcr ({match.home_penalties}-{match.away_penalties})
+                              </div>
+                            )}
+                            
+                            <div className={`flex items-center justify-between transition-opacity ${awayLost ? 'opacity-30' : ''}`}>
+                              <div className="flex items-center gap-2 flex-1">
+                                <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isMatchLive ? 'bg-white/10' : 'bg-white/80'}`}>
+                                  {match.away_team?.logo_url ? (
+                                    <Image src={match.away_team.logo_url} alt={match.away_team.name} width={24} height={24} className="object-cover" />
+                                  ) : <span className={`text-[6px] ${isMatchLive ? 'text-white/70' : 'text-gray-400'}`}>L</span>}
+                                </div>
+                                <span className={`font-bold text-xs uppercase truncate ${isMatchLive ? 'text-white' : 'text-[#000000]'}`}>{match.away_team?.name || 'TBD'}</span>
+                              </div>
+                              <span className={`font-black text-base ml-2 ${isMatchLive ? 'text-white' : 'text-[#581C24]'}`}>{match.away_score ?? '-'}</span>
+                            </div>
                           </div>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
+                        </Link>
+                      );
+                    })}
+                  </>
+                )}
+              </div>
+            )}
             </div>
           </>
         )}

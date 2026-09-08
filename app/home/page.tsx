@@ -435,7 +435,12 @@ export default function HomePage() {
 
         {lastMatch && (
           <Link href={`/partite/${lastMatch.id}`} className="block">
-            <div className={`${isLive ? 'bg-[#581C24] text-white' : 'bg-white text-[#581C24] border-2 border-[#581C24]'} rounded-xl p-3 shadow-lg hover:shadow-xl transition-shadow`}>
+            <div className={`${
+              isLive ? 'bg-[#581C24] text-white' : 
+              lastMatch?.phase === 'FINALE' ? 'bg-gradient-to-br from-[#F9E4A8] to-[#E8D49A] text-[#581C24] border-2 border-[#C9B037]' :
+              lastMatch?.phase === 'FINALE_3_4' ? 'bg-gradient-to-br from-[#E8C8A8] to-[#D4B494] text-[#581C24] border-2 border-[#B87333]' :
+              'bg-white text-[#581C24] border-2 border-[#581C24]'
+            } rounded-xl p-3 shadow-lg hover:shadow-xl transition-shadow`}>
               <div className="flex items-center justify-between mb-2">
                 <div className="w-12" />
                 {isLive ? (
@@ -444,7 +449,15 @@ export default function HomePage() {
                     {lastMatch?.status === 'SUPP' ? 'SUPP' : lastMatch?.status === 'RIGORI' ? 'RIGORI' : 'LIVE'}
                   </span>
                 ) : (
-                  <span className="bg-gray-200 text-[#581C24] text-[9px] font-bold px-2.5 py-0.5 rounded-full">TERMINATA</span>
+                  <span className={`text-[9px] font-bold px-2.5 py-0.5 rounded-full ${
+                    lastMatch?.phase === 'FINALE' ? 'bg-[#FFD700] text-[#581C24]' :
+                    lastMatch?.phase === 'FINALE_3_4' ? 'bg-[#CD7F32] text-white' :
+                    'bg-gray-200 text-[#581C24]'
+                  }`}>
+                    {lastMatch?.phase === 'FINALE' ? 'FINALE 1-2' :
+                    lastMatch?.phase === 'FINALE_3_4' ? 'FINALE 3-4' :
+                    'TERMINATA'}
+                  </span>
                 )}
                 <div className="w-12" />
               </div>
