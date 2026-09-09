@@ -37,27 +37,36 @@ export async function GET(
 
     console.log(`Generazione post per ${homeName} vs ${awayName} - Tipo: ${type}`);
 
-    // ✅ SENZA IMMAGINI - Solo testo e colori
+    // ✅ STRUTTURA JSX 100% COMPATIBILE CON SATORI (VERCEL/OG)
     const imageResponse = new ImageResponse(
-      type === 'PRE_MATCH' ? (
-        <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ fontSize: 64, fontWeight: '900', color: '#e94560', marginBottom: 60, textAlign: 'center' }}>PROSSIMA PARTITA</div>
-          <div style={{ fontSize: 48, fontWeight: '700', color: 'white', marginBottom: 20 }}>{homeName}</div>
-          <div style={{ fontSize: 36, color: '#e94560', marginBottom: 20 }}>VS</div>
-          <div style={{ fontSize: 48, fontWeight: '700', color: 'white', marginBottom: 60 }}>{awayName}</div>
-          <div style={{ fontSize: 32, color: 'rgba(255,255,255,0.8)' }}> {matchDate} • ⏰ {matchTime}</div>
-          <div style={{ position: 'absolute', bottom: 60, fontSize: 28, color: 'rgba(255,255,255,0.6)', fontWeight: '700' }}>TROFEO SARNONICO</div>
-        </div>
-      ) : (
-        <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ fontSize: 64, fontWeight: '900', color: '#e94560', marginBottom: 60, textAlign: 'center' }}>RISULTATO FINALE</div>
-          <div style={{ fontSize: 48, fontWeight: '700', color: 'white', marginBottom: 20 }}>{homeName}</div>
-          <div style={{ fontSize: 72, fontWeight: '900', color: '#ffd700', marginBottom: 20 }}>{match.home_score ?? 0} - {match.away_score ?? 0}</div>
-          <div style={{ fontSize: 48, fontWeight: '700', color: 'white', marginBottom: 60 }}>{awayName}</div>
-          {match.home_penalties != null && (
-            <div style={{ fontSize: 32, color: '#ffd700', marginBottom: 40 }}> DCR {match.home_penalties}-{match.away_penalties}</div>
+      (
+        <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+          
+          {type === 'PRE_MATCH' ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+              <div style={{ fontSize: 64, fontWeight: '900', color: '#e94560', marginBottom: 60, textAlign: 'center' }}>PROSSIMA PARTITA</div>
+              <div style={{ fontSize: 48, fontWeight: '700', color: 'white', marginBottom: 20, textAlign: 'center' }}>{homeName}</div>
+              <div style={{ fontSize: 36, color: '#e94560', marginBottom: 20, textAlign: 'center' }}>VS</div>
+              <div style={{ fontSize: 48, fontWeight: '700', color: 'white', marginBottom: 60, textAlign: 'center' }}>{awayName}</div>
+              <div style={{ fontSize: 32, color: 'rgba(255,255,255,0.8)', textAlign: 'center' }}>{matchDate} • ⏰ {matchTime}</div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+              <div style={{ fontSize: 64, fontWeight: '900', color: '#e94560', marginBottom: 60, textAlign: 'center' }}>RISULTATO FINALE</div>
+              <div style={{ fontSize: 48, fontWeight: '700', color: 'white', marginBottom: 20, textAlign: 'center' }}>{homeName}</div>
+              <div style={{ fontSize: 72, fontWeight: '900', color: '#ffd700', marginBottom: 20, textAlign: 'center' }}>{match.home_score ?? 0} - {match.away_score ?? 0}</div>
+              <div style={{ fontSize: 48, fontWeight: '700', color: 'white', marginBottom: 20, textAlign: 'center' }}>{awayName}</div>
+              
+              {/* ✅ Usiamo ? : invece di && per garantire un solo nodo figlio */}
+              {match.home_penalties != null ? (
+                <div style={{ fontSize: 32, color: '#ffd700', marginBottom: 40, textAlign: 'center' }}>⚽ DCR {match.home_penalties} - {match.away_penalties}</div>
+              ) : (
+                <div style={{ height: 40 }}></div>
+              )}
+            </div>
           )}
-          <div style={{ position: 'absolute', bottom: 60, fontSize: 28, color: 'rgba(255,255,255,0.6)', fontWeight: '700' }}>TROFEO SARNONICO</div>
+          
+          <div style={{ position: 'absolute', bottom: 60, fontSize: 28, color: 'rgba(255,255,255,0.6)', fontWeight: '700', textAlign: 'center' }}>TROFEO SARNONICO</div>
         </div>
       ),
       { width: 1080, height: 1080 }
