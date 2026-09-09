@@ -1632,12 +1632,12 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           
           {/* Contenuto */}
           <div className="flex-1 overflow-y-auto p-4" onClick={(e) => e.stopPropagation()}>
-              <MatchMediaGallery 
-                key={mediaRefreshKey} 
-                matchId={match.id} 
-                folderPath={`match-media/${getMatchFolderName()}`}
-                isStaffMode={isStaffMode}
-              />
+            <MatchMediaGallery 
+              key={mediaRefreshKey} 
+              matchId={match.id} 
+              folderPath={`match-media/${getMatchFolderName()}`}
+              isStaffMode={isStaffMode}
+            />
           </div>
         </div>
       )}
