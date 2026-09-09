@@ -491,7 +491,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   const [uploading, setUploading] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
 
-  // Fetch dati iniziali
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
