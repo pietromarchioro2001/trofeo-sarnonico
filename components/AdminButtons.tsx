@@ -124,18 +124,25 @@ export const AdminPartiteButton = ({ onMatchCreated }: { onMatchCreated?: () => 
     if (homeTeam === awayTeam) { setError('⚠️ Le squadre devono essere diverse!'); return; }
     
     const supabase = createClient();
-    const { error } = await supabase.from('matches').insert({
+    
+    // ✅ 1. Aggiunto .select('id').single() per ottenere l'ID della partita appena creata
+    const { data, error } = await supabase.from('matches').insert({
       home_team_id: homeTeam,
       away_team_id: awayTeam,
       match_date: matchDate,
       match_time: matchTime,
       status: 'PROGRAMMATA',
       phase: 'GIRONI'
-    });
+    }).select('id').single();
 
     if (error) {
       setError('Errore nel salvataggio');
       return;
+    }
+
+    // ✅ 2. Genera automaticamente il post "In programma" in background
+    if (data?.id) {
+      fetch(`/api/matches/${data.id}/generate-post?type=PRE_MATCH`).catch(console.error);
     }
 
     alert('✅ Partita creata con successo!');

@@ -480,6 +480,14 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     if (!match) return params.id;
     return `${match.home_team.name}-${match.away_team.name}`.replace(/\s+/g, '_');
   };
+  const getMatchPostUrl = (type: 'PRE_MATCH' | 'POST_MATCH') => {
+    if (!match) return '';
+    const supabase = createClient();
+    const { data } = supabase.storage
+      .from('tournament-files')
+      .getPublicUrl(`match-posts/${match.id}_${type}.png`);
+    return data.publicUrl;
+  };
   const [uploading, setUploading] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
 
@@ -918,30 +926,30 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     setMatch({ ...match, status: 'LIVE' });
   };
 
-    const handleEndMatch = async () => {
-      if (!match || !confirm('Terminare la partita? Verranno sbloccati i giocatori squalificati di queste squadre.')) return;
-      const supabase = createClient();
-      
-      try {
-        // 1. Termina la partita
-        await supabase.from('matches').update({ status: 'FINITA' }).eq('id', match.id);
-        setMatch({ ...match, status: 'FINITA' });
+  const handleEndMatch = async () => {
+    if (!match || !confirm('Terminare la partita? Verranno sbloccati i giocatori squalificati di queste squadre.')) return;
+    const supabase = createClient();
+    
+    try {
+      // 1. Termina la partita
+      await supabase.from('matches').update({ status: 'FINITA' }).eq('id', match.id);
+      setMatch({ ...match, status: 'FINITA' });
 
-        // 2. RESET SQUALIFICHE
-        await supabase
-          .from('players')
-          .update({ is_suspended: false })
-          .in('team_id', [match.home_team.id, match.away_team.id])
-          .eq('is_suspended', true);
+      // 2. Reset squalifiche
+      await supabase
+        .from('players')
+        .update({ is_suspended: false })
+        .in('team_id', [match.home_team.id, match.away_team.id])
+        .eq('is_suspended', true);
 
-        // ✅ 3. Genera automaticamente il post di fine partita in background
-        fetch(`/api/matches/${match.id}/generate-post?type=POST_MATCH`).catch(console.error);
+      // 3. ✅ Genera in background il post del risultato finale
+      fetch(`/api/matches/${match.id}/generate-post?type=POST_MATCH`).catch(console.error);
 
-      } catch (err) {
-        console.error('Errore termine partita:', err);
-        alert('Errore nel salvataggio');
-      }
-    };
+    } catch (err) {
+      console.error('Errore termine partita:', err);
+      alert('Errore nel salvataggio');
+    }
+  };
 
   const handleExtraTime = async () => {
     if (!match || !confirm('Passare ai tempi supplementari?')) return;
@@ -1067,41 +1075,28 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     }
   };
 
-    const handleShareMatch = async () => {
+  const handleShareMatch = async () => {
     if (!match) return;
     setIsSharing(true);
 
     try {
       const type = match.status === 'FINITA' ? 'POST_MATCH' : 'PRE_MATCH';
-      const supabase = createClient();
+      let imageUrl = getMatchPostUrl(type);
 
-      // 1. Cerca se esiste già un post generato per questa partita
-      let { data: existingPost } = await supabase
-        .from('match_posts')
-        .select('image_url')
-        .eq('match_id', match.id)
-        .eq('type', type)
-        .maybeSingle();
-
-      // 2. Se non esiste, chiama l'API per generarlo al volo
-      if (!existingPost) {
+      // Verifica se l'immagine esiste già in storage
+      const checkRes = await fetch(imageUrl, { method: 'HEAD' });
+      
+      // Se non esiste, generala al volo chiamando l'API
+      if (!checkRes.ok) {
         const genRes = await fetch(`/api/matches/${match.id}/generate-post?type=${type}`);
         if (!genRes.ok) throw new Error('Errore generazione post');
-        
-        // Rifetch dopo la generazione
-        const { data } = await supabase
-          .from('match_posts')
-          .select('image_url')
-          .eq('match_id', match.id)
-          .eq('type', type)
-          .single();
-        existingPost = data;
+        // Aspetta un attimo che Supabase propaghi il file
+        await new Promise((r) => setTimeout(r, 1000));
       }
 
-      if (!existingPost?.image_url) throw new Error('Post non trovato');
-
-      // 3. Scarica l'immagine come Blob per condividerla
-      const imgRes = await fetch(existingPost.image_url);
+      // Scarica l'immagine come Blob
+      const imgRes = await fetch(imageUrl);
+      if (!imgRes.ok) throw new Error('Immagine non disponibile');
       const blob = await imgRes.blob();
       const file = new File([blob], `partita-${match.id}.png`, { type: 'image/png' });
 
@@ -1109,7 +1104,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         ? `🔥 ${match.home_team.name} vs ${match.away_team.name} - ${match.match_date} ${match.match_time}`
         : `🏆 Risultato: ${match.home_team.name} ${match.home_score}-${match.away_score} ${match.away_team.name}`;
 
-      // 4. Usa la Web Share API (nativa su iOS/Android)
+      // Web Share API nativa
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
@@ -1117,10 +1112,9 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           text: shareText,
         });
       } else if (navigator.share) {
-        // Fallback solo testo se i file non sono supportati dal browser
         await navigator.share({ title: 'Partita', text: shareText });
       } else {
-        // Fallback desktop: download del file
+        // Fallback desktop: download
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -1130,8 +1124,8 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       }
     } catch (err) {
       console.error('Errore condivisione:', err);
-      if ((err as Error).name !== 'AbortError') { // Ignora se l'utente annulla la condivisione
-        alert('Errore nella condivisione. Verifica che la tabella match_posts e l\'API route esistano.');
+      if ((err as Error).name !== 'AbortError') {
+        alert('Errore nella condivisione');
       }
     } finally {
       setIsSharing(false);
