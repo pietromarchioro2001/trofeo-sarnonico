@@ -1,4 +1,4 @@
-import { ImageResponse } from 'next/og';
+import { ImageResponse } from '@vercel/og';
 import { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
@@ -59,7 +59,7 @@ export async function GET(
               {awayLogo && <img src={awayLogo} width="150" height="150" style={{ borderRadius: '50%' }} />}
             </div>
             <div style={{ fontSize: 40, marginBottom: 40 }}>{homeName} vs {awayName}</div>
-            <div style={{ fontSize: 28 }}>📅 {matchDate} •  {matchTime}</div>
+            <div style={{ fontSize: 28 }}>📅 {matchDate} • ⏰ {matchTime}</div>
           </div>
         ),
         { width: 1200, height: 1200 }
