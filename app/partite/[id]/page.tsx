@@ -1061,9 +1061,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       alert('Errore durante il caricamento: ' + (err as Error).message);
     } finally {
       setUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
     }
   };
 
