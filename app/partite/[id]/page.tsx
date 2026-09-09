@@ -475,7 +475,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   const [showPenaltyPopupUser, setShowPenaltyPopupUser] = useState(false);
   const [showMediaGallery, setShowMediaGallery] = useState(false);
   const [penaltyKicks, setPenaltyKicks] = useState<{ team: 'home' | 'away'; scored: boolean }[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [mediaRefreshKey, setMediaRefreshKey] = useState(0);
   const getMatchFolderName = () => {
     if (!match) return params.id;
@@ -1210,7 +1209,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         </div>
       </div>
 
-            {/* CONTENUTO */}
+      {/* CONTENUTO */}
       <div className="px-4">
         {activeTab === 'diretta' ? (
           <>
@@ -1459,41 +1458,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
               </div>
             </div>
           </div>
-        ) : (
-          /* ✅ CONTENUTO TAB MEDIA */
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-[#581C24] font-bold text-base uppercase tracking-wider">Foto Partita</h2>
-              {isStaffMode && (
-                <>
-                  {/* Input nascosto */}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleFileSelectAndUpload}
-                    className="hidden"
-                  />
-                  {/* Pulsante che triggera l'input */}
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center gap-2 px-4 py-2 bg-[#581C24] text-white rounded-lg font-bold text-xs uppercase hover:bg-[#581C24]/90 transition-colors shadow-md"
-                  >
-                    <Plus size={16} />
-                    Aggiungi Foto
-                  </button>
-                </>
-              )}
-            </div>
-              <MatchMediaGallery 
-                key={mediaRefreshKey} 
-                matchId={match.id} 
-                folderPath={`match-media/${getMatchFolderName()}`}
-                isStaffMode={isStaffMode}
-              />
-          </div>
-        )}
+        ) : null} {/* ✅ AGGIUNGI QUESTO ": null" ALLA FINE PER CHIUDERE CORRETTAMENTE IL TERNARIO */}
       </div>
 
       {/* POPUP DETTAGLI GIOCATORE */}
@@ -1600,25 +1565,19 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                       <span className="text-xs font-bold text-[#581C24]">Upload in corso...</span>
                     </div>
                   )}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleFileSelectAndUpload}
-                    className="hidden"
-                  />
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();  // ✅ IMPEDISCE AL POPUP DI CHIUDERSI
-                      fileInputRef.current?.click();
-                    }}
-                    disabled={uploading}
-                    className="flex items-center gap-2 px-4 py-2 bg-white text-[#581C24] rounded-lg font-bold text-xs uppercase hover:bg-gray-100 transition-colors disabled:opacity-50"
-                  >
+                  
+                  {/* ✅ SOLUZIONE INFALLIBILE: usa una label invece di un button con ref.click() */}
+                  <label className="flex items-center gap-2 px-4 py-2 bg-white text-[#581C24] rounded-lg font-bold text-xs uppercase hover:bg-gray-100 transition-colors cursor-pointer">
                     <Plus size={16} />
                     Aggiungi
-                  </button>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleFileSelectAndUpload}
+                      className="hidden"
+                    />
+                  </label>
                 </>
               )}
               <button 
