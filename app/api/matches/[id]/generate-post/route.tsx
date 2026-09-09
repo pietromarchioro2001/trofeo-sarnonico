@@ -94,21 +94,38 @@ export async function GET(
     );
 
     // Converti e upload
+    console.log('🔄 Conversione immagine in buffer...');
     const arrayBuffer = await imageResponse.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const fileName = `${params.id}_${type}.png`;
+    
+    console.log('📤 Tentativo upload per:', fileName);
+    console.log('📦 Dimensione buffer:', buffer.length, 'bytes');
+    console.log('🗂️ Path completo:', `match-posts/${fileName}`);
 
-    const { error: uploadError } = await supabase.storage
-      .from('tournament-files')
-      .upload(`match-posts/${fileName}`, buffer, {
-        contentType: 'image/png',
-        cacheControl: '31536000',
-        upsert: true,
-      });
+    try {
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('tournament-files')
+        .upload(`match-posts/${fileName}`, buffer, {
+          contentType: 'image/png',
+          cacheControl: '31536000',
+          upsert: true,
+        });
 
-    if (uploadError) {
-      console.error('Errore upload:', uploadError);
-      return new Response('Errore upload: ' + uploadError.message, { status: 500 });
+      if (uploadError) {
+        console.error(' Errore upload dettagliato:', uploadError);
+        console.error('Message:', uploadError.message);
+        console.error('Name:', uploadError.name);
+        console.error('StatusCode:', uploadError.statusCode);
+        throw uploadError;
+      }
+
+      console.log('✅ Upload completato con successo!');
+      console.log('📁 Dati upload:', uploadData);
+      
+    } catch (uploadErr) {
+      console.error('💥 Eccezione durante upload:', uploadErr);
+      return new Response('Errore upload: ' + (uploadErr as Error).message, { status: 500 });
     }
 
     console.log('✅ Post generato e salvato:', fileName);
