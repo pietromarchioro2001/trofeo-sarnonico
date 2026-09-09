@@ -29,28 +29,35 @@ export default function MatchMediaGallery({ matchId, folderPath, isStaffMode = f
     setLoading(true);
     console.log('📂 Cerco foto in:', storagePath);
     
+    // ✅ Rimuovi eventuali slash iniziali o finali
+    const cleanPath = storagePath.replace(/^\/+|\/+$/g, '');
+    console.log('📂 Percorso pulito:', cleanPath);
+    
     const { data, error } = await supabase.storage
       .from('tournament-files')
-      .list(storagePath, {
+      .list(cleanPath, {
         limit: 100,
         offset: 0,
         sortBy: { column: 'created_at', order: 'desc' }
       });
 
     if (error) {
-      console.error('❌ Errore nel listare le foto:', error);
+      console.error('❌ Errore Supabase:', error);
+      console.error('❌ Messaggio errore:', error.message);
     }
     
     console.log('📁 File trovati:', data);
+    console.log('📁 Numero file:', data?.length);
 
     if (data) {
       const photosWithData = await Promise.all(
         data.map(async (file) => {
+          const fullPath = `${cleanPath}/${file.name}`;
+          console.log('🔗 Genero URL per:', fullPath);
+          
           const { data: urlData } = supabase.storage
             .from('tournament-files')
-            .getPublicUrl(`${storagePath}/${file.name}`);
-          
-          console.log('🔗 URL generato per', file.name, ':', urlData.publicUrl);
+            .getPublicUrl(fullPath);
           
           return {
             url: urlData.publicUrl,
