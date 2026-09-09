@@ -27,8 +27,9 @@ export default function MatchMediaGallery({ matchId, folderPath, isStaffMode = f
 
   const fetchPhotos = async () => {
     setLoading(true);
+    console.log('📂 Cerco foto in:', storagePath);
     
-    const { data } = await supabase.storage
+    const { data, error } = await supabase.storage
       .from('tournament-files')
       .list(storagePath, {
         limit: 100,
@@ -36,12 +37,21 @@ export default function MatchMediaGallery({ matchId, folderPath, isStaffMode = f
         sortBy: { column: 'created_at', order: 'desc' }
       });
 
+    if (error) {
+      console.error('❌ Errore nel listare le foto:', error);
+    }
+    
+    console.log('📁 File trovati:', data);
+
     if (data) {
       const photosWithData = await Promise.all(
         data.map(async (file) => {
           const { data: urlData } = supabase.storage
             .from('tournament-files')
             .getPublicUrl(`${storagePath}/${file.name}`);
+          
+          console.log('🔗 URL generato per', file.name, ':', urlData.publicUrl);
+          
           return {
             url: urlData.publicUrl,
             name: file.name
