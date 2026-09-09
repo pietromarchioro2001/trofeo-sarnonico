@@ -74,9 +74,12 @@ export default function MatchMediaGallery({ matchId, folderPath, isStaffMode = f
   const handleDownloadAll = async () => {
     if (photos.length === 0) return;
     
+    // ✅ Estrai il nome della partita dal folderPath (es. "match-media/SARNONICO-ROMALLO" → "SARNONICO-ROMALLO")
+    const matchName = folderPath ? folderPath.split('/').pop() : `foto-partita-${matchId}`;
+    
     const JSZip = (await import('jszip')).default;
     const zip = new JSZip();
-    const folder = zip.folder(`foto-partita-${matchId}`);
+    const folder = zip.folder(matchName);  // ✅ Nome cartella interna
     
     for (const photo of photos) {
       const response = await fetch(photo.url);
@@ -88,7 +91,7 @@ export default function MatchMediaGallery({ matchId, folderPath, isStaffMode = f
     const url = URL.createObjectURL(content);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `foto-partita-${matchId}.zip`;
+    a.download = `${matchName}.zip`;  // ✅ Nome file ZIP
     a.click();
     URL.revokeObjectURL(url);
   };
