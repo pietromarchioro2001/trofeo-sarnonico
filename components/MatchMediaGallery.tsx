@@ -79,7 +79,7 @@ export default function MatchMediaGallery({ matchId, folderPath, isStaffMode = f
     
     const JSZip = (await import('jszip')).default;
     const zip = new JSZip();
-    const folder = zip.folder(matchName);  // ✅ Nome cartella interna
+    const folder = zip.folder(matchName || 'partita');  // ✅ Nome cartella interna
     
     for (const photo of photos) {
       const response = await fetch(photo.url);
