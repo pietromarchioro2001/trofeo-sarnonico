@@ -4,13 +4,11 @@ import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowLeft, Vote, X } from 'lucide-react';
+import { ArrowLeft, Vote, X, Camera, Plus } from 'lucide-react';
 import { AdminMVPSelector, AdminStopVoting, AdminAddEvent, AdminEditEvent } from '@/components/AdminButtons';
 import { useAuth } from '@/lib/AuthContext';
 import { createClient } from '@/lib/supabase/client';
-import MatchMediaUpload from '@/components/MatchMediaUpload';
 import MatchMediaGallery from '@/components/MatchMediaGallery';
-import { Camera, Plus } from 'lucide-react';
 
 // ==================== TIPI DATI ====================
 interface TeamData {
@@ -475,9 +473,10 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   const [showPenaltyPopup, setShowPenaltyPopup] = useState(false);
   const [editingEvent, setEditingEvent] = useState<EventData | null>(null);
   const [showPenaltyPopupUser, setShowPenaltyPopupUser] = useState(false);
-  const [showMediaUpload, setShowMediaUpload] = useState(false);
   const [showMediaGallery, setShowMediaGallery] = useState(false);
   const [penaltyKicks, setPenaltyKicks] = useState<{ team: 'home' | 'away'; scored: boolean }[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [mediaRefreshKey, setMediaRefreshKey] = useState(0);
 
   // Fetch dati iniziali
   useEffect(() => {
@@ -716,51 +715,30 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       .subscribe();
 
     const penaltyChannel = supabase
-      .channel(`penalty-${matchId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'penalty_shootouts',
-          filter: `match_id=eq.${matchId}`,
-        },
-        async (payload) => {
-          const newKicks = payload.new.kicks || [];
-          setPenaltyKicks(Array.isArray(newKicks) ? newKicks : []);
-        }
-      )
-      .subscribe();
+        .channel(`penalty-${matchId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'penalty_shootouts',
+            filter: `match_id=eq.${matchId}`,
+          },
+          async (payload) => {
+            const newKicks = payload.new.kicks || [];
+            setPenaltyKicks(Array.isArray(newKicks) ? newKicks : []);
+          }
+        )
+        .subscribe();
 
-    // Realtime storage per le foto
-    const pollInterval = setInterval(async () => {
-      const { data } = await supabase.storage
-        .from('tournament-files')
-        .list(matchId, {
-          limit: 100,
-          sortBy: { column: 'created_at', order: 'desc' }
-        });
-      
-      // MatchMediaGallery si aggiornerà automaticamente quando i dati cambiano
-    }, 3000);
-
-    // Nel cleanup:
-    return () => {
-      supabase.removeChannel(matchChannel);
-      supabase.removeChannel(eventsChannel);
-      supabase.removeChannel(playersChannel);
-      supabase.removeChannel(penaltyChannel);
-      clearInterval(pollInterval); // ✅ Aggiungi questo
-    };
-
-    // E nel cleanup:
-    return () => {
-      supabase.removeChannel(matchChannel);
-      supabase.removeChannel(eventsChannel);
-      supabase.removeChannel(playersChannel);
-      supabase.removeChannel(penaltyChannel); 
-    };
-  }, [params.id]);
+      // ✅ Cleanup pulito e unico
+      return () => {
+        supabase.removeChannel(matchChannel);
+        supabase.removeChannel(eventsChannel);
+        supabase.removeChannel(playersChannel);
+        supabase.removeChannel(penaltyChannel);
+      };
+    }, [params.id]);
 
   // ✅ REALTIME: Aggiorna voti MVP in tempo reale
   useEffect(() => {
@@ -1000,16 +978,14 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     }
   };
 
-  const handlePenaltyEnd = async (
+    const handlePenaltyEnd = async (
     winner: 'home' | 'away' | null, 
-    score?: { home: number; away: number }  // ✅ Aggiungi ? per renderlo opzionale
+    score?: { home: number; away: number }
   ) => {
     setShowPenaltyPopup(false);
     
-    // ✅ Controlla che score esista prima di usarlo
     if (winner && match && score) {
       const supabase = createClient();
-      
       await supabase
         .from('matches')
         .update({ 
@@ -1021,6 +997,61 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       
       console.log(`Vincitore ai rigori: ${winner === 'home' ? match.home_team.name : match.away_team.name}`);
       console.log(`Risultato rigori: ${score.home}-${score.away}`);
+    }
+  };
+
+  // ✅ AGGIUNGI QUESTA FUNZIONE QUI:
+  const handleFileSelectAndUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0 || !match) return;
+
+    setLoading(true); // Mostra il caricamento
+    const supabase = createClient();
+    let uploadedCount = 0;
+
+    try {
+      // Importa dinamicamente la compressione per non appesantire il bundle iniziale
+      const imageCompression = (await import('browser-image-compression')).default;
+      
+      for (const file of files) {
+        const options = {
+          maxSizeMB: 1,
+          maxWidthOrHeight: 1920,
+          useWebWorker: true,
+        };
+        const compressedFile = await imageCompression(file, options);
+        
+        const fileExt = file.name.split('.').pop() || 'jpg';
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `${match.id}/${fileName}`;
+
+        const { error } = await supabase.storage
+          .from('tournament-files')
+          .upload(filePath, compressedFile, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (error) {
+          console.error('Errore upload:', error);
+          alert(`Errore nel caricamento di ${file.name}`);
+          continue;
+        }
+        uploadedCount++;
+      }
+
+      alert(`✅ ${uploadedCount} foto caricate con successo!`);
+      
+    } catch (err) {
+      console.error('Errore upload:', err);
+      alert('Errore durante il caricamento');
+    } finally {
+      setLoading(false);
+      // Resetta l'input per permettere di ricaricare le stesse foto se necessario
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      setMediaRefreshKey(prev => prev + 1);
     }
   };
 
@@ -1421,16 +1452,32 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
             <div className="flex items-center justify-between">
               <h2 className="text-[#581C24] font-bold text-base uppercase tracking-wider">Foto Partita</h2>
               {isStaffMode && (
-                <button
-                  onClick={() => setShowMediaUpload(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-[#581C24] text-white rounded-lg font-bold text-xs uppercase hover:bg-[#581C24]/90 transition-colors shadow-md"
-                >
-                  <Plus size={16} />
-                  Aggiungi Foto
-                </button>
+                <>
+                  {/* Input nascosto */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleFileSelectAndUpload}
+                    className="hidden"
+                  />
+                  {/* Pulsante che triggera l'input */}
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-2 px-4 py-2 bg-[#581C24] text-white rounded-lg font-bold text-xs uppercase hover:bg-[#581C24]/90 transition-colors shadow-md"
+                  >
+                    <Plus size={16} />
+                    Aggiungi Foto
+                  </button>
+                </>
               )}
             </div>
-            <MatchMediaGallery matchId={match.id} />
+              <MatchMediaGallery 
+                key={mediaRefreshKey} 
+                matchId={match.id} 
+                isStaffMode={isStaffMode}
+              />
           </div>
         )}
       </div>
@@ -1529,16 +1576,26 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
             <h2 className="text-white font-black text-lg uppercase tracking-wider">Foto Partita</h2>
             <div className="flex items-center gap-3">
               {isStaffMode && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowMediaUpload(true);
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 bg-white text-[#581C24] rounded-lg font-bold text-xs uppercase hover:bg-gray-100 transition-colors"
-                >
-                  <Plus size={16} />
-                  Aggiungi
-                </button>
+                <>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleFileSelectAndUpload}
+                    className="hidden"
+                  />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      fileInputRef.current?.click();
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-white text-[#581C24] rounded-lg font-bold text-xs uppercase hover:bg-gray-100 transition-colors"
+                  >
+                    <Plus size={16} />
+                    Aggiungi
+                  </button>
+                </>
               )}
               <button 
                 onClick={() => setShowMediaGallery(false)}
@@ -1551,10 +1608,11 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           
           {/* Contenuto */}
           <div className="flex-1 overflow-y-auto p-4" onClick={(e) => e.stopPropagation()}>
-            <MatchMediaGallery 
-              matchId={match.id} 
-              isStaffMode={isStaffMode}  // ✅ Aggiungi questa prop
-            />
+              <MatchMediaGallery 
+                key={mediaRefreshKey} 
+                matchId={match.id} 
+                isStaffMode={isStaffMode}
+              />
           </div>
         </div>
       )}
