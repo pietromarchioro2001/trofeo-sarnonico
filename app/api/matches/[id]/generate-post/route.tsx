@@ -37,36 +37,32 @@ export async function GET(
 
     console.log(`Generazione post per ${homeName} vs ${awayName} - Tipo: ${type}`);
 
-    // ✅ STRUTTURA JSX 100% COMPATIBILE CON SATORI (VERCEL/OG)
+    // ✅ NUCLEAR OPTION: display: 'flex' su OGNI singolo div per soddisfare Satori
     const imageResponse = new ImageResponse(
       (
-        <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-          
+        <div style={{ width: '100%', height: '100%', background: '#1a1a2e', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
           {type === 'PRE_MATCH' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-              <div style={{ fontSize: 64, fontWeight: '900', color: '#e94560', marginBottom: 60, textAlign: 'center' }}>PROSSIMA PARTITA</div>
-              <div style={{ fontSize: 48, fontWeight: '700', color: 'white', marginBottom: 20, textAlign: 'center' }}>{homeName}</div>
-              <div style={{ fontSize: 36, color: '#e94560', marginBottom: 20, textAlign: 'center' }}>VS</div>
-              <div style={{ fontSize: 48, fontWeight: '700', color: 'white', marginBottom: 60, textAlign: 'center' }}>{awayName}</div>
-              <div style={{ fontSize: 32, color: 'rgba(255,255,255,0.8)', textAlign: 'center' }}>{matchDate} • ⏰ {matchTime}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', fontSize: 64, fontWeight: '900', color: '#e94560' }}>PROSSIMA PARTITA</div>
+              <div style={{ display: 'flex', fontSize: 48, color: 'white', marginTop: 40 }}>{homeName}</div>
+              <div style={{ display: 'flex', fontSize: 36, color: '#e94560', marginTop: 20 }}>VS</div>
+              <div style={{ display: 'flex', fontSize: 48, color: 'white', marginTop: 20 }}>{awayName}</div>
+              <div style={{ display: 'flex', fontSize: 32, color: 'rgba(255,255,255,0.8)', marginTop: 40 }}>{matchDate} • {matchTime}</div>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-              <div style={{ fontSize: 64, fontWeight: '900', color: '#e94560', marginBottom: 60, textAlign: 'center' }}>RISULTATO FINALE</div>
-              <div style={{ fontSize: 48, fontWeight: '700', color: 'white', marginBottom: 20, textAlign: 'center' }}>{homeName}</div>
-              <div style={{ fontSize: 72, fontWeight: '900', color: '#ffd700', marginBottom: 20, textAlign: 'center' }}>{match.home_score ?? 0} - {match.away_score ?? 0}</div>
-              <div style={{ fontSize: 48, fontWeight: '700', color: 'white', marginBottom: 20, textAlign: 'center' }}>{awayName}</div>
-              
-              {/* ✅ Usiamo ? : invece di && per garantire un solo nodo figlio */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', fontSize: 64, fontWeight: '900', color: '#e94560' }}>RISULTATO FINALE</div>
+              <div style={{ display: 'flex', fontSize: 48, color: 'white', marginTop: 40 }}>{homeName}</div>
+              <div style={{ display: 'flex', fontSize: 72, fontWeight: '900', color: '#ffd700', marginTop: 20 }}>{match.home_score ?? 0} - {match.away_score ?? 0}</div>
+              <div style={{ display: 'flex', fontSize: 48, color: 'white', marginTop: 20 }}>{awayName}</div>
               {match.home_penalties != null ? (
-                <div style={{ fontSize: 32, color: '#ffd700', marginBottom: 40, textAlign: 'center' }}>⚽ DCR {match.home_penalties} - {match.away_penalties}</div>
+                <div style={{ display: 'flex', fontSize: 32, color: '#ffd700', marginTop: 40 }}>DCR {match.home_penalties} - {match.away_penalties}</div>
               ) : (
-                <div style={{ height: 40 }}></div>
+                <div style={{ display: 'flex', height: 72 }}></div>
               )}
             </div>
           )}
-          
-          <div style={{ position: 'absolute', bottom: 60, fontSize: 28, color: 'rgba(255,255,255,0.6)', fontWeight: '700', textAlign: 'center' }}>TROFEO SARNONICO</div>
+          <div style={{ display: 'flex', position: 'absolute', bottom: 60, fontSize: 28, color: 'rgba(255,255,255,0.6)', fontWeight: '700' }}>TROFEO SARNONICO</div>
         </div>
       ),
       { width: 1080, height: 1080 }
