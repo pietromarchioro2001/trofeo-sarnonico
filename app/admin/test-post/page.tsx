@@ -52,7 +52,40 @@ export default function TestPostAdmin() {
       const res = await fetch(`/api/matches/${matchId}/generate-post?type=${type}`);
       
       if (res.ok) {
-        setResults([{ id: matchId, type, success: true, message: '✅ Post generato con successo!' }]);
+        const supabase = createClient();
+        const fileName = `${matchId}_${type}.png`;
+        
+        // Verifica se il file esiste davvero
+        const { data: files } = await supabase.storage
+          .from('tournament-files')
+          .list('match-posts', { search: fileName });
+        
+        const fileExists = files?.some((f: any) => f.name === fileName);
+        
+        const publicUrl = supabase.storage
+          .from('tournament-files')
+          .getPublicUrl(`match-posts/${fileName}`).data.publicUrl;
+        
+        setResults([{ 
+          id: matchId, 
+          type, 
+          success: true, 
+          message: fileExists 
+            ? '✅ Post generato E salvato nello storage!' 
+            : '⚠️ API ha risposto OK ma il file NON è nello storage!',
+        }], 
+        );
+        
+        // Aggiungi un secondo risultato con l'URL
+        setTimeout(() => {
+          setResults(prev => [...prev, {
+            id: matchId,
+            type,
+            success: true,
+            message: `🔗 URL pubblico: ${publicUrl}`
+          }]);
+        }, 100);
+        
       } else {
         const errorText = await res.text();
         setResults([{ id: matchId, type, success: false, message: `❌ Errore ${res.status}: ${errorText}` }]);
