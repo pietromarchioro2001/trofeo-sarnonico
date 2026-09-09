@@ -1008,21 +1008,29 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   // ✅ AGGIUNGI QUESTA FUNZIONE QUI:
   const handleFileSelectAndUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    if (files.length === 0 || !match) return;
+    if (files.length === 0 || !match) {
+      console.log('❌ Nessun file o match non trovato');
+      return;
+    }
 
-    // ✅ NON usare setLoading(true) - usa stato locale
+    console.log('📁 File selezionati:', files.map(f => f.name));
+    console.log('🏷️ Match ID:', match.id);
+    
+    const folderName = getMatchFolderName();
+    const basePath = `match-media/${folderName}`;
+    
+    console.log('📂 Percorso completo:', basePath);
+
     setUploading(true);
     const supabase = createClient();
     let uploadedCount = 0;
-
-    // ✅ Percorso: match-media/SARNONICO-CAVARENO
-    const folderName = getMatchFolderName();
-    const basePath = `match-media/${folderName}`;
 
     try {
       const imageCompression = (await import('browser-image-compression')).default;
       
       for (const file of files) {
+        console.log('️ Upload in corso:', file.name);
+        
         const options = { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true };
         const compressedFile = await imageCompression(file, options);
         
@@ -1030,24 +1038,28 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
         const filePath = `${basePath}/${fileName}`;
 
-        const { error } = await supabase.storage
+        console.log('🎯 Path Supabase:', filePath);
+
+        const { data, error } = await supabase.storage
           .from('tournament-files')
           .upload(filePath, compressedFile, { cacheControl: '3600', upsert: false });
 
         if (error) {
-          console.error('Errore upload:', error);
-          alert(`Errore nel caricamento di ${file.name}`);
+          console.error('❌ Errore upload:', error);
+          alert(`Errore nel caricamento di ${file.name}: ${error.message}`);
           continue;
         }
+        
+        console.log('✅ Upload completato:', data);
         uploadedCount++;
       }
 
       alert(`✅ ${uploadedCount} foto caricate con successo!`);
-      setMediaRefreshKey(prev => prev + 1); // ✅ Forza refresh galleria
+      setMediaRefreshKey(prev => prev + 1);
       
     } catch (err) {
-      console.error('Errore upload:', err);
-      alert('Errore durante il caricamento');
+      console.error(' Errore generale:', err);
+      alert('Errore durante il caricamento: ' + (err as Error).message);
     } finally {
       setUploading(false);
       if (fileInputRef.current) {
