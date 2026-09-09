@@ -73,13 +73,6 @@ interface PenaltyKick {
   kickerId: string;
 }
 
-interface PenaltyShootoutPopupProps {
-  homeTeam: { name: string; logo: string };
-  awayTeam: { name: string; logo: string };
-  isAdmin: boolean;
-  onClose: (winner: 'home' | 'away' | null) => void;
-}
-
 // ==================== COMPONENTE RIUTILIZZABILE PER MAIUSCOLO ====================
 const UppercaseInput = ({ 
   value, 
@@ -102,180 +95,6 @@ const UppercaseInput = ({
   />
 );
 // ================================================================================
-
-export const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
-  homeTeam, awayTeam, isAdmin, onClose
-}) => {
-  const [started, setStarted] = useState(false);
-  const [firstKicker, setFirstKicker] = useState<'home' | 'away' | null>(null);
-  const [penaltyScore, setPenaltyScore] = useState({ home: 0, away: 0 });
-  const [kicks, setKicks] = useState<PenaltyKick[]>([]);
-  const [currentKick, setCurrentKick] = useState(0);
-  const [lightState, setLightState] = useState<'none' | 'green' | 'red'>('none');
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  const handleFirstKickerSelect = (team: 'home' | 'away') => { 
-    setFirstKicker(team); 
-    setStarted(true); 
-  };
-
-  const handleKick = (scored: boolean) => {
-    if (isProcessing) return;
-    setIsProcessing(true);
-    const kickingTeam = currentKick % 2 === 0 ? (firstKicker === 'home' ? 'home' : 'away') : (firstKicker === 'home' ? 'away' : 'home');
-    setLightState(scored ? 'green' : 'red');
-    setTimeout(() => {
-      setKicks([...kicks, { team: kickingTeam, scored, kickerId: `kick-${currentKick}` }]);
-      if (scored) setPenaltyScore(prev => ({ ...prev, [kickingTeam]: prev[kickingTeam] + 1 }));
-      setCurrentKick(prev => prev + 1);
-      setLightState('none');
-      setIsProcessing(false);
-    }, 3000);
-  };
-
-  const handleEnd = () => {
-    const winner = penaltyScore.home > penaltyScore.away ? 'home' : penaltyScore.away > penaltyScore.home ? 'away' : null;
-    onClose(winner);
-  };
-
-  const getTeamKicks = (team: 'home' | 'away') => kicks.filter(kick => kick.team === team);
-
-  // ✅ Resetta lo stato quando il popup viene riaperto (isAdmin cambia o al mount)
-  useEffect(() => {
-    setStarted(false);
-    setFirstKicker(null);
-    setPenaltyScore({ home: 0, away: 0 });
-    setKicks([]);
-    setCurrentKick(0);
-  }, [isAdmin]);
-
-  if (!started || !firstKicker) {
-    return (
-      <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-          <div className="bg-[#581C24] p-4"><h2 className="text-lg font-black text-white uppercase tracking-wider text-center">Calci di Rigore</h2></div>
-          <div className="p-6">
-            <p className="text-center text-sm font-bold text-gray-600 mb-4 uppercase">Chi inizia i rigori?</p>
-            <div className="flex gap-4">
-              <button onClick={() => handleFirstKickerSelect('home')} className="flex-1 flex flex-col items-center gap-3 p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors border-2 border-gray-200">
-                <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center"><span className="text-[10px] text-gray-500">LOGO</span></div>
-                <span className="font-bold text-sm text-[#581C24]">{homeTeam.name}</span>
-              </button>
-              <button onClick={() => handleFirstKickerSelect('away')} className="flex-1 flex flex-col items-center gap-3 p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors border-2 border-gray-200">
-                <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center"><span className="text-[10px] text-gray-500">LOGO</span></div>
-                <span className="font-bold text-sm text-[#581C24]">{awayTeam.name}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-        <div className="bg-[#581C24] p-4"><h2 className="text-lg font-black text-white uppercase tracking-wider text-center">Calci di Rigore</h2></div>
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex-1 flex flex-col items-center">
-              <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center mb-2"><span className="text-[8px] text-gray-500">LOGO</span></div>
-              <span className="font-bold text-xs text-[#581C24]">{homeTeam.name}</span>
-            </div>
-            <div className="flex items-center gap-4 px-6">
-              <span className="text-4xl font-black text-[#581C24]">{penaltyScore.home}</span>
-              <span className="text-2xl text-gray-400">-</span>
-              <span className="text-4xl font-black text-[#581C24]">{penaltyScore.away}</span>
-            </div>
-            <div className="flex-1 flex flex-col items-center">
-              <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center mb-2"><span className="text-[8px] text-gray-500">LOGO</span></div>
-              <span className="font-bold text-xs text-[#581C24]">{awayTeam.name}</span>
-            </div>
-          </div>
-          <div className="flex justify-center mb-6">
-            <div className={`w-20 h-20 rounded-full border-4 transition-all duration-300 ${lightState === 'green' ? 'bg-green-500 border-green-700 shadow-lg shadow-green-500/50' : lightState === 'red' ? 'bg-red-600 border-red-800 shadow-lg shadow-red-600/50' : 'bg-gray-300 border-gray-400'}`} />
-          </div>
-          <div className="flex justify-between mb-6 px-4">
-            <div className="flex-1 space-y-2">{getTeamKicks('home').map((kick, idx) => (<div key={idx} className="flex items-center justify-center"><div className={`w-3 h-3 rounded-full ${kick.scored ? 'bg-green-500' : 'bg-red-600'}`} /></div>))}</div>
-            <div className="flex-1 space-y-2">{getTeamKicks('away').map((kick, idx) => (<div key={idx} className="flex items-center justify-center"><div className={`w-3 h-3 rounded-full ${kick.scored ? 'bg-green-500' : 'bg-red-600'}`} /></div>))}</div>
-          </div>
-          {isAdmin && (
-            <>
-              <div className="flex gap-3 mb-4">
-                <button onClick={() => handleKick(false)} disabled={isProcessing} className="flex-1 bg-red-600 text-white font-bold py-3 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 text-sm uppercase">Sbagliato</button>
-                <button onClick={() => handleKick(true)} disabled={isProcessing} className="flex-1 bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 text-sm uppercase">Gol</button>
-              </div>
-              <button onClick={handleEnd} className="w-full bg-gray-600 text-white font-bold py-2.5 rounded-lg hover:bg-gray-700 transition-colors text-sm uppercase">Fine</button>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-interface AdminMatchControlsProps {
-  matchStatus: 'PROGRAMMATA' | 'LIVE' | 'SUPP' | 'TERMINATA' | 'RIGORI';
-  isFinalPhase: boolean;
-  matchId: string;
-  homeTeam: { name: string; logo: string };
-  awayTeam: { name: string; logo: string };
-  currentScore: { home: number; away: number };
-  onStatusChange: (status: 'PROGRAMMATA' | 'LIVE' | 'SUPP' | 'TERMINATA' | 'RIGORI') => void;
-}
-
-export const AdminMatchControls: React.FC<AdminMatchControlsProps> = ({ matchStatus, isFinalPhase, matchId, homeTeam, awayTeam, currentScore, onStatusChange }) => {
-  const [showPenaltyPopup, setShowPenaltyPopup] = useState(false);
-  
-  const handleStartMatch = () => { if (confirm('Iniziare la partita?')) onStatusChange('LIVE'); };
-  const handleExtraTime = () => { if (confirm('Passare ai tempi supplementari?')) onStatusChange('SUPP'); };
-  const handlePenalties = () => { setShowPenaltyPopup(true); };
-  const handleEndMatch = () => { if (confirm('Terminare la partita? Verranno calcolate classifica e statistiche.')) { onStatusChange('TERMINATA'); console.log('Partita terminata'); } };
-  const handlePenaltyEnd = (winner: 'home' | 'away' | null) => { 
-    setShowPenaltyPopup(false); 
-    if (winner) console.log(`Vincitore ai rigori: ${winner === 'home' ? homeTeam.name : awayTeam.name}`); 
-    onStatusChange('TERMINATA'); 
-  };
-  
-  const getButtonLabel = () => { 
-    if (matchStatus === 'PROGRAMMATA') return 'INIZIA'; 
-    if (matchStatus === 'LIVE') return 'TERMINA'; 
-    return ''; 
-  };
-  
-  const getExtraTimeButtonLabel = () => { 
-    if (matchStatus === 'LIVE' && isFinalPhase && currentScore.home === currentScore.away) return 'SUPPLEMENTARI'; 
-    return null; 
-  };
-  
-  const extraTimeLabel = getExtraTimeButtonLabel();
-
-  return (
-    <>
-      <div className="flex gap-2">
-        {matchStatus !== 'TERMINATA' && (
-          <>
-            <button onClick={matchStatus === 'PROGRAMMATA' ? handleStartMatch : handleEndMatch} className={`px-4 py-2 rounded-lg font-bold text-xs uppercase transition-colors shadow-lg ${matchStatus === 'PROGRAMMATA' ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-red-600 text-white hover:bg-red-700'}`}>
-              {getButtonLabel()}
-            </button>
-            {extraTimeLabel && (
-              <button onClick={handleExtraTime} className="px-4 py-2 bg-orange-600 text-white rounded-lg font-bold text-xs uppercase hover:bg-orange-700 transition-colors shadow-lg">
-                {extraTimeLabel}
-              </button>
-            )}
-            {/* ✅ MOSTRA PULSANTE RIGORI SIA IN SUPP CHE IN RIGORI */}
-            {(matchStatus === 'SUPP' || matchStatus === 'RIGORI') && (
-              <button onClick={handlePenalties} className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold text-xs uppercase hover:bg-purple-700 transition-colors shadow-lg">
-                {matchStatus === 'RIGORI' ? '📋 RIGORI' : 'RIGORI'}
-              </button>
-            )}
-          </>
-        )}
-      </div>
-      {showPenaltyPopup && <PenaltyShootoutPopup homeTeam={homeTeam} awayTeam={awayTeam} isAdmin={true} onClose={handlePenaltyEnd} />}
-    </>
-  );
-};
 
 export const AdminPartiteButton = ({ onMatchCreated }: { onMatchCreated?: () => void }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -738,22 +557,97 @@ export const AdminAddEvent: React.FC<AdminAddEventProps> = ({ teamSide, matchId 
   );
 };
 
-export const AdminSquadreButton = () => {
+export const AdminSquadreButton = ({ onTeamCreated }: { onTeamCreated?: () => void }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [teamName, setTeamName] = useState('');
   const [group, setGroup] = useState('');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [error, setError] = useState('');
-  const handleSave = () => {
-    if (!teamName || !group || !logoFile || !photoFile) { setError('⚠️ Compila tutti i campi e carica le immagini!'); return; }
-    const newTeam = { id: Date.now().toString(), name: teamName.toUpperCase(), group: `GIRONE ${group}`, logo: URL.createObjectURL(logoFile), photo: URL.createObjectURL(photoFile) };
-    console.log('✅ Nuova squadra creata:', newTeam);
-    alert(`✅ Squadra creata con successo!\n\nNome: ${newTeam.name}\nGirone: ${newTeam.group}`);
-    setIsOpen(false); resetForm();
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!teamName.trim() || !group || !logoFile) { 
+      setError('⚠️ Nome, Girone e Logo sono obbligatori!'); 
+      return; 
+    }
+    
+    setIsSaving(true);
+    setError('');
+    const supabase = createClient();
+
+    try {
+      let logoUrl = null;
+      let photoUrl = null;
+
+      // 1. Upload Logo nel bucket tournament-files/team-logos
+      if (logoFile) {
+        const fileExt = logoFile.name.split('.').pop();
+        const fileName = `${Date.now()}_logo_${teamName.replace(/\s+/g, '_')}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('tournament-files')
+          .upload(`team-logos/${fileName}`, logoFile);
+        
+        if (uploadError) throw new Error(`Errore upload logo: ${uploadError.message}`);
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('tournament-files')
+          .getPublicUrl(`team-logos/${fileName}`);
+        logoUrl = publicUrl;
+      }
+
+      // 2. Upload Foto Squadra nel bucket tournament-files/team-photos (opzionale)
+      if (photoFile) {
+        const fileExt = photoFile.name.split('.').pop();
+        const fileName = `${Date.now()}_photo_${teamName.replace(/\s+/g, '_')}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('tournament-files')
+          .upload(`team-photos/${fileName}`, photoFile);
+        
+        if (uploadError) throw new Error(`Errore upload foto: ${uploadError.message}`);
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('tournament-files')
+          .getPublicUrl(`team-photos/${fileName}`);
+        photoUrl = publicUrl;
+      }
+
+      // 3. Inserimento nel Database
+      const { error: dbError } = await supabase.from('teams').insert({
+        name: teamName.trim().toUpperCase(),
+        girone: group,
+        logo_url: logoUrl,
+        team_photo_url: photoUrl  // ✅ Nome colonna corretto
+      });
+
+      if (dbError) throw new Error(`Errore database: ${dbError.message}`);
+
+      alert('✅ Squadra creata con successo!');
+      setIsOpen(false);
+      setTeamName(''); 
+      setGroup(''); 
+      setLogoFile(null); 
+      setPhotoFile(null);
+      
+      if (onTeamCreated) onTeamCreated();
+
+    } catch (err: any) {
+      console.error('Errore creazione squadra:', err);
+      setError(err.message || 'Errore imprevisto durante il salvataggio');
+    } finally {
+      setIsSaving(false);
+    }
   };
-  const resetForm = () => { setTeamName(''); setGroup(''); setLogoFile(null); setPhotoFile(null); setError(''); };
-  const handleClose = () => { setIsOpen(false); resetForm(); };
+
+  const handleClose = () => { 
+    setIsOpen(false); 
+    setTeamName(''); 
+    setGroup(''); 
+    setLogoFile(null); 
+    setPhotoFile(null); 
+    setError(''); 
+  };
+
   return (
     <>
       <div className="px-3 sm:px-4 mb-2">
@@ -767,7 +661,7 @@ export const AdminSquadreButton = () => {
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="bg-[#581C24] p-4 flex items-center justify-between">
               <h2 className="text-lg font-black text-white uppercase tracking-wider">Nuova Squadra</h2>
-              <button onClick={handleClose} className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/20 transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+              <button onClick={handleClose} className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/20 transition-colors"><X size={20} /></button>
             </div>
             <div className="p-6 space-y-4">
               <div>
@@ -779,14 +673,36 @@ export const AdminSquadreButton = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm placeholder:text-gray-400"
                 />
               </div>
-              <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Girone</label><select value={group} onChange={(e) => setGroup(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm font-bold"><option value="">Seleziona Girone...</option><option value="A">GIRONE A</option><option value="B">GIRONE B</option></select></div>
-              <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Logo Squadra</label><input type="file" accept="image/*" onChange={(e) => setLogoFile(e.target.files ? e.target.files[0] : null)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-[#581C24] file:text-white hover:file:bg-[#581C24]/90 cursor-pointer" />{logoFile && <p className="text-xs text-green-700 mt-1 font-medium">✓ {logoFile.name}</p>}</div>
-              <div><label className="block text-xs font-bold text-gray-600 uppercase mb-2">Foto Squadra</label><input type="file" accept="image/*" onChange={(e) => setPhotoFile(e.target.files ? e.target.files[0] : null)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-[#581C24] file:text-white hover:file:bg-[#581C24]/90 cursor-pointer" />{photoFile && <p className="text-xs text-green-700 mt-1 font-medium">✓ {photoFile.name}</p>}</div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 uppercase mb-2">Girone</label>
+                <select value={group} onChange={(e) => setGroup(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm font-bold">
+                  <option value="">Seleziona Girone...</option>
+                  <option value="A">GIRONE A</option>
+                  <option value="B">GIRONE B</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 uppercase mb-2">Logo Squadra *</label>
+                <input type="file" accept="image/*" onChange={(e) => setLogoFile(e.target.files ? e.target.files[0] : null)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-[#581C24] file:text-white hover:file:bg-[#581C24]/90 cursor-pointer" />
+                {logoFile && <p className="text-xs text-green-700 mt-1 font-medium">✓ {logoFile.name}</p>}
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 uppercase mb-2">Foto Squadra (Opzionale)</label>
+                <input type="file" accept="image/*" onChange={(e) => setPhotoFile(e.target.files ? e.target.files[0] : null)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#581C24] text-sm file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-[#581C24] file:text-white hover:file:bg-[#581C24]/90 cursor-pointer" />
+                {photoFile && <p className="text-xs text-green-700 mt-1 font-medium">✓ {photoFile.name}</p>}
+              </div>
               {error && <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs font-bold text-center">{error}</div>}
             </div>
             <div className="p-4 border-t border-gray-200 flex gap-3">
-              <button onClick={handleClose} className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 font-bold rounded-lg hover:bg-gray-50 transition-colors text-sm uppercase">Annulla</button>
-              <button onClick={handleSave} className="flex-1 px-4 py-2.5 bg-[#581C24] text-white font-bold rounded-lg hover:bg-[#581C24]/90 transition-colors text-sm shadow-md uppercase">SALVA</button>
+              <button onClick={handleClose} disabled={isSaving} className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 font-bold rounded-lg hover:bg-gray-50 transition-colors text-sm uppercase disabled:opacity-50">Annulla</button>
+              <button onClick={handleSave} disabled={isSaving} className="flex-1 px-4 py-2.5 bg-[#581C24] text-white font-bold rounded-lg hover:bg-[#581C24]/90 transition-colors text-sm shadow-md uppercase disabled:opacity-50 flex items-center justify-center gap-2">
+                {isSaving ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    Salvataggio...
+                  </>
+                ) : 'SALVA'}
+              </button>
             </div>
           </div>
         </div>
