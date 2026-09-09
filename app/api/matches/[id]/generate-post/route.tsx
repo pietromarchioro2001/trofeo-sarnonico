@@ -49,41 +49,41 @@ export async function GET(
 
     console.log(`Generazione post per ${homeName} vs ${awayName} - Tipo: ${type}`);
 
-    // Genera immagine
+    // Genera immagine - ✅ TUTTI I DIV CON PIU' FIGLI HANNO display: 'flex'
     const imageResponse = new ImageResponse(
       type === 'PRE_MATCH' ? (
         <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', fontFamily: 'sans-serif' }}>
           <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 50%, rgba(233, 69, 96, 0.15) 0%, transparent 60%)' }} />
-          <div style={{ fontSize: 48, fontWeight: '900', color: '#e94560', textTransform: 'uppercase', letterSpacing: 8, marginBottom: 60, zIndex: 1 }}>PROSSIMA PARTITA</div>
+          <div style={{ fontSize: 48, fontWeight: '900', color: '#e94560', textTransform: 'uppercase', letterSpacing: 8, marginBottom: 60, zIndex: 1, textAlign: 'center' }}>PROSSIMA PARTITA</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 30, marginBottom: 60, zIndex: 1 }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 15 }}>
-              {homeLogo && <div style={{ width: 180, height: 180, borderRadius: '50%', background: 'white', padding: 10, boxShadow: '0 10px 40px rgba(0,0,0,0.3)' }}><img src={homeLogo} width="160" height="160" style={{ borderRadius: '50%', objectFit: 'contain' }} alt="" /></div>}
+              {homeLogo && <div style={{ width: 180, height: 180, borderRadius: '50%', background: 'white', padding: 10, boxShadow: '0 10px 40px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><img src={homeLogo} width="160" height="160" style={{ borderRadius: '50%', objectFit: 'contain' }} alt="" /></div>}
               <div style={{ fontSize: 36, fontWeight: '900', color: 'white', textAlign: 'center', textTransform: 'uppercase' }}>{homeShort}</div>
             </div>
             <div style={{ fontSize: 64, fontWeight: '900', color: '#e94560', textShadow: '0 0 30px rgba(233, 69, 96, 0.5)' }}>VS</div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 15 }}>
-              {awayLogo && <div style={{ width: 180, height: 180, borderRadius: '50%', background: 'white', padding: 10, boxShadow: '0 10px 40px rgba(0,0,0,0.3)' }}><img src={awayLogo} width="160" height="160" style={{ borderRadius: '50%', objectFit: 'contain' }} alt="" /></div>}
+              {awayLogo && <div style={{ width: 180, height: 180, borderRadius: '50%', background: 'white', padding: 10, boxShadow: '0 10px 40px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><img src={awayLogo} width="160" height="160" style={{ borderRadius: '50%', objectFit: 'contain' }} alt="" /></div>}
               <div style={{ fontSize: 36, fontWeight: '900', color: 'white', textAlign: 'center', textTransform: 'uppercase' }}>{awayShort}</div>
             </div>
           </div>
-          <div style={{ fontSize: 32, color: 'white', fontWeight: '700', zIndex: 1 }}> {matchDate} • ⏰ {matchTime}</div>
+          <div style={{ fontSize: 32, color: 'white', fontWeight: '700', zIndex: 1, textAlign: 'center' }}>📅 {matchDate} • ⏰ {matchTime}</div>
           <div style={{ position: 'absolute', bottom: 40, fontSize: 24, color: 'rgba(255,255,255,0.6)', fontWeight: '700', letterSpacing: 4, zIndex: 1 }}>TROFEO SARNONICO</div>
         </div>
       ) : (
         <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', fontFamily: 'sans-serif' }}>
           <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 50%, rgba(233, 69, 96, 0.15) 0%, transparent 60%)' }} />
-          <div style={{ fontSize: 56, fontWeight: '900', color: '#e94560', textTransform: 'uppercase', letterSpacing: 8, marginBottom: 40, textShadow: '0 0 40px rgba(233, 69, 96, 0.5)', zIndex: 1 }}>RISULTATO FINALE</div>
+          <div style={{ fontSize: 56, fontWeight: '900', color: '#e94560', textTransform: 'uppercase', letterSpacing: 8, marginBottom: 40, textShadow: '0 0 40px rgba(233, 69, 96, 0.5)', zIndex: 1, textAlign: 'center' }}>RISULTATO FINALE</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 30, marginBottom: 50, zIndex: 1 }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 15 }}>
-              {homeLogo && <div style={{ width: 160, height: 160, borderRadius: '50%', background: 'white', padding: 10, boxShadow: '0 10px 40px rgba(0,0,0,0.3)' }}><img src={homeLogo} width="140" height="140" style={{ borderRadius: '50%', objectFit: 'contain' }} alt="" /></div>}
+              {homeLogo && <div style={{ width: 160, height: 160, borderRadius: '50%', background: 'white', padding: 10, boxShadow: '0 10px 40px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><img src={homeLogo} width="140" height="140" style={{ borderRadius: '50%', objectFit: 'contain' }} alt="" /></div>}
               <div style={{ fontSize: 32, fontWeight: '900', color: 'white', textAlign: 'center', textTransform: 'uppercase' }}>{homeShort}</div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
               <div style={{ fontSize: 100, fontWeight: '900', color: 'white', textShadow: '0 0 50px rgba(255,255,255,0.3)' }}>{match.home_score ?? 0} - {match.away_score ?? 0}</div>
-              {match.home_penalties != null && <div style={{ fontSize: 28, color: '#ffd700', fontWeight: '700', background: 'rgba(255,215,0,0.2)', padding: '8px 20px', borderRadius: 20 }}> DCR {match.home_penalties}-{match.away_penalties}</div>}
+              {match.home_penalties != null && <div style={{ fontSize: 28, color: '#ffd700', fontWeight: '700', background: 'rgba(255,215,0,0.2)', padding: '8px 20px', borderRadius: 20, textAlign: 'center' }}>⚽ DCR {match.home_penalties}-{match.away_penalties}</div>}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 15 }}>
-              {awayLogo && <div style={{ width: 160, height: 160, borderRadius: '50%', background: 'white', padding: 10, boxShadow: '0 10px 40px rgba(0,0,0,0.3)' }}><img src={awayLogo} width="140" height="140" style={{ borderRadius: '50%', objectFit: 'contain' }} alt="" /></div>}
+              {awayLogo && <div style={{ width: 160, height: 160, borderRadius: '50%', background: 'white', padding: 10, boxShadow: '0 10px 40px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><img src={awayLogo} width="140" height="140" style={{ borderRadius: '50%', objectFit: 'contain' }} alt="" /></div>}
               <div style={{ fontSize: 32, fontWeight: '900', color: 'white', textAlign: 'center', textTransform: 'uppercase' }}>{awayShort}</div>
             </div>
           </div>
