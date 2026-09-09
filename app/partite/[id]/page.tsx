@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowLeft, Vote, X, Camera, Plus } from 'lucide-react';
+import { ArrowLeft, Vote, X, Camera, Plus, Share2, Loader2 } from 'lucide-react';
 import { AdminMVPSelector, AdminStopVoting, AdminAddEvent, AdminEditEvent } from '@/components/AdminButtons';
 import { useAuth } from '@/lib/AuthContext';
 import { createClient } from '@/lib/supabase/client';
@@ -481,6 +481,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     return `${match.home_team.name}-${match.away_team.name}`.replace(/\s+/g, '_');
   };
   const [uploading, setUploading] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
 
   // Fetch dati iniziali
   useEffect(() => {
@@ -926,13 +927,15 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         await supabase.from('matches').update({ status: 'FINITA' }).eq('id', match.id);
         setMatch({ ...match, status: 'FINITA' });
 
-        // 2. RESET SQUALIFICHE per le due squadre che hanno appena giocato
-        // (Chi ha giocato questa partita, ha "scontato" la squalifica)
+        // 2. RESET SQUALIFICHE
         await supabase
           .from('players')
           .update({ is_suspended: false })
           .in('team_id', [match.home_team.id, match.away_team.id])
           .eq('is_suspended', true);
+
+        // ✅ 3. Genera automaticamente il post di fine partita in background
+        fetch(`/api/matches/${match.id}/generate-post?type=POST_MATCH`).catch(console.error);
 
       } catch (err) {
         console.error('Errore termine partita:', err);
@@ -1064,6 +1067,77 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     }
   };
 
+    const handleShareMatch = async () => {
+    if (!match) return;
+    setIsSharing(true);
+
+    try {
+      const type = match.status === 'FINITA' ? 'POST_MATCH' : 'PRE_MATCH';
+      const supabase = createClient();
+
+      // 1. Cerca se esiste già un post generato per questa partita
+      let { data: existingPost } = await supabase
+        .from('match_posts')
+        .select('image_url')
+        .eq('match_id', match.id)
+        .eq('type', type)
+        .maybeSingle();
+
+      // 2. Se non esiste, chiama l'API per generarlo al volo
+      if (!existingPost) {
+        const genRes = await fetch(`/api/matches/${match.id}/generate-post?type=${type}`);
+        if (!genRes.ok) throw new Error('Errore generazione post');
+        
+        // Rifetch dopo la generazione
+        const { data } = await supabase
+          .from('match_posts')
+          .select('image_url')
+          .eq('match_id', match.id)
+          .eq('type', type)
+          .single();
+        existingPost = data;
+      }
+
+      if (!existingPost?.image_url) throw new Error('Post non trovato');
+
+      // 3. Scarica l'immagine come Blob per condividerla
+      const imgRes = await fetch(existingPost.image_url);
+      const blob = await imgRes.blob();
+      const file = new File([blob], `partita-${match.id}.png`, { type: 'image/png' });
+
+      const shareText = type === 'PRE_MATCH'
+        ? `🔥 ${match.home_team.name} vs ${match.away_team.name} - ${match.match_date} ${match.match_time}`
+        : `🏆 Risultato: ${match.home_team.name} ${match.home_score}-${match.away_score} ${match.away_team.name}`;
+
+      // 4. Usa la Web Share API (nativa su iOS/Android)
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: `${match.home_team.name} vs ${match.away_team.name}`,
+          text: shareText,
+        });
+      } else if (navigator.share) {
+        // Fallback solo testo se i file non sono supportati dal browser
+        await navigator.share({ title: 'Partita', text: shareText });
+      } else {
+        // Fallback desktop: download del file
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `partita-${match.id}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (err) {
+      console.error('Errore condivisione:', err);
+      if ((err as Error).name !== 'AbortError') { // Ignora se l'utente annulla la condivisione
+        alert('Errore nella condivisione. Verifica che la tabella match_posts e l\'API route esistano.');
+      }
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
   const getStatusLabel = () => {
     if (!match) return '';
     switch (match.status) {
@@ -1152,9 +1226,20 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           )}
 
         <div className="absolute top-4 right-4 flex gap-2 z-20">
+          {/* ✅ NUOVO PULSANTE CONDIVIDI */}
+          <button 
+            onClick={handleShareMatch}
+            disabled={isSharing}
+            className="bg-white text-[#581C24] p-2 rounded-full shadow-lg hover:bg-gray-100 transition-colors disabled:opacity-50 flex items-center justify-center"
+            title="Condividi post"
+          >
+            {isSharing ? <Loader2 size={20} className="animate-spin" /> : <Share2 size={20} />}
+          </button>
+          
           <button 
             onClick={() => setShowMediaGallery(true)}
             className="bg-white text-[#581C24] p-2 rounded-full shadow-lg hover:bg-gray-100 transition-colors"
+            title="Galleria Media"
           >
             <Camera size={20} />
           </button>
