@@ -2,7 +2,8 @@ import { ImageResponse } from '@vercel/og';
 import { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-export const runtime = 'edge';
+// ✅ Usa nodejs invece di edge per avere Buffer
+export const runtime = 'nodejs';
 
 export async function GET(
   req: NextRequest,
@@ -12,22 +13,26 @@ export async function GET(
     const type = req.nextUrl.searchParams.get('type') || 'PRE_MATCH';
     const supabase = createClient();
 
+    // ✅ Query semplice, senza relazioni che potrebbero non esistere
     const { data: match, error } = await supabase
       .from('matches')
-      .select(`
-        id, home_score, away_score, home_penalties, away_penalties, match_date, match_time,
-        home_team:teams!home_team_id(id, name, logo_url),
-        away_team:teams!away_team_id(id, name, logo_url)
-      `)
+      .select('id, home_score, away_score, home_penalties, away_penalties, match_date, match_time, home_team_id, away_team_id')
       .eq('id', params.id)
       .single();
 
     if (error || !match) {
+      console.error('Errore fetch match:', error);
       return new Response('Partita non trovata', { status: 404 });
     }
 
-    const homeTeam = Array.isArray(match.home_team) ? match.home_team[0] : match.home_team;
-    const awayTeam = Array.isArray(match.away_team) ? match.away_team[0] : match.away_team;
+    // ✅ Fetch squadre separatamente (più affidabile)
+    const { data: teams } = await supabase
+      .from('teams')
+      .select('id, name, logo_url')
+      .in('id', [match.home_team_id, match.away_team_id]);
+
+    const homeTeam = teams?.find((t: any) => t.id === match.home_team_id);
+    const awayTeam = teams?.find((t: any) => t.id === match.away_team_id);
 
     const homeLogo = homeTeam?.logo_url || '';
     const awayLogo = awayTeam?.logo_url || '';
@@ -38,10 +43,7 @@ export async function GET(
     const matchDate = match.match_date ? new Date(match.match_date).toLocaleDateString('it-IT', { day: 'numeric', month: 'long' }) : '';
     const matchTime = match.match_time || '--:--';
 
-    // Nome file prevedibile in storage
-    const fileName = `${params.id}_${type}.png`;
-
-    // Genera l'immagine
+    // ✅ Genera l'immagine
     const imageResponse = new ImageResponse(
       type === 'PRE_MATCH' ? (
         <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', fontFamily: 'sans-serif' }}>
@@ -72,7 +74,7 @@ export async function GET(
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
               <div style={{ fontSize: 100, fontWeight: '900', color: 'white', textShadow: '0 0 50px rgba(255,255,255,0.3)' }}>{match.home_score} - {match.away_score}</div>
-              {match.home_penalties != null && <div style={{ fontSize: 28, color: '#ffd700', fontWeight: '700', background: 'rgba(255,215,0,0.2)', padding: '8px 20px', borderRadius: 20 }}>⚽ DCR {match.home_penalties}-{match.away_penalties}</div>}
+              {match.home_penalties != null && <div style={{ fontSize: 28, color: '#ffd700', fontWeight: '700', background: 'rgba(255,215,0,0.2)', padding: '8px 20px', borderRadius: 20 }}> DCR {match.home_penalties}-{match.away_penalties}</div>}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 15 }}>
               {awayLogo && <div style={{ width: 160, height: 160, borderRadius: '50%', background: 'white', padding: 10, boxShadow: '0 10px 40px rgba(0,0,0,0.3)' }}><img src={awayLogo} width="140" height="140" style={{ borderRadius: '50%', objectFit: 'contain' }} alt="" /></div>}
@@ -85,10 +87,12 @@ export async function GET(
       { width: 1080, height: 1080 }
     );
 
-    // Converti in buffer e salva in storage
+    // ✅ Converti in buffer (ora funziona perché siamo in nodejs runtime)
     const arrayBuffer = await imageResponse.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
+    const fileName = `${params.id}_${type}.png`;
 
+    // ✅ Upload su storage
     const { error: uploadError } = await supabase.storage
       .from('tournament-files')
       .upload(`match-posts/${fileName}`, buffer, {
@@ -99,12 +103,15 @@ export async function GET(
 
     if (uploadError) {
       console.error('Errore upload storage:', uploadError);
+      // Restituisci comunque l'immagine anche se l'upload fallisce
+      return imageResponse;
     }
 
-    // Restituisci l'immagine (così il browser la vede subito)
+    console.log('✅ Post generato:', fileName);
     return imageResponse;
+    
   } catch (err) {
-    console.error('Errore generazione post:', err);
-    return new Response('Errore interno', { status: 500 });
+    console.error('❌ Errore generazione post:', err);
+    return new Response('Errore interno: ' + (err as Error).message, { status: 500 });
   }
 }
