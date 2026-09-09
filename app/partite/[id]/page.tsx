@@ -1610,7 +1610,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                   />
                   <button
                     onClick={(e) => {
-                      e.stopPropagation();
+                      e.stopPropagation();  // ✅ IMPEDISCE AL POPUP DI CHIUDERSI
                       fileInputRef.current?.click();
                     }}
                     disabled={uploading}
