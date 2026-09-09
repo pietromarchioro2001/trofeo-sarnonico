@@ -1564,7 +1564,10 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                   )}
                   
                   {/* ✅ SOLUZIONE INFALLIBILE: usa una label invece di un button con ref.click() */}
-                  <label className="flex items-center gap-2 px-4 py-2 bg-white text-[#581C24] rounded-lg font-bold text-xs uppercase hover:bg-gray-100 transition-colors cursor-pointer">
+                  <label 
+                    onClick={(e) => e.stopPropagation()}  // ✅ AGGIUNGI QUESTO
+                    className="flex items-center gap-2 px-4 py-2 bg-white text-[#581C24] rounded-lg font-bold text-xs uppercase hover:bg-gray-100 transition-colors cursor-pointer"
+                  >
                     <Plus size={16} />
                     Aggiungi
                     <input
