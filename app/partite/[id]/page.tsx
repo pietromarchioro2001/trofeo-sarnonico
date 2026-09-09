@@ -477,6 +477,11 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   const [penaltyKicks, setPenaltyKicks] = useState<{ team: 'home' | 'away'; scored: boolean }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [mediaRefreshKey, setMediaRefreshKey] = useState(0);
+  const getMatchFolderName = () => {
+    if (!match) return params.id;
+    return `${match.home_team.name}-${match.away_team.name}`.replace(/\s+/g, '_');
+  };
+  const [uploading, setUploading] = useState(false);
 
   // Fetch dati iniziali
   useEffect(() => {
@@ -1005,32 +1010,29 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     const files = Array.from(e.target.files || []);
     if (files.length === 0 || !match) return;
 
-    setLoading(true); // Mostra il caricamento
+    // ✅ NON usare setLoading(true) - usa stato locale
+    setUploading(true);
     const supabase = createClient();
     let uploadedCount = 0;
 
+    // ✅ Percorso: match-media/SARNONICO-CAVARENO
+    const folderName = getMatchFolderName();
+    const basePath = `match-media/${folderName}`;
+
     try {
-      // Importa dinamicamente la compressione per non appesantire il bundle iniziale
       const imageCompression = (await import('browser-image-compression')).default;
       
       for (const file of files) {
-        const options = {
-          maxSizeMB: 1,
-          maxWidthOrHeight: 1920,
-          useWebWorker: true,
-        };
+        const options = { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true };
         const compressedFile = await imageCompression(file, options);
         
         const fileExt = file.name.split('.').pop() || 'jpg';
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = `${match.id}/${fileName}`;
+        const filePath = `${basePath}/${fileName}`;
 
         const { error } = await supabase.storage
           .from('tournament-files')
-          .upload(filePath, compressedFile, {
-            cacheControl: '3600',
-            upsert: false
-          });
+          .upload(filePath, compressedFile, { cacheControl: '3600', upsert: false });
 
         if (error) {
           console.error('Errore upload:', error);
@@ -1041,17 +1043,16 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       }
 
       alert(`✅ ${uploadedCount} foto caricate con successo!`);
+      setMediaRefreshKey(prev => prev + 1); // ✅ Forza refresh galleria
       
     } catch (err) {
       console.error('Errore upload:', err);
       alert('Errore durante il caricamento');
     } finally {
-      setLoading(false);
-      // Resetta l'input per permettere di ricaricare le stesse foto se necessario
+      setUploading(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
-      setMediaRefreshKey(prev => prev + 1);
     }
   };
 
@@ -1476,6 +1477,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
               <MatchMediaGallery 
                 key={mediaRefreshKey} 
                 matchId={match.id} 
+                folderPath={`match-media/${getMatchFolderName()}`}
                 isStaffMode={isStaffMode}
               />
           </div>
@@ -1577,6 +1579,15 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
             <div className="flex items-center gap-3">
               {isStaffMode && (
                 <>
+                  {uploading && (
+                    <div className="absolute top-16 right-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-lg flex items-center gap-2 z-10">
+                      <svg className="w-4 h-4 animate-spin text-[#581C24]" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span className="text-xs font-bold text-[#581C24]">Upload in corso...</span>
+                    </div>
+                  )}
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -1590,7 +1601,8 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                       e.stopPropagation();
                       fileInputRef.current?.click();
                     }}
-                    className="flex items-center gap-2 px-4 py-2 bg-white text-[#581C24] rounded-lg font-bold text-xs uppercase hover:bg-gray-100 transition-colors"
+                    disabled={uploading}
+                    className="flex items-center gap-2 px-4 py-2 bg-white text-[#581C24] rounded-lg font-bold text-xs uppercase hover:bg-gray-100 transition-colors disabled:opacity-50"
                   >
                     <Plus size={16} />
                     Aggiungi
@@ -1611,6 +1623,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
               <MatchMediaGallery 
                 key={mediaRefreshKey} 
                 matchId={match.id} 
+                folderPath={`match-media/${getMatchFolderName()}`}
                 isStaffMode={isStaffMode}
               />
           </div>
