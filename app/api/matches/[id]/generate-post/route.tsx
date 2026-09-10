@@ -42,19 +42,19 @@ export async function GET(
 
     const dynamicContent = type === 'PRE_MATCH' ? (
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
-        {/* Logo squadra CASA (parete sinistra) - PIÙ GRANDE */}
-        <div style={{ position: 'absolute', top: 380, left: 40, display: 'flex', transform: 'perspective(1000px) rotateY(15deg)', transformOrigin: 'left center' }}>
+        {/* Logo squadra CASA (parete sinistra) - Leggera rotazione per effetto parete */}
+        <div style={{ position: 'absolute', top: 380, left: 40, display: 'flex', transform: 'rotate(-5deg)' }}>
           {homeLogo ? (
-            <img src={homeLogo} width="280" height="280" style={{ objectFit: 'contain', filter: 'drop-shadow(0 8px 30px rgba(0,0,0,0.6)) brightness(1.1)' }} />
+            <img src={homeLogo} width="280" height="280" style={{ objectFit: 'contain', filter: 'drop-shadow(0 8px 30px rgba(0,0,0,0.6))' }} />
           ) : (
             <div style={{ display: 'flex', width: 280, height: 280 }}></div>
           )}
         </div>
         
-        {/* Logo squadra OSPITE (parete destra) - PIÙ GRANDE */}
-        <div style={{ position: 'absolute', top: 380, right: 40, display: 'flex', transform: 'perspective(1000px) rotateY(-15deg)', transformOrigin: 'right center' }}>
+        {/* Logo squadra OSPITE (parete destra) */}
+        <div style={{ position: 'absolute', top: 380, right: 40, display: 'flex', transform: 'rotate(5deg)' }}>
           {awayLogo ? (
-            <img src={awayLogo} width="280" height="280" style={{ objectFit: 'contain', filter: 'drop-shadow(0 8px 30px rgba(0,0,0,0.6)) brightness(1.1)' }} />
+            <img src={awayLogo} width="280" height="280" style={{ objectFit: 'contain', filter: 'drop-shadow(0 8px 30px rgba(0,0,0,0.6))' }} />
           ) : (
             <div style={{ display: 'flex', width: 280, height: 280 }}></div>
           )}
@@ -62,9 +62,9 @@ export async function GET(
 
         {/* Nomi squadre - PIÙ IN BASSO E PIÙ GRANDI */}
         <div style={{ position: 'absolute', top: 920, left: 0, right: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 40 }}>
-          <div style={{ display: 'flex', fontSize: 72, fontWeight: '900', color: '#e94560', letterSpacing: 4, textShadow: '0 8px 40px rgba(233, 69, 96, 0.9)', fontFamily: 'Impact, sans-serif' }}>{homeName}</div>
+          <div style={{ display: 'flex', fontSize: 72, fontWeight: '900', color: '#e94560', letterSpacing: 4, textShadow: '0 8px 40px rgba(233, 69, 96, 0.9)' }}>{homeName}</div>
           <div style={{ display: 'flex', fontSize: 56, fontWeight: '900', color: 'rgba(255,255,255,0.7)' }}>VS</div>
-          <div style={{ display: 'flex', fontSize: 72, fontWeight: '900', color: '#3b82f6', letterSpacing: 4, textShadow: '0 8px 40px rgba(59, 130, 246, 0.9)', fontFamily: 'Impact, sans-serif' }}>{awayName}</div>
+          <div style={{ display: 'flex', fontSize: 72, fontWeight: '900', color: '#3b82f6', letterSpacing: 4, textShadow: '0 8px 40px rgba(59, 130, 246, 0.9)' }}>{awayName}</div>
         </div>
 
         {/* Data e ora - NUOVO STILE */}
@@ -82,7 +82,7 @@ export async function GET(
     ) : (
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
         {/* Logo squadra CASA */}
-        <div style={{ position: 'absolute', top: 380, left: 60, display: 'flex', transform: 'perspective(1000px) rotateY(15deg)', transformOrigin: 'left center' }}>
+        <div style={{ position: 'absolute', top: 380, left: 60, display: 'flex', transform: 'rotate(-5deg)' }}>
           {homeLogo ? (
             <img src={homeLogo} width="260" height="260" style={{ objectFit: 'contain', filter: 'drop-shadow(0 8px 30px rgba(0,0,0,0.6))' }} />
           ) : (
@@ -91,7 +91,7 @@ export async function GET(
         </div>
         
         {/* Logo squadra OSPITE */}
-        <div style={{ position: 'absolute', top: 380, right: 60, display: 'flex', transform: 'perspective(1000px) rotateY(-15deg)', transformOrigin: 'right center' }}>
+        <div style={{ position: 'absolute', top: 380, right: 60, display: 'flex', transform: 'rotate(5deg)' }}>
           {awayLogo ? (
             <img src={awayLogo} width="260" height="260" style={{ objectFit: 'contain', filter: 'drop-shadow(0 8px 30px rgba(0,0,0,0.6))' }} />
           ) : (
@@ -159,7 +159,7 @@ export async function GET(
           
           {/* Badge fase - PIÙ IN BASSO E COLORE DIVERSO */}
           <div style={{ position: 'absolute', top: 300, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
-            <div style={{ display: 'flex', background: 'rgba(0,0,0,0.6)', border: '2px solid rgba(255,255,255,0.3)', borderRadius: '50px', padding: '12px 48px', backdropFilter: 'blur(10px)' }}>
+            <div style={{ display: 'flex', background: 'rgba(0,0,0,0.6)', border: '2px solid rgba(255,255,255,0.3)', borderRadius: '50px', padding: '12px 48px' }}>
               <div style={{ display: 'flex', fontSize: 28, fontWeight: '700', color: 'rgba(255,255,255,0.8)', letterSpacing: 6 }}>{phase}</div>
             </div>
           </div>
