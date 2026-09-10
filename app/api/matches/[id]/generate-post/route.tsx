@@ -34,97 +34,116 @@ export async function GET(
     const awayName = awayTeam?.name || 'Ospite';
     const homeLogo = homeTeam?.logo_url || '';
     const awayLogo = awayTeam?.logo_url || '';
-    
-    // Formatta data come DD.MM.YYYY
-    const dateObj = match.match_date ? new Date(match.match_date) : null;
-    const formattedDate = dateObj ? `${String(dateObj.getDate()).padStart(2, '0')}.${String(dateObj.getMonth() + 1).padStart(2, '0')}.${dateObj.getFullYear()}` : '';
     const matchTime = match.match_time || '--:--';
+
+    const dateObj = match.match_date ? new Date(match.match_date) : null;
+    const formattedDate = dateObj 
+      ? `${String(dateObj.getUTCDate()).padStart(2, '0')}.${String(dateObj.getUTCMonth() + 1).padStart(2, '0')}.${dateObj.getUTCFullYear()}` 
+      : '';
 
     console.log(`Generazione post per ${homeName} vs ${awayName} - Tipo: ${type}`);
 
+    // ✅ COSTRUISCO IL CONTENUTO DINAMICO FUORI DAL JSX
     const dynamicContent = type === 'PRE_MATCH' ? (
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
-        {/* Logo squadra CASA - Effetto adesivo con ombra marcata */}
-        <div style={{ position: 'absolute', top: 480, left: 60, display: 'flex', transform: 'rotate(-3deg)' }}>
-          {homeLogo ? (
-            <img src={homeLogo} width="260" height="260" style={{ objectFit: 'contain', filter: 'drop-shadow(0 12px 40px rgba(0,0,0,0.8)) brightness(1.05) contrast(1.1)' }} />
-          ) : (
-            <div style={{ display: 'flex', width: 260, height: 260 }}></div>
-          )}
-        </div>
         
-        {/* Logo squadra OSPITE */}
-        <div style={{ position: 'absolute', top: 480, right: 60, display: 'flex', transform: 'rotate(3deg)' }}>
-          {awayLogo ? (
-            <img src={awayLogo} width="260" height="260" style={{ objectFit: 'contain', filter: 'drop-shadow(0 12px 40px rgba(0,0,0,0.8)) brightness(1.05) contrast(1.1)' }} />
-          ) : (
-            <div style={{ display: 'flex', width: 260, height: 260 }}></div>
-          )}
-        </div>
-
-        {/* Sfondo scuro per nomi squadre - PIÙ IN BASSO */}
-        <div style={{ position: 'absolute', top: 1100, left: 60, right: 60, display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'rgba(0,0,0,0.7)', borderRadius: '20px', padding: '32px 48px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
-            <div style={{ display: 'flex', fontSize: 64, fontWeight: '700', color: '#e94560', letterSpacing: 2 }}>{homeName}</div>
-            <div style={{ display: 'flex', fontSize: 48, fontWeight: '700', color: 'rgba(255,255,255,0.9)', fontStyle: 'italic' }}>VS</div>
-            <div style={{ display: 'flex', fontSize: 64, fontWeight: '700', color: '#3b82f6', letterSpacing: 2 }}>{awayName}</div>
+        {/* Etichetta FASE (sopra i nomi) */}
+        <div style={{ position: 'absolute', top: 780, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', background: 'rgba(0,0,0,0.6)', borderRadius: '50px', padding: '12px 40px', border: '2px solid rgba(255,255,255,0.3)' }}>
+            <div style={{ display: 'flex', fontSize: 28, fontWeight: '700', color: 'white', letterSpacing: '4px' }}>{match.phase || 'GIRONI'}</div>
           </div>
         </div>
 
-        {/* Data e ora - Formato semplice su una riga */}
-        <div style={{ position: 'absolute', bottom: 140, left: 0, right: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16 }}>
-          <div style={{ display: 'flex', fontSize: 32, color: 'rgba(255,255,255,0.8)' }}>📅</div>
-          <div style={{ display: 'flex', fontSize: 40, fontWeight: '700', color: 'white', letterSpacing: 2 }}>{formattedDate} - {matchTime}</div>
+        {/* Nomi squadre (sopra i loghi) */}
+        <div style={{ position: 'absolute', top: 860, left: 0, right: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 80 }}>
+          <div style={{ display: 'flex', fontSize: 48, fontWeight: '900', color: 'white', letterSpacing: '2px', textShadow: '0 4px 20px rgba(0,0,0,0.9)' }}>{homeName}</div>
+          <div style={{ display: 'flex', fontSize: 48, fontWeight: '900', color: 'white', letterSpacing: '2px', textShadow: '0 4px 20px rgba(0,0,0,0.9)' }}>{awayName}</div>
+        </div>
+
+        {/* Logo squadra CASA (a sinistra del VS) */}
+        <div style={{ position: 'absolute', top: 980, left: 180, display: 'flex' }}>
+          {homeLogo ? (
+            <img src={homeLogo} width="180" height="180" style={{ objectFit: 'contain', filter: 'drop-shadow(0 8px 30px rgba(0,0,0,0.8))' }} />
+          ) : (
+            <div style={{ display: 'flex', width: 180, height: 180 }}></div>
+          )}
+        </div>
+        
+        {/* Logo squadra OSPITE (a destra del VS) */}
+        <div style={{ position: 'absolute', top: 980, right: 180, display: 'flex' }}>
+          {awayLogo ? (
+            <img src={awayLogo} width="180" height="180" style={{ objectFit: 'contain', filter: 'drop-shadow(0 8px 30px rgba(0,0,0,0.8))' }} />
+          ) : (
+            <div style={{ display: 'flex', width: 180, height: 180 }}></div>
+          )}
+        </div>
+
+        {/* Data e ora (a fianco dell'icona calendario) */}
+        <div style={{ position: 'absolute', top: 1320, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', fontSize: 42, fontWeight: '700', color: 'white', letterSpacing: '3px', textShadow: '0 4px 20px rgba(0,0,0,0.9)' }}>
+            {formattedDate} - {matchTime}
+          </div>
         </div>
       </div>
     ) : (
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
-        {/* Logo squadra CASA */}
-        <div style={{ position: 'absolute', top: 480, left: 80, display: 'flex', transform: 'rotate(-3deg)' }}>
-          {homeLogo ? (
-            <img src={homeLogo} width="240" height="240" style={{ objectFit: 'contain', filter: 'drop-shadow(0 12px 40px rgba(0,0,0,0.8))' }} />
-          ) : (
-            <div style={{ display: 'flex', width: 240, height: 240 }}></div>
-          )}
-        </div>
         
-        {/* Logo squadra OSPITE */}
-        <div style={{ position: 'absolute', top: 480, right: 80, display: 'flex', transform: 'rotate(3deg)' }}>
-          {awayLogo ? (
-            <img src={awayLogo} width="240" height="240" style={{ objectFit: 'contain', filter: 'drop-shadow(0 12px 40px rgba(0,0,0,0.8))' }} />
-          ) : (
-            <div style={{ display: 'flex', width: 240, height: 240 }}></div>
-          )}
-        </div>
-
-        {/* Score con sfondo */}
-        <div style={{ position: 'absolute', top: 1100, left: 60, right: 60, display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'rgba(0,0,0,0.7)', borderRadius: '20px', padding: '32px 48px' }}>
-          <div style={{ display: 'flex', fontSize: 120, fontWeight: '900', color: '#ffd700', letterSpacing: 12 }}>
-            {match.home_score ?? 0} - {match.away_score ?? 0}
+        {/* Etichetta FASE */}
+        <div style={{ position: 'absolute', top: 780, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', background: 'rgba(0,0,0,0.6)', borderRadius: '50px', padding: '12px 40px', border: '2px solid rgba(255,255,255,0.3)' }}>
+            <div style={{ display: 'flex', fontSize: 28, fontWeight: '700', color: 'white', letterSpacing: '4px' }}>{match.phase || 'GIRONI'}</div>
           </div>
         </div>
 
         {/* Nomi squadre */}
-        <div style={{ position: 'absolute', top: 1260, left: 0, right: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 100 }}>
-          <div style={{ display: 'flex', fontSize: 48, fontWeight: '700', color: 'white', letterSpacing: 2 }}>{homeName}</div>
-          <div style={{ display: 'flex', fontSize: 48, fontWeight: '700', color: 'white', letterSpacing: 2 }}>{awayName}</div>
+        <div style={{ position: 'absolute', top: 860, left: 0, right: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 80 }}>
+          <div style={{ display: 'flex', fontSize: 48, fontWeight: '900', color: 'white', letterSpacing: '2px', textShadow: '0 4px 20px rgba(0,0,0,0.9)' }}>{homeName}</div>
+          <div style={{ display: 'flex', fontSize: 48, fontWeight: '900', color: 'white', letterSpacing: '2px', textShadow: '0 4px 20px rgba(0,0,0,0.9)' }}>{awayName}</div>
         </div>
 
-        {/* DCR */}
-        {match.home_penalties != null ? (
-          <div style={{ position: 'absolute', top: 1340, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
-            <div style={{ display: 'flex', background: 'rgba(255, 215, 0, 0.9)', borderRadius: '50px', padding: '12px 40px' }}>
-              <div style={{ display: 'flex', fontSize: 32, fontWeight: '900', color: '#1a0a0e', letterSpacing: 2 }}>DCR {match.home_penalties} - {match.away_penalties}</div>
+        {/* Logo squadra CASA */}
+        <div style={{ position: 'absolute', top: 980, left: 200, display: 'flex' }}>
+          {homeLogo ? (
+            <img src={homeLogo} width="160" height="160" style={{ objectFit: 'contain', filter: 'drop-shadow(0 8px 30px rgba(0,0,0,0.8))' }} />
+          ) : (
+            <div style={{ display: 'flex', width: 160, height: 160 }}></div>
+          )}
+        </div>
+        
+        {/* Logo squadra OSPITE */}
+        <div style={{ position: 'absolute', top: 980, right: 200, display: 'flex' }}>
+          {awayLogo ? (
+            <img src={awayLogo} width="160" height="160" style={{ objectFit: 'contain', filter: 'drop-shadow(0 8px 30px rgba(0,0,0,0.8))' }} />
+          ) : (
+            <div style={{ display: 'flex', width: 160, height: 160 }}></div>
+          )}
+        </div>
+
+        {/* Score al posto del VS (lo copriamo con un box scuro) */}
+        <div style={{ position: 'absolute', top: 1020, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', background: 'rgba(0,0,0,0.7)', borderRadius: '20px', padding: '16px 48px' }}>
+            <div style={{ display: 'flex', fontSize: 80, fontWeight: '900', color: '#ffd700', letterSpacing: '8px', textShadow: '0 4px 20px rgba(0,0,0,0.9)' }}>
+              {match.home_score ?? 0} - {match.away_score ?? 0}
             </div>
           </div>
-        ) : (
-          <div style={{ position: 'absolute', top: 1340, left: 0, right: 0, height: 76 }}></div>
-        )}
+        </div>
+
+        {/* DCR se ci sono rigori */}
+        <div style={{ position: 'absolute', top: 1140, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
+          {match.home_penalties != null ? (
+            <div style={{ display: 'flex', background: 'rgba(255, 215, 0, 0.9)', borderRadius: '50px', padding: '12px 40px' }}>
+              <div style={{ display: 'flex', fontSize: 32, fontWeight: '900', color: '#1a0a0e', letterSpacing: '2px' }}>DCR {match.home_penalties} - {match.away_penalties}</div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', height: 60 }}></div>
+          )}
+        </div>
 
         {/* Data e ora */}
-        <div style={{ position: 'absolute', bottom: 140, left: 0, right: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16 }}>
-          <div style={{ display: 'flex', fontSize: 32, color: 'rgba(255,255,255,0.8)' }}>📅</div>
-          <div style={{ display: 'flex', fontSize: 40, fontWeight: '700', color: 'white', letterSpacing: 2 }}>{formattedDate} - {matchTime}</div>
+        <div style={{ position: 'absolute', top: 1320, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', fontSize: 42, fontWeight: '700', color: 'white', letterSpacing: '3px', textShadow: '0 4px 20px rgba(0,0,0,0.9)' }}>
+            {formattedDate} - {matchTime}
+          </div>
         </div>
       </div>
     );
@@ -132,22 +151,14 @@ export async function GET(
     const imageResponse = new ImageResponse(
       (
         <div style={{ width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          
+          {/* Nuova immagine di base MATCH DAY */}
           <img 
-            src="https://trofeo-sarnonico.vercel.app/tunnel-bg.png" 
+            src="https://trofeo-sarnonico.vercel.app/matchday.png" 
             width="1080" 
             height="1920" 
             style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
           />
-          
-          {/* Logo torneo */}
-          <div style={{ position: 'absolute', top: 40, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
-            <img 
-              src="https://trofeo-sarnonico.vercel.app/logo.png" 
-              width="240" 
-              height="240" 
-              style={{ objectFit: 'contain', filter: 'drop-shadow(0 8px 30px rgba(255,255,255,0.5))' }} 
-            />
-          </div>
           
           {dynamicContent}
         </div>
@@ -174,7 +185,7 @@ export async function GET(
 
     console.log('✅ Post generato e salvato:', fileName);
 
-    return new Response(buffer, {
+    return new Response(new Uint8Array(buffer), {
       headers: {
         'Content-Type': 'image/png',
         'Cache-Control': 'public, max-age=31536000, immutable',
