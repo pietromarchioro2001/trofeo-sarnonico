@@ -24,7 +24,7 @@ export async function GET(
 
     const { data: teams } = await supabase
       .from('teams')
-      .select('id, name')
+      .select('id, name, logo_url')
       .in('id', [match.home_team_id, match.away_team_id]);
 
     const homeTeam = teams?.find((t: any) => t.id === match.home_team_id);
@@ -32,117 +32,125 @@ export async function GET(
 
     const homeName = homeTeam?.name || 'Casa';
     const awayName = awayTeam?.name || 'Ospite';
+    const homeLogo = homeTeam?.logo_url || '';
+    const awayLogo = awayTeam?.logo_url || '';
     const matchDate = match.match_date ? new Date(match.match_date).toLocaleDateString('it-IT', { day: 'numeric', month: 'long' }) : '';
     const matchTime = match.match_time || '--:--';
     const phase = match.phase || 'GIRONI';
 
     console.log(`Generazione post per ${homeName} vs ${awayName} - Tipo: ${type}`);
 
-    // ✅ DESIGN MODERNO E FIGO - SENZA IMMAGINI
+    // ✅ FORMATO VERTICALE 1080x1920 per Instagram Stories
     const imageResponse = new ImageResponse(
       (
-        <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #1a0a0e 0%, #2d1118 30%, #581C24 70%, #1a0a0e 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ width: '100%', height: '100%', background: 'linear-gradient(180deg, #0a0a0a 0%, #1a0a0e 30%, #2d1118 60%, #0a0a0a 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', position: 'relative', overflow: 'hidden' }}>
           
-          {/* Elementi decorativi di sfondo */}
-          <div style={{ position: 'absolute', top: '-100px', right: '-100px', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(233, 69, 96, 0.3) 0%, transparent 70%)', display: 'flex' }}></div>
-          <div style={{ position: 'absolute', bottom: '-150px', left: '-150px', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(255, 215, 0, 0.2) 0%, transparent 70%)', display: 'flex' }}></div>
-          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '800px', height: '800px', border: '2px solid rgba(255, 255, 255, 0.05)', borderRadius: '50%', display: 'flex' }}></div>
-          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '600px', height: '600px', border: '2px solid rgba(255, 255, 255, 0.03)', borderRadius: '50%', display: 'flex' }}></div>
+          {/* Effetto tunnel con luci */}
+          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'radial-gradient(ellipse at center top, rgba(233, 69, 96, 0.4) 0%, transparent 50%)', display: 'flex' }}></div>
+          <div style={{ position: 'absolute', top: '20%', left: 0, width: '100%', height: '60%', background: 'linear-gradient(90deg, rgba(233, 69, 96, 0.3) 0%, transparent 20%, transparent 80%, rgba(59, 130, 246, 0.3) 100%)', display: 'flex' }}></div>
+          <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '40%', background: 'radial-gradient(ellipse at center bottom, rgba(255, 215, 0, 0.2) 0%, transparent 60%)', display: 'flex' }}></div>
           
-          {/* Linee diagonali decorative */}
-          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(45deg, transparent 48%, rgba(255, 255, 255, 0.02) 49%, rgba(255, 255, 255, 0.02) 51%, transparent 52%)', display: 'flex' }}></div>
-          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(-45deg, transparent 48%, rgba(255, 255, 255, 0.02) 49%, rgba(255, 255, 255, 0.02) 51%, transparent 52%)', display: 'flex' }}></div>
+          {/* Linee verticali effetto tunnel */}
+          <div style={{ position: 'absolute', top: 0, left: '10%', width: '2px', height: '100%', background: 'linear-gradient(180deg, transparent 0%, rgba(233, 69, 96, 0.5) 50%, transparent 100%)', display: 'flex' }}></div>
+          <div style={{ position: 'absolute', top: 0, right: '10%', width: '2px', height: '100%', background: 'linear-gradient(180deg, transparent 0%, rgba(59, 130, 246, 0.5) 50%, transparent 100%)', display: 'flex' }}></div>
+
+          {/* Header con logo torneo */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 60, zIndex: 1 }}>
+            <div style={{ display: 'flex', fontSize: 48, marginBottom: 20 }}>⚽</div>
+            <div style={{ display: 'flex', fontSize: 42, fontWeight: '900', color: 'white', letterSpacing: 6, textShadow: '0 0 30px rgba(255,255,255,0.5)' }}>TROFEO SARNONICO</div>
+            <div style={{ display: 'flex', fontSize: 28, color: 'rgba(255,255,255,0.7)', marginTop: 10, letterSpacing: 4 }}>2026</div>
+          </div>
 
           {type === 'PRE_MATCH' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', zIndex: 1 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, zIndex: 1 }}>
               
               {/* Badge fase */}
-              <div style={{ display: 'flex', background: 'rgba(255, 255, 255, 0.1)', border: '2px solid rgba(255, 255, 255, 0.2)', borderRadius: '50px', padding: '12px 32px', marginBottom: 40 }}>
-                <div style={{ display: 'flex', fontSize: 28, fontWeight: '700', color: 'white', letterSpacing: 4 }}>{phase}</div>
+              <div style={{ display: 'flex', background: 'rgba(233, 69, 96, 0.3)', border: '2px solid rgba(233, 69, 96, 0.8)', borderRadius: '50px', padding: '16px 48px', marginBottom: 60 }}>
+                <div style={{ display: 'flex', fontSize: 36, fontWeight: '900', color: '#e94560', letterSpacing: 6 }}>{phase}</div>
               </div>
               
-              {/* Titolo */}
-              <div style={{ display: 'flex', fontSize: 72, fontWeight: '900', color: '#e94560', marginBottom: 60, textShadow: '0 0 40px rgba(233, 69, 96, 0.5)', letterSpacing: 4 }}>PROSSIMA PARTITA</div>
-              
-              {/* Squadre con VS */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 60, marginBottom: 60 }}>
+              {/* Loghi squadre */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 80, marginBottom: 60 }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
-                  <div style={{ display: 'flex', fontSize: 56, fontWeight: '900', color: 'white', textShadow: '0 4px 20px rgba(0,0,0,0.5)' }}>{homeName}</div>
-                  <div style={{ display: 'flex', width: 80, height: 4, background: '#e94560', borderRadius: 2 }}></div>
+                  {homeLogo && (
+                    <div style={{ display: 'flex', width: 180, height: 180, background: 'rgba(255,255,255,0.1)', borderRadius: '50%', border: '4px solid rgba(233, 69, 96, 0.8)', boxShadow: '0 0 40px rgba(233, 69, 96, 0.6)', padding: 10 }}>
+                      <img src={homeLogo} width="160" height="160" style={{ borderRadius: '50%', objectFit: 'contain' }} />
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', fontSize: 48, fontWeight: '900', color: 'white', textShadow: '0 4px 20px rgba(0,0,0,0.8)', textAlign: 'center' }}>{homeName}</div>
                 </div>
                 
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-                  <div style={{ display: 'flex', fontSize: 48, fontWeight: '900', color: '#e94560', textShadow: '0 0 30px rgba(233, 69, 96, 0.8)' }}>VS</div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', fontSize: 72, fontWeight: '900', color: '#e94560', textShadow: '0 0 40px rgba(233, 69, 96, 0.8)' }}>VS</div>
                 </div>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
-                  <div style={{ display: 'flex', fontSize: 56, fontWeight: '900', color: 'white', textShadow: '0 4px 20px rgba(0,0,0,0.5)' }}>{awayName}</div>
-                  <div style={{ display: 'flex', width: 80, height: 4, background: '#e94560', borderRadius: 2 }}></div>
+                  {awayLogo && (
+                    <div style={{ display: 'flex', width: 180, height: 180, background: 'rgba(255,255,255,0.1)', borderRadius: '50%', border: '4px solid rgba(59, 130, 246, 0.8)', boxShadow: '0 0 40px rgba(59, 130, 246, 0.6)', padding: 10 }}>
+                      <img src={awayLogo} width="160" height="160" style={{ borderRadius: '50%', objectFit: 'contain' }} />
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', fontSize: 48, fontWeight: '900', color: 'white', textShadow: '0 4px 20px rgba(0,0,0,0.8)', textAlign: 'center' }}>{awayName}</div>
                 </div>
               </div>
               
-              {/* Data e ora in box */}
-              <div style={{ display: 'flex', background: 'rgba(255, 255, 255, 0.1)', border: '2px solid rgba(255, 255, 255, 0.3)', borderRadius: 20, padding: '20px 40px', backdropFilter: 'blur(10px)' }}>
-                <div style={{ display: 'flex', gap: 30, alignItems: 'center' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-                    <div style={{ display: 'flex', fontSize: 24, color: 'rgba(255, 255, 255, 0.7)' }}>📅</div>
-                    <div style={{ display: 'flex', fontSize: 32, fontWeight: '700', color: 'white' }}>{matchDate}</div>
-                  </div>
-                  <div style={{ display: 'flex', width: 2, height: 40, background: 'rgba(255, 255, 255, 0.3)' }}></div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-                    <div style={{ display: 'flex', fontSize: 24, color: 'rgba(255, 255, 255, 0.7)' }}>⏰</div>
-                    <div style={{ display: 'flex', fontSize: 32, fontWeight: '700', color: 'white' }}>{matchTime}</div>
-                  </div>
-                </div>
+              {/* Data e ora */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
+                <div style={{ display: 'flex', fontSize: 56, fontWeight: '700', color: 'white', textShadow: '0 0 20px rgba(255,255,255,0.5)' }}>{matchDate}</div>
+                <div style={{ display: 'flex', fontSize: 72, fontWeight: '900', color: '#ffd700', textShadow: '0 0 30px rgba(255, 215, 0, 0.8)' }}>{matchTime}</div>
               </div>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', zIndex: 1 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, zIndex: 1 }}>
               
               {/* Badge fase */}
-              <div style={{ display: 'flex', background: 'rgba(255, 215, 0, 0.2)', border: '2px solid rgba(255, 215, 0, 0.5)', borderRadius: '50px', padding: '12px 32px', marginBottom: 40 }}>
-                <div style={{ display: 'flex', fontSize: 28, fontWeight: '700', color: '#ffd700', letterSpacing: 4 }}>{phase}</div>
+              <div style={{ display: 'flex', background: 'rgba(255, 215, 0, 0.3)', border: '2px solid rgba(255, 215, 0, 0.8)', borderRadius: '50px', padding: '16px 48px', marginBottom: 60 }}>
+                <div style={{ display: 'flex', fontSize: 36, fontWeight: '900', color: '#ffd700', letterSpacing: 6 }}>{phase}</div>
               </div>
               
-              {/* Titolo */}
-              <div style={{ display: 'flex', fontSize: 72, fontWeight: '900', color: '#ffd700', marginBottom: 60, textShadow: '0 0 40px rgba(255, 215, 0, 0.5)', letterSpacing: 4 }}>RISULTATO FINALE</div>
-              
-              {/* Squadre con score */}
+              {/* Loghi squadre con score */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 60, marginBottom: 60 }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
-                  <div style={{ display: 'flex', fontSize: 56, fontWeight: '900', color: 'white', textShadow: '0 4px 20px rgba(0,0,0,0.5)' }}>{homeName}</div>
-                  <div style={{ display: 'flex', width: 80, height: 4, background: '#ffd700', borderRadius: 2 }}></div>
+                  {homeLogo && (
+                    <div style={{ display: 'flex', width: 160, height: 160, background: 'rgba(255,255,255,0.1)', borderRadius: '50%', border: '4px solid rgba(255, 215, 0, 0.8)', boxShadow: '0 0 40px rgba(255, 215, 0, 0.6)', padding: 10 }}>
+                      <img src={homeLogo} width="140" height="140" style={{ borderRadius: '50%', objectFit: 'contain' }} />
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', fontSize: 44, fontWeight: '900', color: 'white', textShadow: '0 4px 20px rgba(0,0,0,0.8)', textAlign: 'center' }}>{homeName}</div>
                 </div>
                 
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-                  <div style={{ display: 'flex', fontSize: 120, fontWeight: '900', color: '#ffd700', textShadow: '0 0 60px rgba(255, 215, 0, 0.8)', letterSpacing: 8 }}>{match.home_score ?? 0} - {match.away_score ?? 0}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', fontSize: 140, fontWeight: '900', color: '#ffd700', textShadow: '0 0 60px rgba(255, 215, 0, 0.8)', letterSpacing: 8 }}>{match.home_score ?? 0} - {match.away_score ?? 0}</div>
                 </div>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
-                  <div style={{ display: 'flex', fontSize: 56, fontWeight: '900', color: 'white', textShadow: '0 4px 20px rgba(0,0,0,0.5)' }}>{awayName}</div>
-                  <div style={{ display: 'flex', width: 80, height: 4, background: '#ffd700', borderRadius: 2 }}></div>
+                  {awayLogo && (
+                    <div style={{ display: 'flex', width: 160, height: 160, background: 'rgba(255,255,255,0.1)', borderRadius: '50%', border: '4px solid rgba(255, 215, 0, 0.8)', boxShadow: '0 0 40px rgba(255, 215, 0, 0.6)', padding: 10 }}>
+                      <img src={awayLogo} width="140" height="140" style={{ borderRadius: '50%', objectFit: 'contain' }} />
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', fontSize: 44, fontWeight: '900', color: 'white', textShadow: '0 4px 20px rgba(0,0,0,0.8)', textAlign: 'center' }}>{awayName}</div>
                 </div>
               </div>
               
               {/* DCR se ci sono rigori */}
               {match.home_penalties != null ? (
-                <div style={{ display: 'flex', background: 'rgba(255, 215, 0, 0.2)', border: '2px solid rgba(255, 215, 0, 0.5)', borderRadius: 20, padding: '16px 32px', marginBottom: 40 }}>
-                  <div style={{ display: 'flex', fontSize: 36, fontWeight: '700', color: '#ffd700', letterSpacing: 2 }}>⚽ DCR {match.home_penalties} - {match.away_penalties}</div>
+                <div style={{ display: 'flex', background: 'rgba(255, 215, 0, 0.3)', border: '2px solid rgba(255, 215, 0, 0.8)', borderRadius: '50px', padding: '20px 48px' }}>
+                  <div style={{ display: 'flex', fontSize: 42, fontWeight: '900', color: '#ffd700', letterSpacing: 4 }}>⚽ DCR {match.home_penalties} - {match.away_penalties}</div>
                 </div>
               ) : (
-                <div style={{ display: 'flex', height: 72 }}></div>
+                <div style={{ display: 'flex', height: 82 }}></div>
               )}
             </div>
           )}
           
-          {/* Footer con logo torneo */}
-          <div style={{ position: 'absolute', bottom: 40, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-            <div style={{ display: 'flex', fontSize: 32, fontWeight: '900', color: 'rgba(255, 255, 255, 0.8)', letterSpacing: 6 }}>TROFEO SARNONICO</div>
-            <div style={{ display: 'flex', fontSize: 20, color: 'rgba(255, 255, 255, 0.5)', letterSpacing: 2 }}>2026</div>
+          {/* Footer */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 60, zIndex: 1 }}>
+            <div style={{ display: 'flex', fontSize: 32, color: 'rgba(255,255,255,0.6)', letterSpacing: 4 }}>#TrofeoSarnonico</div>
           </div>
         </div>
       ),
-      { width: 1080, height: 1080 }
+      { width: 1080, height: 1920 }
     );
 
     const arrayBuffer = await imageResponse.arrayBuffer();
