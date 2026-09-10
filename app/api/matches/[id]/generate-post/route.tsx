@@ -54,11 +54,14 @@ export async function GET(
           <div style={{ position: 'absolute', top: 0, left: '10%', width: '2px', height: '100%', background: 'linear-gradient(180deg, transparent 0%, rgba(233, 69, 96, 0.5) 50%, transparent 100%)', display: 'flex' }}></div>
           <div style={{ position: 'absolute', top: 0, right: '10%', width: '2px', height: '100%', background: 'linear-gradient(180deg, transparent 0%, rgba(59, 130, 246, 0.5) 50%, transparent 100%)', display: 'flex' }}></div>
 
-          {/* Header con logo torneo */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 60, zIndex: 1 }}>
-            <div style={{ display: 'flex', fontSize: 48, marginBottom: 20 }}>⚽</div>
-            <div style={{ display: 'flex', fontSize: 42, fontWeight: '900', color: 'white', letterSpacing: 6, textShadow: '0 0 30px rgba(255,255,255,0.5)' }}>TROFEO SARNONICO</div>
-            <div style={{ display: 'flex', fontSize: 28, color: 'rgba(255,255,255,0.7)', marginTop: 10, letterSpacing: 4 }}>2026</div>
+          {/* ✅ Header con logo torneo (sostituisce pallone + scritta) */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 60, zIndex: 1 }}>
+            <img 
+              src="/torneo-logo.png" 
+              width="200" 
+              height="200" 
+              style={{ objectFit: 'contain', filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.3))' }} 
+            />
           </div>
 
           {type === 'PRE_MATCH' ? (
@@ -144,10 +147,8 @@ export async function GET(
             </div>
           )}
           
-          {/* Footer */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 60, zIndex: 1 }}>
-            <div style={{ display: 'flex', fontSize: 32, color: 'rgba(255,255,255,0.6)', letterSpacing: 4 }}>#TrofeoSarnonico</div>
-          </div>
+          {/* ✅ Footer vuoto (rimosso hashtag) */}
+          <div style={{ display: 'flex', height: 60 }}></div>
         </div>
       ),
       { width: 1080, height: 1920 }
@@ -166,7 +167,7 @@ export async function GET(
       });
 
     if (uploadError) {
-      console.error('❌ Errore upload:', uploadError);
+      console.error(' Errore upload:', uploadError);
       return new Response('Errore upload: ' + uploadError.message, { status: 500 });
     }
 
