@@ -48,14 +48,14 @@ export async function GET(
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
         
         {/* Etichetta FASE (sopra i nomi) */}
-        <div style={{ position: 'absolute', top: 1000, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
+        <div style={{ position: 'absolute', top: 1050, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
           <div style={{ display: 'flex', background: 'rgba(0,0,0,0.6)', borderRadius: '50px', padding: '12px 40px', border: '2px solid rgba(255,255,255,0.3)' }}>
             <div style={{ display: 'flex', fontSize: 28, fontWeight: '700', color: 'white', letterSpacing: '4px' }}>{match.phase || 'GIRONI'}</div>
           </div>
         </div>
 
         {/* Nomi squadre (sopra i loghi) */}
-        <div style={{ position: 'absolute', top: 1450, left: 85, right: 85, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 80 }}>
+        <div style={{ position: 'absolute', top: 1480, left: 95, right: 95, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 80 }}>
           <div style={{ display: 'flex', fontSize: 48, fontWeight: '900', color: 'white', letterSpacing: '2px', textShadow: '0 4px 20px rgba(0,0,0,0.9)' }}>{homeName}</div>
           <div style={{ display: 'flex', fontSize: 48, fontWeight: '900', color: 'white', letterSpacing: '2px', textShadow: '0 4px 20px rgba(0,0,0,0.9)' }}>{awayName}</div>
         </div>
@@ -79,7 +79,7 @@ export async function GET(
         </div>
 
         {/* Data e ora (a fianco dell'icona calendario) */}
-        <div style={{ position: 'absolute', top: 1630, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
+        <div style={{ position: 'absolute', top: 1660, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
           <div style={{ display: 'flex', fontSize: 42, fontWeight: '700', color: 'white', letterSpacing: '3px', textShadow: '0 4px 20px rgba(0,0,0,0.9)' }}>
             {formattedDate} - {matchTime}
           </div>
