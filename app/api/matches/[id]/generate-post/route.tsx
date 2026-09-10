@@ -57,7 +57,7 @@ export async function GET(
           {/* ✅ Header con logo torneo (sostituisce pallone + scritta) */}
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: 60, zIndex: 1 }}>
             <img 
-              src="/torneo-logo.png" 
+              src="https://trofeo-sarnonico.vercel.app/logo.png" 
               width="200" 
               height="200" 
               style={{ objectFit: 'contain', filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.3))' }} 
