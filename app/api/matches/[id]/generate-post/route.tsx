@@ -40,115 +40,114 @@ export async function GET(
 
     console.log(`Generazione post per ${homeName} vs ${awayName} - Tipo: ${type}`);
 
-    // ✅ FORMATO VERTICALE 1080x1920 per Instagram Stories
+    // ✅ FORMATO VERTICALE 1080x1920 - DESIGN MIGLIORATO E CENTRATO
     const imageResponse = new ImageResponse(
       (
-        <div style={{ width: '100%', height: '100%', background: 'linear-gradient(180deg, #0a0a0a 0%, #1a0a0e 30%, #2d1118 60%, #0a0a0a 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ width: '100%', height: '100%', background: 'linear-gradient(180deg, #0a0a0a 0%, #1a0a0e 50%, #0a0a0a 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', position: 'relative', overflow: 'hidden' }}>
           
-          {/* Effetto tunnel con luci */}
-          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'radial-gradient(ellipse at center top, rgba(233, 69, 96, 0.4) 0%, transparent 50%)', display: 'flex' }}></div>
-          <div style={{ position: 'absolute', top: '20%', left: 0, width: '100%', height: '60%', background: 'linear-gradient(90deg, rgba(233, 69, 96, 0.3) 0%, transparent 20%, transparent 80%, rgba(59, 130, 246, 0.3) 100%)', display: 'flex' }}></div>
-          <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '40%', background: 'radial-gradient(ellipse at center bottom, rgba(255, 215, 0, 0.2) 0%, transparent 60%)', display: 'flex' }}></div>
+          {/* Sfondo con effetto stadio/luci */}
+          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'radial-gradient(circle at 50% 30%, rgba(233, 69, 96, 0.4) 0%, transparent 50%)', display: 'flex' }}></div>
+          <div style={{ position: 'absolute', top: '40%', left: 0, width: '100%', height: '40%', background: 'linear-gradient(90deg, rgba(233, 69, 96, 0.2) 0%, transparent 15%, transparent 85%, rgba(59, 130, 246, 0.2) 100%)', display: 'flex' }}></div>
           
-          {/* Linee verticali effetto tunnel */}
-          <div style={{ position: 'absolute', top: 0, left: '10%', width: '2px', height: '100%', background: 'linear-gradient(180deg, transparent 0%, rgba(233, 69, 96, 0.5) 50%, transparent 100%)', display: 'flex' }}></div>
-          <div style={{ position: 'absolute', top: 0, right: '10%', width: '2px', height: '100%', background: 'linear-gradient(180deg, transparent 0%, rgba(59, 130, 246, 0.5) 50%, transparent 100%)', display: 'flex' }}></div>
+          {/* Linee decorative laterali */}
+          <div style={{ position: 'absolute', top: 0, left: '5%', width: '3px', height: '100%', background: 'linear-gradient(180deg, transparent 0%, rgba(233, 69, 96, 0.6) 20%, rgba(233, 69, 96, 0.6) 80%, transparent 100%)', display: 'flex' }}></div>
+          <div style={{ position: 'absolute', top: 0, right: '5%', width: '3px', height: '100%', background: 'linear-gradient(180deg, transparent 0%, rgba(59, 130, 246, 0.6) 20%, rgba(59, 130, 246, 0.6) 80%, transparent 100%)', display: 'flex' }}></div>
 
-          {/* ✅ Header con logo torneo (sostituisce pallone + scritta) */}
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 60, zIndex: 1 }}>
+          {/* Header con logo torneo - POSIZIONATO MEGLIO */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 80, marginBottom: 40, zIndex: 1 }}>
             <img 
               src="https://trofeo-sarnonico.vercel.app/logo.png" 
-              width="200" 
-              height="200" 
-              style={{ objectFit: 'contain', filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.3))' }} 
+              width="240" 
+              height="240" 
+              style={{ objectFit: 'contain', filter: 'drop-shadow(0 0 30px rgba(255,255,255,0.4))' }} 
             />
           </div>
 
           {type === 'PRE_MATCH' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, zIndex: 1 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', marginTop: 40, zIndex: 1 }}>
               
-              {/* Badge fase */}
-              <div style={{ display: 'flex', background: 'rgba(233, 69, 96, 0.3)', border: '2px solid rgba(233, 69, 96, 0.8)', borderRadius: '50px', padding: '16px 48px', marginBottom: 60 }}>
-                <div style={{ display: 'flex', fontSize: 36, fontWeight: '900', color: '#e94560', letterSpacing: 6 }}>{phase}</div>
+              {/* Badge fase - PIÙ GRANDE E CENTRATO */}
+              <div style={{ display: 'flex', background: 'linear-gradient(135deg, rgba(233, 69, 96, 0.4) 0%, rgba(233, 69, 96, 0.2) 100%)', border: '3px solid rgba(233, 69, 96, 0.9)', borderRadius: '50px', padding: '20px 60px', marginBottom: 80, boxShadow: '0 10px 40px rgba(233, 69, 96, 0.5)' }}>
+                <div style={{ display: 'flex', fontSize: 42, fontWeight: '900', color: '#e94560', letterSpacing: 8, textShadow: '0 0 20px rgba(233, 69, 96, 0.8)' }}>{phase}</div>
               </div>
               
-              {/* Loghi squadre */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 80, marginBottom: 60 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
+              {/* Loghi squadre - MEGLIO ALLINEATI E SPAZIATI */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 60, marginBottom: 80 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24 }}>
                   {homeLogo && (
-                    <div style={{ display: 'flex', width: 180, height: 180, background: 'rgba(255,255,255,0.1)', borderRadius: '50%', border: '4px solid rgba(233, 69, 96, 0.8)', boxShadow: '0 0 40px rgba(233, 69, 96, 0.6)', padding: 10 }}>
-                      <img src={homeLogo} width="160" height="160" style={{ borderRadius: '50%', objectFit: 'contain' }} />
+                    <div style={{ display: 'flex', width: 220, height: 220, background: 'rgba(255,255,255,0.05)', borderRadius: '50%', border: '5px solid rgba(233, 69, 96, 0.9)', boxShadow: '0 0 60px rgba(233, 69, 96, 0.7), inset 0 0 40px rgba(233, 69, 96, 0.2)', padding: 12 }}>
+                      <img src={homeLogo} width="196" height="196" style={{ borderRadius: '50%', objectFit: 'contain' }} />
                     </div>
                   )}
-                  <div style={{ display: 'flex', fontSize: 48, fontWeight: '900', color: 'white', textShadow: '0 4px 20px rgba(0,0,0,0.8)', textAlign: 'center' }}>{homeName}</div>
+                  <div style={{ display: 'flex', fontSize: 52, fontWeight: '900', color: 'white', textShadow: '0 4px 30px rgba(0,0,0,0.9)', textAlign: 'center', letterSpacing: 2 }}>{homeName}</div>
                 </div>
                 
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', fontSize: 72, fontWeight: '900', color: '#e94560', textShadow: '0 0 40px rgba(233, 69, 96, 0.8)' }}>VS</div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ display: 'flex', fontSize: 80, fontWeight: '900', color: '#e94560', textShadow: '0 0 50px rgba(233, 69, 96, 0.9)', letterSpacing: 4 }}>VS</div>
                 </div>
                 
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24 }}>
                   {awayLogo && (
-                    <div style={{ display: 'flex', width: 180, height: 180, background: 'rgba(255,255,255,0.1)', borderRadius: '50%', border: '4px solid rgba(59, 130, 246, 0.8)', boxShadow: '0 0 40px rgba(59, 130, 246, 0.6)', padding: 10 }}>
-                      <img src={awayLogo} width="160" height="160" style={{ borderRadius: '50%', objectFit: 'contain' }} />
+                    <div style={{ display: 'flex', width: 220, height: 220, background: 'rgba(255,255,255,0.05)', borderRadius: '50%', border: '5px solid rgba(59, 130, 246, 0.9)', boxShadow: '0 0 60px rgba(59, 130, 246, 0.7), inset 0 0 40px rgba(59, 130, 246, 0.2)', padding: 12 }}>
+                      <img src={awayLogo} width="196" height="196" style={{ borderRadius: '50%', objectFit: 'contain' }} />
                     </div>
                   )}
-                  <div style={{ display: 'flex', fontSize: 48, fontWeight: '900', color: 'white', textShadow: '0 4px 20px rgba(0,0,0,0.8)', textAlign: 'center' }}>{awayName}</div>
+                  <div style={{ display: 'flex', fontSize: 52, fontWeight: '900', color: 'white', textShadow: '0 4px 30px rgba(0,0,0,0.9)', textAlign: 'center', letterSpacing: 2 }}>{awayName}</div>
                 </div>
               </div>
               
-              {/* Data e ora */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
-                <div style={{ display: 'flex', fontSize: 56, fontWeight: '700', color: 'white', textShadow: '0 0 20px rgba(255,255,255,0.5)' }}>{matchDate}</div>
-                <div style={{ display: 'flex', fontSize: 72, fontWeight: '900', color: '#ffd700', textShadow: '0 0 30px rgba(255, 215, 0, 0.8)' }}>{matchTime}</div>
+              {/* Data e ora - PIÙ IMPATTANTI */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, marginTop: 40 }}>
+                <div style={{ display: 'flex', fontSize: 64, fontWeight: '900', color: 'white', textShadow: '0 0 30px rgba(255,255,255,0.6)', letterSpacing: 4 }}>{matchDate}</div>
+                <div style={{ display: 'flex', fontSize: 80, fontWeight: '900', color: '#ffd700', textShadow: '0 0 40px rgba(255, 215, 0, 0.9)', letterSpacing: 4 }}>{matchTime}</div>
               </div>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, zIndex: 1 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', marginTop: 40, zIndex: 1 }}>
               
               {/* Badge fase */}
-              <div style={{ display: 'flex', background: 'rgba(255, 215, 0, 0.3)', border: '2px solid rgba(255, 215, 0, 0.8)', borderRadius: '50px', padding: '16px 48px', marginBottom: 60 }}>
-                <div style={{ display: 'flex', fontSize: 36, fontWeight: '900', color: '#ffd700', letterSpacing: 6 }}>{phase}</div>
+              <div style={{ display: 'flex', background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 100%)', border: '3px solid rgba(255, 215, 0, 0.9)', borderRadius: '50px', padding: '20px 60px', marginBottom: 80, boxShadow: '0 10px 40px rgba(255, 215, 0, 0.5)' }}>
+                <div style={{ display: 'flex', fontSize: 42, fontWeight: '900', color: '#ffd700', letterSpacing: 8, textShadow: '0 0 20px rgba(255, 215, 0, 0.8)' }}>{phase}</div>
               </div>
               
               {/* Loghi squadre con score */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 60, marginBottom: 60 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 50, marginBottom: 80 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24 }}>
                   {homeLogo && (
-                    <div style={{ display: 'flex', width: 160, height: 160, background: 'rgba(255,255,255,0.1)', borderRadius: '50%', border: '4px solid rgba(255, 215, 0, 0.8)', boxShadow: '0 0 40px rgba(255, 215, 0, 0.6)', padding: 10 }}>
-                      <img src={homeLogo} width="140" height="140" style={{ borderRadius: '50%', objectFit: 'contain' }} />
+                    <div style={{ display: 'flex', width: 200, height: 200, background: 'rgba(255,255,255,0.05)', borderRadius: '50%', border: '5px solid rgba(255, 215, 0, 0.9)', boxShadow: '0 0 60px rgba(255, 215, 0, 0.7)', padding: 12 }}>
+                      <img src={homeLogo} width="176" height="176" style={{ borderRadius: '50%', objectFit: 'contain' }} />
                     </div>
                   )}
-                  <div style={{ display: 'flex', fontSize: 44, fontWeight: '900', color: 'white', textShadow: '0 4px 20px rgba(0,0,0,0.8)', textAlign: 'center' }}>{homeName}</div>
+                  <div style={{ display: 'flex', fontSize: 48, fontWeight: '900', color: 'white', textShadow: '0 4px 30px rgba(0,0,0,0.9)', textAlign: 'center', letterSpacing: 2 }}>{homeName}</div>
                 </div>
                 
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', fontSize: 140, fontWeight: '900', color: '#ffd700', textShadow: '0 0 60px rgba(255, 215, 0, 0.8)', letterSpacing: 8 }}>{match.home_score ?? 0} - {match.away_score ?? 0}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20 }}>
+                  <div style={{ display: 'flex', fontSize: 160, fontWeight: '900', color: '#ffd700', textShadow: '0 0 80px rgba(255, 215, 0, 0.9)', letterSpacing: 12 }}>{match.home_score ?? 0} - {match.away_score ?? 0}</div>
                 </div>
                 
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24 }}>
                   {awayLogo && (
-                    <div style={{ display: 'flex', width: 160, height: 160, background: 'rgba(255,255,255,0.1)', borderRadius: '50%', border: '4px solid rgba(255, 215, 0, 0.8)', boxShadow: '0 0 40px rgba(255, 215, 0, 0.6)', padding: 10 }}>
-                      <img src={awayLogo} width="140" height="140" style={{ borderRadius: '50%', objectFit: 'contain' }} />
+                    <div style={{ display: 'flex', width: 200, height: 200, background: 'rgba(255,255,255,0.05)', borderRadius: '50%', border: '5px solid rgba(255, 215, 0, 0.9)', boxShadow: '0 0 60px rgba(255, 215, 0, 0.7)', padding: 12 }}>
+                      <img src={awayLogo} width="176" height="176" style={{ borderRadius: '50%', objectFit: 'contain' }} />
                     </div>
                   )}
-                  <div style={{ display: 'flex', fontSize: 44, fontWeight: '900', color: 'white', textShadow: '0 4px 20px rgba(0,0,0,0.8)', textAlign: 'center' }}>{awayName}</div>
+                  <div style={{ display: 'flex', fontSize: 48, fontWeight: '900', color: 'white', textShadow: '0 4px 30px rgba(0,0,0,0.9)', textAlign: 'center', letterSpacing: 2 }}>{awayName}</div>
                 </div>
               </div>
               
               {/* DCR se ci sono rigori */}
               {match.home_penalties != null ? (
-                <div style={{ display: 'flex', background: 'rgba(255, 215, 0, 0.3)', border: '2px solid rgba(255, 215, 0, 0.8)', borderRadius: '50px', padding: '20px 48px' }}>
-                  <div style={{ display: 'flex', fontSize: 42, fontWeight: '900', color: '#ffd700', letterSpacing: 4 }}>⚽ DCR {match.home_penalties} - {match.away_penalties}</div>
+                <div style={{ display: 'flex', background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 100%)', border: '3px solid rgba(255, 215, 0, 0.9)', borderRadius: '50px', padding: '24px 60px', boxShadow: '0 10px 40px rgba(255, 215, 0, 0.5)' }}>
+                  <div style={{ display: 'flex', fontSize: 48, fontWeight: '900', color: '#ffd700', letterSpacing: 4, textShadow: '0 0 20px rgba(255, 215, 0, 0.8)' }}>⚽ DCR {match.home_penalties} - {match.away_penalties}</div>
                 </div>
               ) : (
-                <div style={{ display: 'flex', height: 82 }}></div>
+                <div style={{ display: 'flex', height: 90 }}></div>
               )}
             </div>
           )}
           
-          {/* ✅ Footer vuoto (rimosso hashtag) */}
-          <div style={{ display: 'flex', height: 60 }}></div>
+          {/* Footer vuoto */}
+          <div style={{ display: 'flex', height: 80 }}></div>
         </div>
       ),
       { width: 1080, height: 1920 }
@@ -167,7 +166,7 @@ export async function GET(
       });
 
     if (uploadError) {
-      console.error(' Errore upload:', uploadError);
+      console.error('❌ Errore upload:', uploadError);
       return new Response('Errore upload: ' + uploadError.message, { status: 500 });
     }
 
