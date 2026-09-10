@@ -48,38 +48,38 @@ export async function GET(
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
         
         {/* Etichetta FASE (sopra i nomi) */}
-        <div style={{ position: 'absolute', top: 780, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
+        <div style={{ position: 'absolute', top: 900, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
           <div style={{ display: 'flex', background: 'rgba(0,0,0,0.6)', borderRadius: '50px', padding: '12px 40px', border: '2px solid rgba(255,255,255,0.3)' }}>
             <div style={{ display: 'flex', fontSize: 28, fontWeight: '700', color: 'white', letterSpacing: '4px' }}>{match.phase || 'GIRONI'}</div>
           </div>
         </div>
 
         {/* Nomi squadre (sopra i loghi) */}
-        <div style={{ position: 'absolute', top: 860, left: 0, right: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 80 }}>
+        <div style={{ position: 'absolute', top: 1000, left: 50, right: 50, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 80 }}>
           <div style={{ display: 'flex', fontSize: 48, fontWeight: '900', color: 'white', letterSpacing: '2px', textShadow: '0 4px 20px rgba(0,0,0,0.9)' }}>{homeName}</div>
           <div style={{ display: 'flex', fontSize: 48, fontWeight: '900', color: 'white', letterSpacing: '2px', textShadow: '0 4px 20px rgba(0,0,0,0.9)' }}>{awayName}</div>
         </div>
 
         {/* Logo squadra CASA (a sinistra del VS) */}
-        <div style={{ position: 'absolute', top: 980, left: 180, display: 'flex' }}>
+        <div style={{ position: 'absolute', top: 1300, left: 180, display: 'flex' }}>
           {homeLogo ? (
-            <img src={homeLogo} width="180" height="180" style={{ objectFit: 'contain', filter: 'drop-shadow(0 8px 30px rgba(0,0,0,0.8))' }} />
+            <img src={homeLogo} width="300" height="300" style={{ objectFit: 'contain', filter: 'drop-shadow(0 8px 30px rgba(0,0,0,0.8))' }} />
           ) : (
             <div style={{ display: 'flex', width: 180, height: 180 }}></div>
           )}
         </div>
         
         {/* Logo squadra OSPITE (a destra del VS) */}
-        <div style={{ position: 'absolute', top: 980, right: 180, display: 'flex' }}>
+        <div style={{ position: 'absolute', top: 1300, right: 180, display: 'flex' }}>
           {awayLogo ? (
-            <img src={awayLogo} width="180" height="180" style={{ objectFit: 'contain', filter: 'drop-shadow(0 8px 30px rgba(0,0,0,0.8))' }} />
+            <img src={awayLogo} width="300" height="300" style={{ objectFit: 'contain', filter: 'drop-shadow(0 8px 30px rgba(0,0,0,0.8))' }} />
           ) : (
             <div style={{ display: 'flex', width: 180, height: 180 }}></div>
           )}
         </div>
 
         {/* Data e ora (a fianco dell'icona calendario) */}
-        <div style={{ position: 'absolute', top: 1320, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
+        <div style={{ position: 'absolute', top: 1500, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
           <div style={{ display: 'flex', fontSize: 42, fontWeight: '700', color: 'white', letterSpacing: '3px', textShadow: '0 4px 20px rgba(0,0,0,0.9)' }}>
             {formattedDate} - {matchTime}
           </div>
