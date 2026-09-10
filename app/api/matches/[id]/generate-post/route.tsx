@@ -68,10 +68,12 @@ export async function GET(
       { width: 1080, height: 1080 }
     );
 
+        // 1. Convertiamo l'immagine in buffer per Supabase
     const arrayBuffer = await imageResponse.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const fileName = `${params.id}_${type}.png`;
 
+    // 2. Carichiamo su Supabase
     const { error: uploadError } = await supabase.storage
       .from('tournament-files')
       .upload(`match-posts/${fileName}`, buffer, {
@@ -81,12 +83,19 @@ export async function GET(
       });
 
     if (uploadError) {
-      console.error('Errore upload:', uploadError);
+      console.error('❌ Errore upload:', uploadError);
       return new Response('Errore upload: ' + uploadError.message, { status: 500 });
     }
 
     console.log('✅ Post generato e salvato:', fileName);
-    return imageResponse;
+
+    // 3. ✅ RESTITUIAMO UNA NUOVA RESPONSE CON IL BUFFER (risolve l'errore ReadableStream)
+    return new Response(buffer, {
+      headers: {
+        'Content-Type': 'image/png',
+        'Cache-Control': 'public, max-age=31536000, immutable',
+      },
+    });
     
   } catch (err) {
     console.error('❌ Errore generazione post:', err);
