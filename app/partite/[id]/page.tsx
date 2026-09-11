@@ -8,7 +8,7 @@ import { ArrowLeft, Vote, X, Camera, Plus, Share2, Loader2 } from 'lucide-react'
 import { AdminMVPSelector, AdminStopVoting, AdminAddEvent, AdminEditEvent } from '@/components/AdminButtons';
 import { useAuth } from '@/lib/AuthContext';
 import { createClient } from '@/lib/supabase/client';
-import MatchMediaGallery from '@/components/MatchMediaGallery';
+import MatchdayVideo from '@/components/MatchdayVideo';
 
 // ==================== TIPI DATI ====================
 interface TeamData {
@@ -1669,7 +1669,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           
           {/* Contenuto */}
           <div className="flex-1 overflow-y-auto p-4" onClick={(e) => e.stopPropagation()}>
-            <MatchMediaGallery 
+            <MatchdayVideo
               key={mediaRefreshKey} 
               matchId={match.id} 
               folderPath={`match-media/${getMatchFolderName()}`}
