@@ -423,13 +423,15 @@ export default function AltroPage() {
                   <button 
                     onClick={async () => {
                       try {
-                        const res = await fetch('/api/social/generate?type=classifica');
+                        // ✅ AGGIUNTO TIMESTAMP: costringe il browser a non usare la cache
+                        const res = await fetch(`/api/social/generate?type=classifica&t=${Date.now()}`);
                         if (!res.ok) throw new Error();
                         const blob = await res.blob();
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
-                        a.download = 'Classifica_Trofeo_Sarnonico.png';
+                        // ✅ Nome file con timestamp per non sovrascrivere lo storico sul tuo PC
+                        a.download = `Classifica_Trofeo_Sarnonico_${Date.now()}.png`;
                         a.click();
                         URL.revokeObjectURL(url);
                       } catch (err) {
