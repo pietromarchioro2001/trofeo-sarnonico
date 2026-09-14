@@ -57,53 +57,48 @@ export async function GET(
         <div style={{ position: 'absolute', top: 80, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
           <img 
             src="https://trofeo-sarnonico.vercel.app/logo.png" 
-            width="160" 
-            height="160" 
+            width="180" 
+            height="180" 
             style={{ objectFit: 'contain' }} 
           />
         </div>
 
         {/* LOGO SQUADRA CASA nello scudo sinistro */}
-        <div style={{ position: 'absolute', top: 620, left: 130, display: 'flex' }}>
+        <div style={{ position: 'absolute', top: 720, left: 130, display: 'flex' }}>
           {homeLogo ? (
-            <img src={homeLogo} width="220" height="220" style={{ objectFit: 'contain' }} />
+            <img src={homeLogo} width="260" height="260" style={{ objectFit: 'contain' }} />
           ) : (
             <div style={{ display: 'flex', width: 220, height: 220 }}></div>
           )}
         </div>
 
         {/* LOGO SQUADRA OSPITE nello scudo destro */}
-        <div style={{ position: 'absolute', top: 620, right: 130, display: 'flex' }}>
+        <div style={{ position: 'absolute', top: 720, right: 130, display: 'flex' }}>
           {awayLogo ? (
-            <img src={awayLogo} width="220" height="220" style={{ objectFit: 'contain' }} />
+            <img src={awayLogo} width="260" height="260" style={{ objectFit: 'contain' }} />
           ) : (
             <div style={{ display: 'flex', width: 220, height: 220 }}></div>
           )}
         </div>
 
         {/* NOME SQUADRA CASA */}
-        <div style={{ position: 'absolute', top: 870, left: 0, right: 0, display: 'flex', justifyContent: 'flex-start', paddingLeft: 130 }}>
-          <div style={{ display: 'flex', width: 220, justifyContent: 'center' }}>
+        <div style={{ position: 'absolute', top: 920, left: 0, right: 0, display: 'flex', justifyContent: 'flex-start', paddingLeft: 130 }}>
+          <div style={{ display: 'flex', width: 240, justifyContent: 'center' }}>
             <div style={{ display: 'flex', fontSize: 36, fontWeight: '900', color: '#800020', textAlign: 'center', letterSpacing: 1 }}>{homeName}</div>
           </div>
         </div>
 
         {/* NOME SQUADRA OSPITE */}
-        <div style={{ position: 'absolute', top: 870, left: 0, right: 0, display: 'flex', justifyContent: 'flex-end', paddingRight: 130 }}>
-          <div style={{ display: 'flex', width: 220, justifyContent: 'center' }}>
+        <div style={{ position: 'absolute', top: 920, left: 0, right: 0, display: 'flex', justifyContent: 'flex-end', paddingRight: 130 }}>
+          <div style={{ display: 'flex', width: 240, justifyContent: 'center' }}>
             <div style={{ display: 'flex', fontSize: 36, fontWeight: '900', color: '#800020', textAlign: 'center', letterSpacing: 1 }}>{awayName}</div>
           </div>
         </div>
 
         {/* DATA accanto all'icona calendario */}
-        <div style={{ position: 'absolute', top: 1080, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 120 }}>
+        <div style={{ position: 'absolute', top: 1180, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 150 }}>
           <div style={{ display: 'flex', fontSize: 32, fontWeight: '700', color: '#800020' }}>{formattedDate}</div>
           <div style={{ display: 'flex', fontSize: 32, fontWeight: '700', color: '#800020' }}>{matchTime}</div>
-        </div>
-
-        {/* CAMPO accanto all'icona posizione */}
-        <div style={{ position: 'absolute', top: 1180, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
-          <div style={{ display: 'flex', fontSize: 28, fontWeight: '700', color: '#800020' }}>{fieldName}</div>
         </div>
       </div>
     );
