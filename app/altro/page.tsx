@@ -100,7 +100,6 @@ export default function AltroPage() {
   const [openSection, setOpenSection] = useState<SectionId | null>(null);
   const [loading, setLoading] = useState(true);
   const [isTournamentLocked, setIsTournamentLocked] = useState(false);
-
   const [teamsLiberatorie, setTeamsLiberatorie] = useState<TeamLiberatorie[]>([]);
   const [templateDoc, setTemplateDoc] = useState<UploadedDocument | undefined>(undefined);
   const [alboDoro, setAlboDoro] = useState<AlboDoroData | null>(null);
