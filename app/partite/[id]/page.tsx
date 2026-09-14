@@ -8,7 +8,6 @@ import { ArrowLeft, Vote, X, Camera, Plus, Share2, Loader2 } from 'lucide-react'
 import { AdminMVPSelector, AdminStopVoting, AdminAddEvent, AdminEditEvent } from '@/components/AdminButtons';
 import { useAuth } from '@/lib/AuthContext';
 import { createClient } from '@/lib/supabase/client';
-import MatchdayPost from '@/components/MatchdayPost';
 
 // ==================== TIPI DATI ====================
 interface TeamData {
