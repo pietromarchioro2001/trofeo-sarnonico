@@ -114,6 +114,8 @@ export default function AltroPage() {
     whatsapp: '+39 333 1234567'
   });
 
+  const [isGenerating, setIsGenerating] = useState<'coming-soon' | 'classifica' | null>(null);
+
   useEffect(() => {
     const fetchAltroData = async () => {
       setLoading(true);
@@ -390,10 +392,12 @@ export default function AltroPage() {
                       <p className="text-sm text-gray-600 mb-6">Genera immagini pronte per Instagram e Facebook</p>
                       
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* COMING SOON */}
                         <button 
                           onClick={async () => {
+                            setIsGenerating('coming-soon');
                             try {
-                              const res = await fetch('/api/social/generate?type=coming-soon');
+                              const res = await fetch(`/api/social/generate?type=coming-soon&t=${Date.now()}`);
                               if (!res.ok) throw new Error();
                               const blob = await res.blob();
                               const url = URL.createObjectURL(blob);
@@ -404,50 +408,86 @@ export default function AltroPage() {
                               URL.revokeObjectURL(url);
                             } catch (err) {
                               alert('Errore generazione post');
+                            } finally {
+                              setIsGenerating(null);
                             }
                           }}
-                          className="flex flex-col items-center gap-3 p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border-2 border-blue-200 hover:border-blue-400 hover:shadow-lg transition-all group"
+                          disabled={isGenerating !== null}
+                          className="flex flex-col items-center gap-3 p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border-2 border-blue-200 hover:border-blue-400 hover:shadow-lg transition-all group min-h-[220px] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                          </div>
-                          <span className="font-bold text-[#581C24]">Coming Soon</span>
-                          <span className="text-xs text-gray-500 text-center">Annuncio inizio torneo</span>
+                          {isGenerating === 'coming-soon' ? (
+                            <>
+                              <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center">
+                                <svg className="animate-spin h-8 w-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                              </div>
+                              <span className="font-bold text-[#581C24]">Generazione...</span>
+                              <span className="text-xs text-gray-500 text-center">Attendere prego</span>
+                            </>
+                          ) : (
+                            <>
+                              <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              </div>
+                              <span className="font-bold text-[#581C24]">Coming Soon</span>
+                              <span className="text-xs text-gray-500 text-center">Annuncio inizio torneo</span>
+                            </>
+                          )}
+                        </button>
+
+                        {/* CLASSIFICA */}
+                        <button 
+                          onClick={async () => {
+                            setIsGenerating('classifica');
+                            try {
+                              const res = await fetch(`/api/social/generate?type=classifica&t=${Date.now()}`);
+                              if (!res.ok) throw new Error();
+                              const blob = await res.blob();
+                              const url = URL.createObjectURL(blob);
+                              const a = document.createElement('a');
+                              a.href = url;
+                              a.download = `Classifica_Trofeo_Sarnonico_${Date.now()}.png`;
+                              a.click();
+                              URL.revokeObjectURL(url);
+                            } catch (err) {
+                              alert('Errore generazione post');
+                            } finally {
+                              setIsGenerating(null);
+                            }
+                          }}
+                          disabled={isGenerating !== null}
+                          className="flex flex-col items-center gap-3 p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border-2 border-purple-200 hover:border-purple-400 hover:shadow-lg transition-all group min-h-[220px] disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isGenerating === 'classifica' ? (
+                            <>
+                              <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center">
+                                <svg className="animate-spin h-8 w-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                              </div>
+                              <span className="font-bold text-[#581C24]">Generazione...</span>
+                              <span className="text-xs text-gray-500 text-center">Attendere prego</span>
+                            </>
+                          ) : (
+                            <>
+                              <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                </svg>
+                              </div>
+                              <span className="font-bold text-[#581C24]">Classifica</span>
+                              <span className="text-xs text-gray-500 text-center">Classifica aggiornata gironi</span>
+                            </>
+                          )}
                         </button>
                       </div>
                     </div>
                   )}
-                  {/* CLASSIFICA */}
-                  <button 
-                    onClick={async () => {
-                      try {
-                        // ✅ AGGIUNTO TIMESTAMP: costringe il browser a non usare la cache
-                        const res = await fetch(`/api/social/generate?type=classifica&t=${Date.now()}`);
-                        if (!res.ok) throw new Error();
-                        const blob = await res.blob();
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        // ✅ Nome file con timestamp per non sovrascrivere lo storico sul tuo PC
-                        a.download = `Classifica_Trofeo_Sarnonico_${Date.now()}.png`;
-                        a.click();
-                        URL.revokeObjectURL(url);
-                      } catch (err) {
-                        alert('Errore generazione post');
-                      }
-                    }}
-                    className="flex flex-col items-center gap-3 p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border-2 border-purple-200 hover:border-purple-400 hover:shadow-lg transition-all group"
-                  >
-                    <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                      </svg>
-                    </div>
-                    <span className="font-bold text-[#581C24]">Classifica</span>
-                    <span className="text-xs text-gray-500 text-center">Classifica aggiornata gironi</span>
-                  </button>
 
                 </div>
               )}
