@@ -178,8 +178,8 @@ export async function GET(req: NextRequest) {
      console.log('✅ [5/5] Generazione immagine Satori...');
 
       //  COORDINATE MODIFICABILI MANUALMENTE
-      const GIRONE_A_START_Y = 580;  // Posizione Y prima riga Girone A
-      const GIRONE_B_START_Y = 1180; // Posizione Y prima riga Girone B
+      const GIRONE_A_START_Y = 650;  // Posizione Y prima riga Girone A
+      const GIRONE_B_START_Y = 1250; // Posizione Y prima riga Girone B
       const ROW_HEIGHT = 55;          // Distanza tra le righe
 
       // Genera le righe della classifica
@@ -187,10 +187,10 @@ export async function GET(req: NextRequest) {
         const rowY = GIRONE_A_START_Y + (index * ROW_HEIGHT);
         
         return (
-          <div key={team.id} style={{ position: 'absolute', top: rowY, left: 65, right: 65, display: 'flex', alignItems: 'center', height: 50 }}>
+          <div key={team.id} style={{ position: 'absolute', top: rowY, left: 85, right: 65, display: 'flex', alignItems: 'center', height: 50 }}>
             <div style={{ display: 'flex', width: 30, justifyContent: 'center', alignItems: 'center' }}>
               {team.logo_url ? (
-                <img src={team.logo_url} width="28" height="28" style={{ objectFit: 'contain' }} />
+                <img src={team.logo_url} width="32" height="32" style={{ objectFit: 'contain' }} />
               ) : (
                 <div style={{ display: 'flex', width: 28, height: 28, background: '#ddd', borderRadius: '50%' }} />
               )}
@@ -199,13 +199,13 @@ export async function GET(req: NextRequest) {
               {team.name}
             </div>
             <div style={{ display: 'flex', width: 30, justifyContent: 'center', fontWeight: '900', color: '#800020', fontSize: 14 }}>{team.pt}</div>
-            <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 12, color: '#333' }}>{team.pg}</div>
-            <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 12, color: '#333' }}>{team.v}</div>
-            <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 12, color: '#333' }}>{team.p}</div>
-            <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 12, color: '#333' }}>{team.s}</div>
-            <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 12, color: '#333' }}>{team.gf}</div>
-            <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 12, color: '#333' }}>{team.gs}</div>
-            <div style={{ display: 'flex', width: 30, justifyContent: 'center', fontSize: 12, fontWeight: '700', color: team.dr > 0 ? '#16a34a' : team.dr < 0 ? '#dc2626' : '#333' }}>
+            <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 18, color: '#333' }}>{team.pg}</div>
+            <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 18, color: '#333' }}>{team.v}</div>
+            <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 18, color: '#333' }}>{team.p}</div>
+            <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 18, color: '#333' }}>{team.s}</div>
+            <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 18, color: '#333' }}>{team.gf}</div>
+            <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 18, color: '#333' }}>{team.gs}</div>
+            <div style={{ display: 'flex', width: 30, justifyContent: 'center', fontSize: 18, fontWeight: '700', color: team.dr > 0 ? '#16a34a' : team.dr < 0 ? '#dc2626' : '#333' }}>
               {team.dr > 0 ? `+${team.dr}` : team.dr}
             </div>
           </div>
@@ -216,10 +216,10 @@ export async function GET(req: NextRequest) {
         const rowY = GIRONE_B_START_Y + (index * ROW_HEIGHT);
         
         return (
-          <div key={team.id} style={{ position: 'absolute', top: rowY, left: 65, right: 65, display: 'flex', alignItems: 'center', height: 50 }}>
+          <div key={team.id} style={{ position: 'absolute', top: rowY, left: 85, right: 65, display: 'flex', alignItems: 'center', height: 50 }}>
             <div style={{ display: 'flex', width: 30, justifyContent: 'center', alignItems: 'center' }}>
               {team.logo_url ? (
-                <img src={team.logo_url} width="28" height="28" style={{ objectFit: 'contain' }} />
+                <img src={team.logo_url} width="32" height="32" style={{ objectFit: 'contain' }} />
               ) : (
                 <div style={{ display: 'flex', width: 28, height: 28, background: '#ddd', borderRadius: '50%' }} />
               )}
@@ -228,13 +228,13 @@ export async function GET(req: NextRequest) {
               {team.name}
             </div>
             <div style={{ display: 'flex', width: 30, justifyContent: 'center', fontWeight: '900', color: '#800020', fontSize: 14 }}>{team.pt}</div>
-            <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 12, color: '#333' }}>{team.pg}</div>
-            <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 12, color: '#333' }}>{team.v}</div>
-            <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 12, color: '#333' }}>{team.p}</div>
-            <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 12, color: '#333' }}>{team.s}</div>
-            <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 12, color: '#333' }}>{team.gf}</div>
-            <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 12, color: '#333' }}>{team.gs}</div>
-            <div style={{ display: 'flex', width: 30, justifyContent: 'center', fontSize: 12, fontWeight: '700', color: team.dr > 0 ? '#16a34a' : team.dr < 0 ? '#dc2626' : '#333' }}>
+            <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 18, color: '#333' }}>{team.pg}</div>
+            <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 18, color: '#333' }}>{team.v}</div>
+            <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 18, color: '#333' }}>{team.p}</div>
+            <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 18, color: '#333' }}>{team.s}</div>
+            <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 18, color: '#333' }}>{team.gf}</div>
+            <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 18, color: '#333' }}>{team.gs}</div>
+            <div style={{ display: 'flex', width: 30, justifyContent: 'center', fontSize: 18, fontWeight: '700', color: team.dr > 0 ? '#16a34a' : team.dr < 0 ? '#dc2626' : '#333' }}>
               {team.dr > 0 ? `+${team.dr}` : team.dr}
             </div>
           </div>
@@ -251,7 +251,7 @@ export async function GET(req: NextRequest) {
               style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
             />
             
-            <div style={{ position: 'absolute', top: 60, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 10 }}>
+            <div style={{ position: 'absolute', top: 55, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 10 }}>
               <img 
                 src="https://trofeo-sarnonico.vercel.app/logo.png" 
                 width="200" 
