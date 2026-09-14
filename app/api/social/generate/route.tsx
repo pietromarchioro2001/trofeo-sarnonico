@@ -177,35 +177,43 @@ export async function GET(req: NextRequest) {
 
      console.log('✅ [5/5] Generazione immagine Satori...');
 
-      //  COORDINATE MODIFICABILI MANUALMENTE
-      const GIRONE_A_START_Y = 700;  // Posizione Y prima riga Girone A
-      const GIRONE_B_START_Y = 1300; // Posizione Y prima riga Girone B
-      const ROW_HEIGHT = 55;          // Distanza tra le righe
+            //  COORDINATE MODIFICABILI MANUALMENTE
+      const GIRONE_A_START_Y = 700;   // Posizione Y prima riga Girone A
+      const GIRONE_B_START_Y = 1300;  // Posizione Y prima riga Girone B
+      const ROW_HEIGHT = 55;           // Distanza tra le righe
+      const ROW_LEFT = 145;            // ⬅️ Sposta TUTTO a destra (logo + nome + stats)
+      const BOX_LEFT = 95;             // Posizione box bianchi (più a sx dei dati)
+      const BOX_WIDTH = 55;            // Larghezza box bianchi (più larghi)
 
       // Genera le righe della classifica
       const gironeARows = gironeA.slice(0, 6).map((team: any, index: number) => {
         const rowY = GIRONE_A_START_Y + (index * ROW_HEIGHT);
         
         return (
-          <div key={team.id} style={{ position: 'absolute', top: rowY, left: 105, right: 65, display: 'flex', alignItems: 'center', height: 50 }}>
-            <div style={{ display: 'flex', width: 30, justifyContent: 'center', alignItems: 'center' }}>
+          <div key={team.id} style={{ position: 'absolute', top: rowY, left: ROW_LEFT, right: 50, display: 'flex', alignItems: 'center', height: 50 }}>
+            {/* Logo squadra */}
+            <div style={{ display: 'flex', width: 35, justifyContent: 'center', alignItems: 'center' }}>
               {team.logo_url ? (
                 <img src={team.logo_url} width="32" height="32" style={{ objectFit: 'contain' }} />
               ) : (
-                <div style={{ display: 'flex', width: 28, height: 28, background: '#ddd', borderRadius: '50%' }} />
+                <div style={{ display: 'flex', width: 32, height: 32, background: '#ddd', borderRadius: '50%' }} />
               )}
             </div>
-            <div style={{ display: 'flex', flex: 1, paddingLeft: 10, fontWeight: '700', color: '#000', fontSize: 22, textTransform: 'uppercase' }}>
+            
+            {/* Nome squadra - più spazio */}
+            <div style={{ display: 'flex', flex: 1, paddingLeft: 12, fontWeight: '700', color: '#000', fontSize: 22, textTransform: 'uppercase' }}>
               {team.name}
             </div>
-            <div style={{ display: 'flex', width: 30, justifyContent: 'center', fontWeight: '900', color: '#800020', fontSize: 22 }}>{team.pt}</div>
-            <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 22, color: '#333' }}>{team.pg}</div>
-            <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 22, color: '#333' }}>{team.v}</div>
-            <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 22, color: '#333' }}>{team.p}</div>
-            <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 22, color: '#333' }}>{team.s}</div>
-            <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 22, color: '#333' }}>{team.gf}</div>
-            <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 22, color: '#333' }}>{team.gs}</div>
-            <div style={{ display: 'flex', width: 30, justifyContent: 'center', fontSize: 22, fontWeight: '700', color: team.dr > 0 ? '#16a34a' : team.dr < 0 ? '#dc2626' : '#333' }}>
+            
+            {/* Statistiche - distribuite meglio */}
+            <div style={{ display: 'flex', width: 40, justifyContent: 'center', fontWeight: '900', color: '#800020', fontSize: 22 }}>{team.pt}</div>
+            <div style={{ display: 'flex', width: 32, justifyContent: 'center', fontSize: 22, color: '#333' }}>{team.pg}</div>
+            <div style={{ display: 'flex', width: 28, justifyContent: 'center', fontSize: 22, color: '#333' }}>{team.v}</div>
+            <div style={{ display: 'flex', width: 28, justifyContent: 'center', fontSize: 22, color: '#333' }}>{team.p}</div>
+            <div style={{ display: 'flex', width: 28, justifyContent: 'center', fontSize: 22, color: '#333' }}>{team.s}</div>
+            <div style={{ display: 'flex', width: 32, justifyContent: 'center', fontSize: 22, color: '#333' }}>{team.gf}</div>
+            <div style={{ display: 'flex', width: 32, justifyContent: 'center', fontSize: 22, color: '#333' }}>{team.gs}</div>
+            <div style={{ display: 'flex', width: 40, justifyContent: 'center', fontSize: 22, fontWeight: '700', color: team.dr > 0 ? '#16a34a' : team.dr < 0 ? '#dc2626' : '#333' }}>
               {team.dr > 0 ? `+${team.dr}` : team.dr}
             </div>
           </div>
@@ -216,25 +224,30 @@ export async function GET(req: NextRequest) {
         const rowY = GIRONE_B_START_Y + (index * ROW_HEIGHT);
         
         return (
-          <div key={team.id} style={{ position: 'absolute', top: rowY, left: 105, right: 65, display: 'flex', alignItems: 'center', height: 50 }}>
-            <div style={{ display: 'flex', width: 30, justifyContent: 'center', alignItems: 'center' }}>
+          <div key={team.id} style={{ position: 'absolute', top: rowY, left: ROW_LEFT, right: 50, display: 'flex', alignItems: 'center', height: 50 }}>
+            {/* Logo squadra */}
+            <div style={{ display: 'flex', width: 35, justifyContent: 'center', alignItems: 'center' }}>
               {team.logo_url ? (
                 <img src={team.logo_url} width="32" height="32" style={{ objectFit: 'contain' }} />
               ) : (
-                <div style={{ display: 'flex', width: 28, height: 28, background: '#ddd', borderRadius: '50%' }} />
+                <div style={{ display: 'flex', width: 32, height: 32, background: '#ddd', borderRadius: '50%' }} />
               )}
             </div>
-            <div style={{ display: 'flex', flex: 1, paddingLeft: 10, fontWeight: '700', color: '#000', fontSize: 22, textTransform: 'uppercase' }}>
+            
+            {/* Nome squadra */}
+            <div style={{ display: 'flex', flex: 1, paddingLeft: 12, fontWeight: '700', color: '#000', fontSize: 22, textTransform: 'uppercase' }}>
               {team.name}
             </div>
-            <div style={{ display: 'flex', width: 30, justifyContent: 'center', fontWeight: '900', color: '#800020', fontSize: 22 }}>{team.pt}</div>
-            <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 22, color: '#333' }}>{team.pg}</div>
-            <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 22, color: '#333' }}>{team.v}</div>
-            <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 22, color: '#333' }}>{team.p}</div>
-            <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 22, color: '#333' }}>{team.s}</div>
-            <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 22, color: '#333' }}>{team.gf}</div>
-            <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 22, color: '#333' }}>{team.gs}</div>
-            <div style={{ display: 'flex', width: 30, justifyContent: 'center', fontSize: 22, fontWeight: '700', color: team.dr > 0 ? '#16a34a' : team.dr < 0 ? '#dc2626' : '#333' }}>
+            
+            {/* Statistiche - distribuite meglio */}
+            <div style={{ display: 'flex', width: 40, justifyContent: 'center', fontWeight: '900', color: '#800020', fontSize: 22 }}>{team.pt}</div>
+            <div style={{ display: 'flex', width: 32, justifyContent: 'center', fontSize: 22, color: '#333' }}>{team.pg}</div>
+            <div style={{ display: 'flex', width: 28, justifyContent: 'center', fontSize: 22, color: '#333' }}>{team.v}</div>
+            <div style={{ display: 'flex', width: 28, justifyContent: 'center', fontSize: 22, color: '#333' }}>{team.p}</div>
+            <div style={{ display: 'flex', width: 28, justifyContent: 'center', fontSize: 22, color: '#333' }}>{team.s}</div>
+            <div style={{ display: 'flex', width: 32, justifyContent: 'center', fontSize: 22, color: '#333' }}>{team.gf}</div>
+            <div style={{ display: 'flex', width: 32, justifyContent: 'center', fontSize: 22, color: '#333' }}>{team.gs}</div>
+            <div style={{ display: 'flex', width: 40, justifyContent: 'center', fontSize: 22, fontWeight: '700', color: team.dr > 0 ? '#16a34a' : team.dr < 0 ? '#dc2626' : '#333' }}>
               {team.dr > 0 ? `+${team.dr}` : team.dr}
             </div>
           </div>
@@ -262,12 +275,12 @@ export async function GET(req: NextRequest) {
 
             {/* BOX BIANCHI per coprire SOLO i numeri 1-6 del template - GIRONE A */}
             {[0, 1, 2, 3, 4, 5].map((i) => (
-              <div key={`cover-a-${i}`} style={{ position: 'absolute', top: GIRONE_A_START_Y + (i * ROW_HEIGHT), left: 65, width: 40, height: 50, background: '#fff', zIndex: 5 }} />
+              <div key={`cover-a-${i}`} style={{ position: 'absolute', top: GIRONE_A_START_Y + (i * ROW_HEIGHT), left: BOX_LEFT, width: BOX_WIDTH, height: 50, background: '#fff', zIndex: 5 }} />
             ))}
 
             {/* BOX BIANCHI per coprire SOLO i numeri 1-6 del template - GIRONE B */}
             {[0, 1, 2, 3, 4, 5].map((i) => (
-              <div key={`cover-b-${i}`} style={{ position: 'absolute', top: GIRONE_B_START_Y + (i * ROW_HEIGHT), left: 65, width: 40, height: 50, background: '#fff', zIndex: 5 }} />
+              <div key={`cover-b-${i}`} style={{ position: 'absolute', top: GIRONE_B_START_Y + (i * ROW_HEIGHT), left: BOX_LEFT, width: BOX_WIDTH, height: 50, background: '#fff', zIndex: 5 }} />
             ))}
 
             {gironeARows}
