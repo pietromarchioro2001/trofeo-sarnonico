@@ -7,8 +7,48 @@ export const runtime = 'nodejs';
 export async function GET(req: NextRequest) {
   try {
     const type = req.nextUrl.searchParams.get('type') || 'coming-soon';
+    const supabase = createClient();
 
+    // ✅ COMING SOON - Controlla se esiste già, altrimenti genera e salva
     if (type === 'coming-soon') {
+      console.log('📋 [1/2] Verifico se esiste già Coming Soon...');
+      
+      // Cerca file esistenti che iniziano con COMING_SOON_
+      const { data: existingFiles, error: listError } = await supabase.storage
+        .from('tournament-files')
+        .list('social', { 
+          limit: 1,
+          prefix: 'COMING_SOON_'
+        });
+
+      if (listError) {
+        console.error('Errore listing:', listError);
+      }
+
+      // Se esiste già, lo restituisco
+      if (existingFiles && existingFiles.length > 0) {
+        const fileName = existingFiles[0].name;
+        console.log('✅ Coming Soon già esiste:', fileName);
+        
+        const { data: fileData } = supabase.storage
+          .from('tournament-files')
+          .getPublicUrl(`social/${fileName}`);
+        
+        // Scarica il file esistente
+        const response = await fetch(fileData.publicUrl);
+        const buffer = await response.arrayBuffer();
+        
+        return new Response(new Uint8Array(buffer), {
+          headers: {
+            'Content-Type': 'image/png',
+            'Cache-Control': 'public, max-age=86400', // Cache 1 giorno
+          },
+        });
+      }
+
+      console.log('⚡ Genero nuovo Coming Soon...');
+      
+      // Genera nuova immagine
       const imageResponse = new ImageResponse(
         (
           <div style={{ width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -33,19 +73,35 @@ export async function GET(req: NextRequest) {
 
       const arrayBuffer = await imageResponse.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
+      
+      // Trova il prossimo numero disponibile
+      const nextNumber = (existingFiles?.length || 0) + 1;
+      const fileName = `COMING_SOON_${nextNumber}.png`;
+      
+      // Salva su Supabase
+      const { error: uploadError } = await supabase.storage
+        .from('tournament-files')
+        .upload(`social/${fileName}`, buffer, {
+          contentType: 'image/png',
+          cacheControl: '31536000',
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+      
+      console.log('✅ Coming Soon salvato:', fileName);
 
       return new Response(new Uint8Array(buffer), {
         headers: {
           'Content-Type': 'image/png',
-          'Cache-Control': 'public, max-age=31536000, immutable',
+          'Cache-Control': 'public, max-age=86400',
         },
       });
     }
 
-    // ✅ GENERA CLASSIFICA
+    // ✅ CLASSIFICA - Genera sempre nuovo e salva con numero progressivo
     if (type === 'classifica') {
       console.log('📊 [1/5] Inizio generazione classifica...');
-      const supabase = createClient();
 
       const { data: allTeams, error: teamsError } = await supabase
         .from('teams')
@@ -59,12 +115,8 @@ export async function GET(req: NextRequest) {
         .select('id, home_team_id, away_team_id, home_score, away_score, status, phase')
         .eq('phase', 'GIRONI');
 
-      if (matchesError) {
-        console.error('❌ Errore fetch matches:', matchesError);
-        throw new Error('Errore database matches: ' + JSON.stringify(matchesError));
-      }
+      if (matchesError) throw new Error('Errore database matches: ' + JSON.stringify(matchesError));
       
-      // Filtra in JavaScript (istantaneo)
       const validMatches = matchesData?.filter(m => 
         ['FINITA', 'LIVE', 'SUPP', 'RIGORI'].includes(m.status)
       ) || [];
@@ -123,13 +175,12 @@ export async function GET(req: NextRequest) {
 
       console.log('✅ [4/5] Classifiche calcolate - Girone A:', gironeA.length, 'Girone B:', gironeB.length);
 
-      // ✅ Genera le righe della classifica posizionate sopra gli spazi bianchi del template
+      // Genera le righe della classifica
       const gironeARows = gironeA.slice(0, 6).map((team: any, index: number) => {
-        const rowY = 580 + (index * 55); // Posizione Y di ogni riga
+        const rowY = 580 + (index * 55);
         
         return (
           <div key={team.id} style={{ position: 'absolute', top: rowY, left: 65, right: 65, display: 'flex', alignItems: 'center', height: 50 }}>
-            {/* Logo squadra */}
             <div style={{ display: 'flex', width: 30, justifyContent: 'center', alignItems: 'center' }}>
               {team.logo_url ? (
                 <img src={team.logo_url} width="28" height="28" style={{ objectFit: 'contain' }} />
@@ -137,13 +188,9 @@ export async function GET(req: NextRequest) {
                 <div style={{ display: 'flex', width: 28, height: 28, background: '#ddd', borderRadius: '50%' }} />
               )}
             </div>
-            
-            {/* Nome squadra */}
             <div style={{ display: 'flex', flex: 1, paddingLeft: 10, fontWeight: '700', color: '#000', fontSize: 14, textTransform: 'uppercase' }}>
               {team.name}
             </div>
-            
-            {/* Statistiche */}
             <div style={{ display: 'flex', width: 30, justifyContent: 'center', fontWeight: '900', color: '#800020', fontSize: 14 }}>{team.pt}</div>
             <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 12, color: '#333' }}>{team.pg}</div>
             <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 12, color: '#333' }}>{team.v}</div>
@@ -159,11 +206,10 @@ export async function GET(req: NextRequest) {
       });
 
       const gironeBRows = gironeB.slice(0, 6).map((team: any, index: number) => {
-        const rowY = 1180 + (index * 55); // Posizione Y di ogni riga
+        const rowY = 1180 + (index * 55);
         
         return (
           <div key={team.id} style={{ position: 'absolute', top: rowY, left: 65, right: 65, display: 'flex', alignItems: 'center', height: 50 }}>
-            {/* Logo squadra */}
             <div style={{ display: 'flex', width: 30, justifyContent: 'center', alignItems: 'center' }}>
               {team.logo_url ? (
                 <img src={team.logo_url} width="28" height="28" style={{ objectFit: 'contain' }} />
@@ -171,13 +217,9 @@ export async function GET(req: NextRequest) {
                 <div style={{ display: 'flex', width: 28, height: 28, background: '#ddd', borderRadius: '50%' }} />
               )}
             </div>
-            
-            {/* Nome squadra */}
             <div style={{ display: 'flex', flex: 1, paddingLeft: 10, fontWeight: '700', color: '#000', fontSize: 14, textTransform: 'uppercase' }}>
               {team.name}
             </div>
-            
-            {/* Statistiche */}
             <div style={{ display: 'flex', width: 30, justifyContent: 'center', fontWeight: '900', color: '#800020', fontSize: 14 }}>{team.pt}</div>
             <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 12, color: '#333' }}>{team.pg}</div>
             <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 12, color: '#333' }}>{team.v}</div>
@@ -194,10 +236,9 @@ export async function GET(req: NextRequest) {
 
       console.log('✅ [5/5] Generazione immagine Satori...');
 
-       const imageResponse = new ImageResponse(
+      const imageResponse = new ImageResponse(
         (
           <div style={{ width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: '#fff' }}>
-            {/* Sfondo template */}
             <img 
               src="https://trofeo-sarnonico.vercel.app/template-classifica.png" 
               width="1080" 
@@ -205,7 +246,6 @@ export async function GET(req: NextRequest) {
               style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
             />
             
-            {/* LOGO TORNEO */}
             <div style={{ position: 'absolute', top: 65, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 10 }}>
               <img 
                 src="https://trofeo-sarnonico.vercel.app/logo.png" 
@@ -219,22 +259,15 @@ export async function GET(req: NextRequest) {
             {[0, 1, 2, 3, 4, 5].map((i) => (
               <div key={`cover-a-${i}`} style={{ position: 'absolute', top: 580 + (i * 55), left: 65, width: 40, height: 50, background: '#fff', zIndex: 5 }} />
             ))}
-            
-            {/* BOX BIANCHI per coprire le intestazioni del template - GIRONE A */}
             <div style={{ position: 'absolute', top: 530, left: 65, right: 65, height: 40, background: '#fff', zIndex: 5 }} />
 
             {/* BOX BIANCHI per coprire i numeri del template - GIRONE B */}
             {[0, 1, 2, 3, 4, 5].map((i) => (
               <div key={`cover-b-${i}`} style={{ position: 'absolute', top: 1180 + (i * 55), left: 65, width: 40, height: 50, background: '#fff', zIndex: 5 }} />
             ))}
-            
-            {/* BOX BIANCHI per coprire le intestazioni del template - GIRONE B */}
             <div style={{ position: 'absolute', top: 1130, left: 65, right: 65, height: 40, background: '#fff', zIndex: 5 }} />
 
-            {/* GIRONE A - Righe dati */}
             {gironeARows}
-
-            {/* GIRONE B - Righe dati */}
             {gironeBRows}
           </div>
         ),
@@ -243,11 +276,35 @@ export async function GET(req: NextRequest) {
 
       const arrayBuffer = await imageResponse.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
+      
+      // Conta quante classifiche esistono già
+      const { data: existingClassifiche, error: listError } = await supabase.storage
+        .from('tournament-files')
+        .list('social', { 
+          limit: 100,
+          prefix: 'CLASSIFICA_'
+        });
+
+      const nextNumber = (existingClassifiche?.length || 0) + 1;
+      const fileName = `CLASSIFICA_${nextNumber}.png`;
+      
+      // Salva su Supabase
+      const { error: uploadError } = await supabase.storage
+        .from('tournament-files')
+        .upload(`social/${fileName}`, buffer, {
+          contentType: 'image/png',
+          cacheControl: '31536000',
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+      
+      console.log('✅ Classifica salvata:', fileName);
 
       return new Response(new Uint8Array(buffer), {
         headers: {
           'Content-Type': 'image/png',
-          'Cache-Control': 'public, max-age=31536000, immutable',
+          'Cache-Control': 'no-store, max-age=0', // NO CACHE - sempre fresca
         },
       });
     }
