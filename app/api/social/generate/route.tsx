@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
             />
             
             {/* LOGO TORNEO in alto */}
-            <div style={{ position: 'absolute', top: 65, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
+            <div style={{ position: 'absolute', top: 62, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
               <img 
                 src="https://trofeo-sarnonico.vercel.app/logo.png" 
                 width="200" 
