@@ -430,6 +430,33 @@ export default function AltroPage() {
                       </div>
                     </div>
                   )}
+                  {/* CLASSIFICA */}
+                  <button 
+                    onClick={async () => {
+                      try {
+                        const res = await fetch('/api/social/generate?type=classifica');
+                        if (!res.ok) throw new Error();
+                        const blob = await res.blob();
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'Classifica_Trofeo_Sarnonico.png';
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      } catch (err) {
+                        alert('Errore generazione post');
+                      }
+                    }}
+                    className="flex flex-col items-center gap-3 p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border-2 border-purple-200 hover:border-purple-400 hover:shadow-lg transition-all group"
+                  >
+                    <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                    </div>
+                    <span className="font-bold text-[#581C24]">Classifica</span>
+                    <span className="text-xs text-gray-500 text-center">Classifica aggiornata gironi</span>
+                  </button>
 
                 </div>
               )}
