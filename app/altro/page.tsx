@@ -18,13 +18,15 @@ import {
   type ContattiData
 } from '@/components/AdminButtons';
 
+// ✅ AGGIUNTO 'social' ai tipi
 type SectionId = 'liberatorie' | 'albo-oro' | 'regolamento' | 'eventi' | 'sponsor' | 'contatti' | 'social';
 
-const MENU_ITEMS: { id: SectionId | 'social'; title: string; restricted: boolean; icon: JSX.Element }[] = [
+// ✅ AGGIUNTO l'oggetto 'social' all'inizio dell'array
+const MENU_ITEMS: { id: SectionId; title: string; restricted: boolean; icon: JSX.Element }[] = [
   {
     id: 'social',
     title: 'Post Social',
-    restricted: true, // Solo staff
+    restricted: true,
     icon: (
       <svg className="w-6 h-6 text-[#581C24]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -91,14 +93,12 @@ const MENU_ITEMS: { id: SectionId | 'social'; title: string; restricted: boolean
       </svg>
     ),
   },
-];
+]; // ✅ Assicurati che questa parentesi quadra ci sia!
 
 export default function AltroPage() {
-  // ✅ USA IL NUOVO AUTH CONTEXT
   const { isStaffMode, isCaptainMode, accessTeamId } = useAuth();
   const [openSection, setOpenSection] = useState<SectionId | null>(null);
   const [loading, setLoading] = useState(true);
-  
   const [isTournamentLocked, setIsTournamentLocked] = useState(false);
 
   const [teamsLiberatorie, setTeamsLiberatorie] = useState<TeamLiberatorie[]>([]);
@@ -114,8 +114,6 @@ export default function AltroPage() {
     instagram: 'https://instagram.com/proloco',
     whatsapp: '+39 333 1234567'
   });
-
-  // ❌ RIMOSSO: useEffect che leggeva localStorage per isCaptain e captainTeamId
 
   useEffect(() => {
     const fetchAltroData = async () => {
@@ -225,7 +223,6 @@ export default function AltroPage() {
     setOpenSection(openSection === sectionId ? null : sectionId);
   };
 
-  // ✅ LOGICA AGGIORNATA: mostra sezioni riservate a staff O capitani
   const showRestricted = isStaffMode || isCaptainMode;
 
   if (loading) {
