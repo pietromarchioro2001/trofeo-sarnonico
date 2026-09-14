@@ -7,7 +7,6 @@ export const runtime = 'nodejs';
 export async function GET(req: NextRequest) {
   try {
     const type = req.nextUrl.searchParams.get('type') || 'coming-soon';
-    const supabase = createClient();
 
     if (type === 'coming-soon') {
       const imageResponse = new ImageResponse(
@@ -45,41 +44,41 @@ export async function GET(req: NextRequest) {
 
     // ✅ GENERA CLASSIFICA
     if (type === 'classifica') {
-      console.log('📊 Generazione classifica...');
+      console.log('📊 [1/5] Inizio generazione classifica...');
+      const supabase = createClient();
 
-      // Recupera tutte le squadre
+      // 1. Recupera squadre
       const { data: allTeams, error: teamsError } = await supabase
         .from('teams')
         .select('id, name, logo_url, girone');
 
       if (teamsError) {
-        console.error('Errore fetch teams:', teamsError);
-        throw teamsError;
+        console.error('❌ Errore fetch teams:', teamsError);
+        throw new Error('Errore database teams: ' + JSON.stringify(teamsError));
       }
+      console.log('✅ [2/5] Teams recuperati:', allTeams?.length);
 
-      // Recupera solo partite dei gironi finite
+      // 2. Recupera partite (incluse quelle LIVE/SUPP/RIGORI per classifica in tempo reale)
       const { data: matchesData, error: matchesError } = await supabase
         .from('matches')
         .select('id, home_team_id, away_team_id, home_score, away_score, status, phase')
         .eq('phase', 'GIRONI')
-        .in('status', ['FINITA']);
+        .in('status', ['FINITA', 'LIVE', 'SUPP', 'RIGORI']);
 
       if (matchesError) {
-        console.error('Errore fetch matches:', matchesError);
-        throw matchesError;
+        console.error('❌ Errore fetch matches:', matchesError);
+        throw new Error('Errore database matches: ' + JSON.stringify(matchesError));
       }
+      console.log('✅ [3/5] Partite recuperate:', matchesData?.length);
 
-      console.log('Teams:', allTeams?.length);
-      console.log('Matches:', matchesData?.length);
-
-      // Calcola statistiche
+      // 3. Calcola statistiche
       const statsMap = new Map();
       
       if (allTeams) {
         allTeams.forEach((t) => {
           statsMap.set(t.id, { 
             id: t.id, 
-            name: t.name, 
+            name: t.name || 'Squadra', 
             logo_url: t.logo_url || '', 
             girone: t.girone,
             pt: 0, pg: 0, v: 0, p: 0, s: 0, gf: 0, gs: 0, dr: 0 
@@ -124,74 +123,68 @@ export async function GET(req: NextRequest) {
       }
 
       const allStats = Array.from(statsMap.values());
-      
-      const sortFn = (a: any, b: any) => 
-        b.pt - a.pt || b.dr - a.dr || b.gf - a.gf;
+      const sortFn = (a: any, b: any) => b.pt - a.pt || b.dr - a.dr || b.gf - a.gf;
 
-      const gironeA = allStats.filter(t => t.girone === 'A').sort(sortFn);
-      const gironeB = allStats.filter(t => t.girone === 'B').sort(sortFn);
+      const gironeA = allStats.filter((t: any) => t.girone === 'A').sort(sortFn);
+      const gironeB = allStats.filter((t: any) => t.girone === 'B').sort(sortFn);
 
-      console.log('Girone A:', gironeA.length);
-      console.log('Girone B:', gironeB.length);
+      console.log('✅ [4/5] Classifiche calcolate - Girone A:', gironeA.length, 'Girone B:', gironeB.length);
 
-      // Crea elementi per Girone A
-      const gironeAElements = gironeA.slice(0, 6).map((team, index) => {
-        return (
-          <div key={team.id} style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.95)', borderRadius: 8, padding: '8px 12px', fontSize: 14 }}>
-            <div style={{ width: 30, fontWeight: '900', color: '#800020', textAlign: 'center' }}>{index + 1}</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
-              {team.logo_url ? (
-                <img src={team.logo_url} width="24" height="24" style={{ objectFit: 'contain' }} />
-              ) : (
-                <div style={{ width: 24, height: 24, background: '#ddd', borderRadius: '50%' }} />
-              )}
-              <div style={{ fontWeight: '700', color: '#000', fontSize: 13, textTransform: 'uppercase' }}>{team.name}</div>
-            </div>
-            <div style={{ width: 30, textAlign: 'center', fontWeight: '900', color: '#800020' }}>{team.pt}</div>
-            <div style={{ width: 25, textAlign: 'center', fontSize: 11, color: '#666' }}>{team.pg}</div>
-            <div style={{ width: 20, textAlign: 'center', fontSize: 11, color: '#666' }}>{team.v}</div>
-            <div style={{ width: 20, textAlign: 'center', fontSize: 11, color: '#666' }}>{team.p}</div>
-            <div style={{ width: 20, textAlign: 'center', fontSize: 11, color: '#666' }}>{team.s}</div>
-            <div style={{ width: 25, textAlign: 'center', fontSize: 11, color: '#666' }}>{team.gf}</div>
-            <div style={{ width: 25, textAlign: 'center', fontSize: 11, color: '#666' }}>{team.gs}</div>
-            <div style={{ width: 30, textAlign: 'center', fontSize: 11, fontWeight: '700', color: team.dr > 0 ? '#16a34a' : team.dr < 0 ? '#dc2626' : '#666' }}>
-              {team.dr > 0 ? `+${team.dr}` : team.dr}
-            </div>
+      // 4. Crea elementi JSX
+      const gironeAElements = gironeA.slice(0, 6).map((team: any, index: number) => (
+        <div key={team.id} style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.95)', borderRadius: 8, padding: '8px 12px', fontSize: 14 }}>
+          <div style={{ width: 30, fontWeight: '900', color: '#800020', textAlign: 'center' }}>{index + 1}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+            {team.logo_url ? (
+              <img src={team.logo_url} width="24" height="24" style={{ objectFit: 'contain' }} />
+            ) : (
+              <div style={{ width: 24, height: 24, background: '#ddd', borderRadius: '50%' }} />
+            )}
+            <div style={{ fontWeight: '700', color: '#000', fontSize: 13, textTransform: 'uppercase' }}>{team.name}</div>
           </div>
-        );
-      });
-
-      // Crea elementi per Girone B
-      const gironeBElements = gironeB.slice(0, 6).map((team, index) => {
-        return (
-          <div key={team.id} style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.95)', borderRadius: 8, padding: '8px 12px', fontSize: 14 }}>
-            <div style={{ width: 30, fontWeight: '900', color: '#800020', textAlign: 'center' }}>{index + 1}</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
-              {team.logo_url ? (
-                <img src={team.logo_url} width="24" height="24" style={{ objectFit: 'contain' }} />
-              ) : (
-                <div style={{ width: 24, height: 24, background: '#ddd', borderRadius: '50%' }} />
-              )}
-              <div style={{ fontWeight: '700', color: '#000', fontSize: 13, textTransform: 'uppercase' }}>{team.name}</div>
-            </div>
-            <div style={{ width: 30, textAlign: 'center', fontWeight: '900', color: '#800020' }}>{team.pt}</div>
-            <div style={{ width: 25, textAlign: 'center', fontSize: 11, color: '#666' }}>{team.pg}</div>
-            <div style={{ width: 20, textAlign: 'center', fontSize: 11, color: '#666' }}>{team.v}</div>
-            <div style={{ width: 20, textAlign: 'center', fontSize: 11, color: '#666' }}>{team.p}</div>
-            <div style={{ width: 20, textAlign: 'center', fontSize: 11, color: '#666' }}>{team.s}</div>
-            <div style={{ width: 25, textAlign: 'center', fontSize: 11, color: '#666' }}>{team.gf}</div>
-            <div style={{ width: 25, textAlign: 'center', fontSize: 11, color: '#666' }}>{team.gs}</div>
-            <div style={{ width: 30, textAlign: 'center', fontSize: 11, fontWeight: '700', color: team.dr > 0 ? '#16a34a' : team.dr < 0 ? '#dc2626' : '#666' }}>
-              {team.dr > 0 ? `+${team.dr}` : team.dr}
-            </div>
+          <div style={{ width: 30, textAlign: 'center', fontWeight: '900', color: '#800020' }}>{team.pt}</div>
+          <div style={{ width: 25, textAlign: 'center', fontSize: 11, color: '#666' }}>{team.pg}</div>
+          <div style={{ width: 20, textAlign: 'center', fontSize: 11, color: '#666' }}>{team.v}</div>
+          <div style={{ width: 20, textAlign: 'center', fontSize: 11, color: '#666' }}>{team.p}</div>
+          <div style={{ width: 20, textAlign: 'center', fontSize: 11, color: '#666' }}>{team.s}</div>
+          <div style={{ width: 25, textAlign: 'center', fontSize: 11, color: '#666' }}>{team.gf}</div>
+          <div style={{ width: 25, textAlign: 'center', fontSize: 11, color: '#666' }}>{team.gs}</div>
+          <div style={{ width: 30, textAlign: 'center', fontSize: 11, fontWeight: '700', color: team.dr > 0 ? '#16a34a' : team.dr < 0 ? '#dc2626' : '#666' }}>
+            {team.dr > 0 ? `+${team.dr}` : team.dr}
           </div>
-        );
-      });
+        </div>
+      ));
 
+      const gironeBElements = gironeB.slice(0, 6).map((team: any, index: number) => (
+        <div key={team.id} style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.95)', borderRadius: 8, padding: '8px 12px', fontSize: 14 }}>
+          <div style={{ width: 30, fontWeight: '900', color: '#800020', textAlign: 'center' }}>{index + 1}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+            {team.logo_url ? (
+              <img src={team.logo_url} width="24" height="24" style={{ objectFit: 'contain' }} />
+            ) : (
+              <div style={{ width: 24, height: 24, background: '#ddd', borderRadius: '50%' }} />
+            )}
+            <div style={{ fontWeight: '700', color: '#000', fontSize: 13, textTransform: 'uppercase' }}>{team.name}</div>
+          </div>
+          <div style={{ width: 30, textAlign: 'center', fontWeight: '900', color: '#800020' }}>{team.pt}</div>
+          <div style={{ width: 25, textAlign: 'center', fontSize: 11, color: '#666' }}>{team.pg}</div>
+          <div style={{ width: 20, textAlign: 'center', fontSize: 11, color: '#666' }}>{team.v}</div>
+          <div style={{ width: 20, textAlign: 'center', fontSize: 11, color: '#666' }}>{team.p}</div>
+          <div style={{ width: 20, textAlign: 'center', fontSize: 11, color: '#666' }}>{team.s}</div>
+          <div style={{ width: 25, textAlign: 'center', fontSize: 11, color: '#666' }}>{team.gf}</div>
+          <div style={{ width: 25, textAlign: 'center', fontSize: 11, color: '#666' }}>{team.gs}</div>
+          <div style={{ width: 30, textAlign: 'center', fontSize: 11, fontWeight: '700', color: team.dr > 0 ? '#16a34a' : team.dr < 0 ? '#dc2626' : '#666' }}>
+            {team.dr > 0 ? `+${team.dr}` : team.dr}
+          </div>
+        </div>
+      ));
+
+      console.log('✅ [5/5] Generazione immagine Satori...');
+
+      // 5. Genera immagine
       const imageResponse = new ImageResponse(
         (
           <div style={{ width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: '#fff' }}>
-            {/* Sfondo template */}
             <img 
               src="https://trofeo-sarnonico.vercel.app/template-classifica.png" 
               width="1080" 
@@ -199,7 +192,6 @@ export async function GET(req: NextRequest) {
               style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
             />
             
-            {/* LOGO TORNEO */}
             <div style={{ position: 'absolute', top: 65, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 10 }}>
               <img 
                 src="https://trofeo-sarnonico.vercel.app/logo.png" 
@@ -209,12 +201,10 @@ export async function GET(req: NextRequest) {
               />
             </div>
 
-            {/* GIRONE A - Tabella */}
             <div style={{ position: 'absolute', top: 580, left: 65, right: 65, display: 'flex', flexDirection: 'column', gap: 8 }}>
               {gironeAElements}
             </div>
 
-            {/* GIRONE B - Tabella */}
             <div style={{ position: 'absolute', top: 1180, left: 65, right: 65, display: 'flex', flexDirection: 'column', gap: 8 }}>
               {gironeBElements}
             </div>
@@ -236,7 +226,9 @@ export async function GET(req: NextRequest) {
 
     return new Response('Tipo non valido', { status: 400 });
   } catch (err) {
+    // ✅ Gestione errori robusta che mostra il messaggio reale
     console.error('❌ Errore generazione social:', err);
-    return new Response('Errore interno: ' + (err as Error).message, { status: 500 });
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    return new Response('Errore interno: ' + errorMessage, { status: 500 });
   }
 }
