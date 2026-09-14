@@ -178,9 +178,9 @@ export async function GET(req: NextRequest) {
      console.log('✅ [5/5] Generazione immagine Satori...');
 
                   //  COORDINATE MODIFICABILI MANUALMENTE
-      const GIRONE_A_START_Y = 710;   // Posizione Y prima riga Girone A
-      const GIRONE_B_START_Y = 1305;  // Posizione Y prima riga Girone B
-      const ROW_HEIGHT = 75;           // Distanza tra le righe
+      const GIRONE_A_START_Y = 720;   // Posizione Y prima riga Girone A
+      const GIRONE_B_START_Y = 1310;  // Posizione Y prima riga Girone B
+      const ROW_HEIGHT = 65;           // Distanza tra le righe
       const ROW_LEFT = 85;             // Posizione sinistra riga (copre i numeri)
       const ROW_RIGHT = 50;            // Posizione destra riga
 
@@ -199,7 +199,7 @@ export async function GET(req: NextRequest) {
             height: 50,
             background: '#fff',           // ✅ Sfondo bianco che copre i numeri
             borderRadius: 8,              // ✅ Arrotondato come il template
-            paddingLeft: 45,              // ✅ Spazio interno per il logo
+            paddingLeft: 10,              // ✅ Spazio interno per il logo
             paddingRight: 15
           }}>
             {/* Logo squadra */}
@@ -212,7 +212,7 @@ export async function GET(req: NextRequest) {
             </div>
             
             {/* Nome squadra */}
-            <div style={{ display: 'flex', flex: 1, paddingLeft: 12, fontWeight: '700', color: '#000', fontSize: 26, textTransform: 'uppercase' }}>
+            <div style={{ display: 'flex', flex: 0.6, paddingLeft: 12, fontWeight: '700', color: '#000', fontSize: 26, textTransform: 'uppercase' }}>
               {team.name}
             </div>
             
@@ -245,7 +245,7 @@ export async function GET(req: NextRequest) {
             height: 50,
             background: '#fff',           // ✅ Sfondo bianco che copre i numeri
             borderRadius: 8,              // ✅ Arrotondato come il template
-            paddingLeft: 45,              // ✅ Spazio interno per il logo
+            paddingLeft: 10,              // ✅ Spazio interno per il logo
             paddingRight: 15
           }}>
             {/* Logo squadra */}
@@ -258,7 +258,7 @@ export async function GET(req: NextRequest) {
             </div>
             
             {/* Nome squadra */}
-            <div style={{ display: 'flex', flex: 1, paddingLeft: 12, fontWeight: '700', color: '#000', fontSize: 26, textTransform: 'uppercase' }}>
+            <div style={{ display: 'flex', flex: 0.6, paddingLeft: 12, fontWeight: '700', color: '#000', fontSize: 26, textTransform: 'uppercase' }}>
               {team.name}
             </div>
             
