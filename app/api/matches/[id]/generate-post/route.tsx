@@ -54,7 +54,7 @@ export async function GET(
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
         
         {/* LOGO TORNEO nello scudo bianco in alto */}
-        <div style={{ position: 'absolute', top: 70, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
+        <div style={{ position: 'absolute', top: 65, left: 0, right: 5, display: 'flex', justifyContent: 'center' }}>
           <img 
             src="https://trofeo-sarnonico.vercel.app/logo.png" 
             width="200" 
@@ -64,7 +64,7 @@ export async function GET(
         </div>
 
         {/* LOGO SQUADRA CASA nello scudo sinistro */}
-        <div style={{ position: 'absolute', top: 720, left: 120, display: 'flex' }}>
+        <div style={{ position: 'absolute', top: 720, left: 100, display: 'flex' }}>
           {homeLogo ? (
             <img src={homeLogo} width="280" height="280" style={{ objectFit: 'contain' }} />
           ) : (
@@ -73,7 +73,7 @@ export async function GET(
         </div>
 
         {/* LOGO SQUADRA OSPITE nello scudo destro */}
-        <div style={{ position: 'absolute', top: 720, right: 120, display: 'flex' }}>
+        <div style={{ position: 'absolute', top: 720, right: 100, display: 'flex' }}>
           {awayLogo ? (
             <img src={awayLogo} width="280" height="280" style={{ objectFit: 'contain' }} />
           ) : (
@@ -82,16 +82,16 @@ export async function GET(
         </div>
 
         {/* NOME SQUADRA CASA */}
-        <div style={{ position: 'absolute', top: 1080, left: 0, right: 0, display: 'flex', justifyContent: 'flex-start', paddingLeft: 130 }}>
+        <div style={{ position: 'absolute', top: 1060, left: 0, right: 0, display: 'flex', justifyContent: 'flex-start', paddingLeft: 130 }}>
           <div style={{ display: 'flex', width: 240, justifyContent: 'center' }}>
-            <div style={{ display: 'flex', fontSize: 38, fontWeight: '900', color: '#800020', textAlign: 'center', letterSpacing: 1 }}>{homeName}</div>
+            <div style={{ display: 'flex', fontSize: 40, fontWeight: '900', color: '#800020', textAlign: 'center', letterSpacing: 1 }}>{homeName}</div>
           </div>
         </div>
 
         {/* NOME SQUADRA OSPITE */}
-        <div style={{ position: 'absolute', top: 1080, left: 0, right: 0, display: 'flex', justifyContent: 'flex-end', paddingRight: 130 }}>
+        <div style={{ position: 'absolute', top: 1060, left: 0, right: 0, display: 'flex', justifyContent: 'flex-end', paddingRight: 130 }}>
           <div style={{ display: 'flex', width: 240, justifyContent: 'center' }}>
-            <div style={{ display: 'flex', fontSize: 38, fontWeight: '900', color: '#800020', textAlign: 'center', letterSpacing: 1 }}>{awayName}</div>
+            <div style={{ display: 'flex', fontSize: 40, fontWeight: '900', color: '#800020', textAlign: 'center', letterSpacing: 1 }}>{awayName}</div>
           </div>
         </div>
 
@@ -101,7 +101,7 @@ export async function GET(
         </div>
         
         {/* ORA (a destra) */}
-        <div style={{ position: 'absolute', top: 1180, right: 180, display: 'flex' }}>
+        <div style={{ position: 'absolute', top: 1180, right: 220, display: 'flex' }}>
           <div style={{ display: 'flex', fontSize: 38, fontWeight: '700', color: '#800020' }}>{matchTime}</div>
         </div>
       </div>
