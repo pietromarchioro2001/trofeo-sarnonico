@@ -125,8 +125,7 @@ export async function GET(req: NextRequest) {
 
       const allStats = Array.from(statsMap.values());
       
-      // Ordina: punti > differenza reti > gol fatti
-      const sortFn = (a, b) => 
+      const sortFn = (a: any, b: any) => 
         b.pt - a.pt || b.dr - a.dr || b.gf - a.gf;
 
       const gironeA = allStats.filter(t => t.girone === 'A').sort(sortFn);
