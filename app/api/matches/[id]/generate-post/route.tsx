@@ -54,7 +54,7 @@ export async function GET(
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
         
         {/* LOGO TORNEO nello scudo bianco in alto */}
-        <div style={{ position: 'absolute', top: 65, left: 0, right: 10, display: 'flex', justifyContent: 'center' }}>
+        <div style={{ position: 'absolute', top: 65, left: 10, right: 0, display: 'flex', justifyContent: 'center' }}>
           <img 
             src="https://trofeo-sarnonico.vercel.app/logo.png" 
             width="200" 
@@ -82,14 +82,14 @@ export async function GET(
         </div>
 
         {/* NOME SQUADRA CASA */}
-        <div style={{ position: 'absolute', top: 1050, left: 20, right: 0, display: 'flex', justifyContent: 'flex-start', paddingLeft: 130 }}>
+        <div style={{ position: 'absolute', top: 1050, left: 0, right: 20, display: 'flex', justifyContent: 'flex-start', paddingLeft: 130 }}>
           <div style={{ display: 'flex', width: 240, justifyContent: 'center' }}>
             <div style={{ display: 'flex', fontSize: 40, fontWeight: '900', color: '#800020', textAlign: 'center', letterSpacing: 1 }}>{homeName}</div>
           </div>
         </div>
 
         {/* NOME SQUADRA OSPITE */}
-        <div style={{ position: 'absolute', top: 1050, left: 0, right: 20, display: 'flex', justifyContent: 'flex-end', paddingRight: 130 }}>
+        <div style={{ position: 'absolute', top: 1050, left: 20, right: 0, display: 'flex', justifyContent: 'flex-end', paddingRight: 130 }}>
           <div style={{ display: 'flex', width: 240, justifyContent: 'center' }}>
             <div style={{ display: 'flex', fontSize: 40, fontWeight: '900', color: '#800020', textAlign: 'center', letterSpacing: 1 }}>{awayName}</div>
           </div>
@@ -101,7 +101,7 @@ export async function GET(
         </div>
         
         {/* ORA (a destra) */}
-        <div style={{ position: 'absolute', top: 1180, right: 250, display: 'flex' }}>
+        <div style={{ position: 'absolute', top: 1180, right: 260, display: 'flex' }}>
           <div style={{ display: 'flex', fontSize: 38, fontWeight: '700', color: '#800020' }}>{matchTime}</div>
         </div>
       </div>
