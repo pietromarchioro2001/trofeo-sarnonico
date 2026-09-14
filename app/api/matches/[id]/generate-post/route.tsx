@@ -14,7 +14,7 @@ export async function GET(
 
     const { data: match, error: matchError } = await supabase
       .from('matches')
-      .select('id, home_score, away_score, home_penalties, away_penalties, match_date, match_time, home_team_id, away_team_id, status, phase, field')
+      .select('id, home_score, away_score, home_penalties, away_penalties, match_date, match_time, home_team_id, away_team_id, status, phase, match_key')
       .eq('id', params.id)
       .single();
 
@@ -35,7 +35,7 @@ export async function GET(
     const homeLogo = homeTeam?.logo_url || '';
     const awayLogo = awayTeam?.logo_url || '';
     const matchTime = match.match_time || '--:--';
-    const fieldName = (match as any).field || 'Campo di gioco';
+    const fieldName = 'Campo di gioco';
 
     const dateObj = match.match_date ? new Date(match.match_date) : null;
     const formattedDate = dateObj 
