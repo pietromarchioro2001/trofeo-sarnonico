@@ -54,50 +54,54 @@ export async function GET(
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
         
         {/* LOGO TORNEO nello scudo bianco in alto */}
-        <div style={{ position: 'absolute', top: 80, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
+        <div style={{ position: 'absolute', top: 70, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
           <img 
             src="https://trofeo-sarnonico.vercel.app/logo.png" 
-            width="180" 
-            height="180" 
+            width="200" 
+            height="200" 
             style={{ objectFit: 'contain' }} 
           />
         </div>
 
         {/* LOGO SQUADRA CASA nello scudo sinistro */}
-        <div style={{ position: 'absolute', top: 720, left: 130, display: 'flex' }}>
+        <div style={{ position: 'absolute', top: 720, left: 150, display: 'flex' }}>
           {homeLogo ? (
-            <img src={homeLogo} width="260" height="260" style={{ objectFit: 'contain' }} />
+            <img src={homeLogo} width="270" height="270" style={{ objectFit: 'contain' }} />
           ) : (
             <div style={{ display: 'flex', width: 220, height: 220 }}></div>
           )}
         </div>
 
         {/* LOGO SQUADRA OSPITE nello scudo destro */}
-        <div style={{ position: 'absolute', top: 720, right: 130, display: 'flex' }}>
+        <div style={{ position: 'absolute', top: 720, right: 150, display: 'flex' }}>
           {awayLogo ? (
-            <img src={awayLogo} width="260" height="260" style={{ objectFit: 'contain' }} />
+            <img src={awayLogo} width="270" height="270" style={{ objectFit: 'contain' }} />
           ) : (
             <div style={{ display: 'flex', width: 220, height: 220 }}></div>
           )}
         </div>
 
         {/* NOME SQUADRA CASA */}
-        <div style={{ position: 'absolute', top: 920, left: 0, right: 0, display: 'flex', justifyContent: 'flex-start', paddingLeft: 130 }}>
+        <div style={{ position: 'absolute', top: 1100, left: 0, right: 0, display: 'flex', justifyContent: 'flex-start', paddingLeft: 130 }}>
           <div style={{ display: 'flex', width: 240, justifyContent: 'center' }}>
-            <div style={{ display: 'flex', fontSize: 36, fontWeight: '900', color: '#800020', textAlign: 'center', letterSpacing: 1 }}>{homeName}</div>
+            <div style={{ display: 'flex', fontSize: 38, fontWeight: '900', color: '#800020', textAlign: 'center', letterSpacing: 1 }}>{homeName}</div>
           </div>
         </div>
 
         {/* NOME SQUADRA OSPITE */}
-        <div style={{ position: 'absolute', top: 920, left: 0, right: 0, display: 'flex', justifyContent: 'flex-end', paddingRight: 130 }}>
+        <div style={{ position: 'absolute', top: 1100, left: 0, right: 0, display: 'flex', justifyContent: 'flex-end', paddingRight: 130 }}>
           <div style={{ display: 'flex', width: 240, justifyContent: 'center' }}>
-            <div style={{ display: 'flex', fontSize: 36, fontWeight: '900', color: '#800020', textAlign: 'center', letterSpacing: 1 }}>{awayName}</div>
+            <div style={{ display: 'flex', fontSize: 38, fontWeight: '900', color: '#800020', textAlign: 'center', letterSpacing: 1 }}>{awayName}</div>
           </div>
         </div>
 
-        {/* DATA accanto all'icona calendario */}
-        <div style={{ position: 'absolute', top: 1180, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 150 }}>
+        {/* DATA (a sinistra) */}
+        <div style={{ position: 'absolute', top: 1180, left: 120 }}>
           <div style={{ display: 'flex', fontSize: 32, fontWeight: '700', color: '#800020' }}>{formattedDate}</div>
+        </div>
+        
+        {/* ORA (a destra) */}
+        <div style={{ position: 'absolute', top: 1180, right: 120 }}>
           <div style={{ display: 'flex', fontSize: 32, fontWeight: '700', color: '#800020' }}>{matchTime}</div>
         </div>
       </div>
