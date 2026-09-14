@@ -13,21 +13,21 @@ export async function GET(req: NextRequest) {
     if (type === 'coming-soon') {
       console.log('📋 [1/2] Verifico se esiste già Coming Soon...');
       
-      // Cerca file esistenti che iniziano con COMING_SOON_
+      // Recupera i file nella cartella social
       const { data: existingFiles, error: listError } = await supabase.storage
         .from('tournament-files')
-        .list('social', { 
-          limit: 1,
-          prefix: 'COMING_SOON_'
-        });
+        .list('social', { limit: 100 });
 
       if (listError) {
         console.error('Errore listing:', listError);
       }
 
+      // Filtra i file che iniziano con COMING_SOON_
+      const comingSoonFiles = existingFiles?.filter(f => f.name.startsWith('COMING_SOON_')) || [];
+
       // Se esiste già, lo restituisco
-      if (existingFiles && existingFiles.length > 0) {
-        const fileName = existingFiles[0].name;
+      if (comingSoonFiles.length > 0) {
+        const fileName = comingSoonFiles[0].name;
         console.log('✅ Coming Soon già esiste:', fileName);
         
         const { data: fileData } = supabase.storage
@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
       const buffer = Buffer.from(arrayBuffer);
       
       // Trova il prossimo numero disponibile
-      const nextNumber = (existingFiles?.length || 0) + 1;
+      const nextNumber = comingSoonFiles.length + 1;
       const fileName = `COMING_SOON_${nextNumber}.png`;
       
       // Salva su Supabase
@@ -249,8 +249,8 @@ export async function GET(req: NextRequest) {
             <div style={{ position: 'absolute', top: 65, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 10 }}>
               <img 
                 src="https://trofeo-sarnonico.vercel.app/logo.png" 
-                width="180" 
-                height="180" 
+                width="200" 
+                height="200" 
                 style={{ objectFit: 'contain' }} 
               />
             </div>
@@ -278,14 +278,12 @@ export async function GET(req: NextRequest) {
       const buffer = Buffer.from(arrayBuffer);
       
       // Conta quante classifiche esistono già
-      const { data: existingClassifiche, error: listError } = await supabase.storage
+      const { data: existingClassifiche, error: listErrorClass } = await supabase.storage
         .from('tournament-files')
-        .list('social', { 
-          limit: 100,
-          prefix: 'CLASSIFICA_'
-        });
+        .list('social', { limit: 100 });
 
-      const nextNumber = (existingClassifiche?.length || 0) + 1;
+      const classificaFiles = existingClassifiche?.filter(f => f.name.startsWith('CLASSIFICA_')) || [];
+      const nextNumber = classificaFiles.length + 1;
       const fileName = `CLASSIFICA_${nextNumber}.png`;
       
       // Salva su Supabase
