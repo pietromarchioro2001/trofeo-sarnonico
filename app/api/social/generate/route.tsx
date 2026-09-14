@@ -194,7 +194,7 @@ export async function GET(req: NextRequest) {
 
       console.log('✅ [5/5] Generazione immagine Satori...');
 
-      const imageResponse = new ImageResponse(
+       const imageResponse = new ImageResponse(
         (
           <div style={{ width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: '#fff' }}>
             {/* Sfondo template */}
@@ -209,11 +209,27 @@ export async function GET(req: NextRequest) {
             <div style={{ position: 'absolute', top: 65, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 10 }}>
               <img 
                 src="https://trofeo-sarnonico.vercel.app/logo.png" 
-                width="200" 
-                height="200" 
+                width="180" 
+                height="180" 
                 style={{ objectFit: 'contain' }} 
               />
             </div>
+
+            {/* BOX BIANCHI per coprire i numeri del template - GIRONE A */}
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <div key={`cover-a-${i}`} style={{ position: 'absolute', top: 580 + (i * 55), left: 65, width: 40, height: 50, background: '#fff', zIndex: 5 }} />
+            ))}
+            
+            {/* BOX BIANCHI per coprire le intestazioni del template - GIRONE A */}
+            <div style={{ position: 'absolute', top: 530, left: 65, right: 65, height: 40, background: '#fff', zIndex: 5 }} />
+
+            {/* BOX BIANCHI per coprire i numeri del template - GIRONE B */}
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <div key={`cover-b-${i}`} style={{ position: 'absolute', top: 1180 + (i * 55), left: 65, width: 40, height: 50, background: '#fff', zIndex: 5 }} />
+            ))}
+            
+            {/* BOX BIANCHI per coprire le intestazioni del template - GIRONE B */}
+            <div style={{ position: 'absolute', top: 1130, left: 65, right: 65, height: 40, background: '#fff', zIndex: 5 }} />
 
             {/* GIRONE A - Righe dati */}
             {gironeARows}
