@@ -178,10 +178,10 @@ export async function GET(req: NextRequest) {
      console.log('✅ [5/5] Generazione immagine Satori...');
 
                   //  COORDINATE MODIFICABILI MANUALMENTE
-      const GIRONE_A_START_Y = 700;   // Posizione Y prima riga Girone A
-      const GIRONE_B_START_Y = 1300;  // Posizione Y prima riga Girone B
-      const ROW_HEIGHT = 55;           // Distanza tra le righe
-      const ROW_LEFT = 75;             // Posizione sinistra riga (copre i numeri)
+      const GIRONE_A_START_Y = 710;   // Posizione Y prima riga Girone A
+      const GIRONE_B_START_Y = 1305;  // Posizione Y prima riga Girone B
+      const ROW_HEIGHT = 75;           // Distanza tra le righe
+      const ROW_LEFT = 85;             // Posizione sinistra riga (copre i numeri)
       const ROW_RIGHT = 50;            // Posizione destra riga
 
       // Genera le righe della classifica
