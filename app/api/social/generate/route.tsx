@@ -41,7 +41,9 @@ export async function GET(req: NextRequest) {
         return new Response(new Uint8Array(buffer), {
           headers: {
             'Content-Type': 'image/png',
-            'Cache-Control': 'public, max-age=86400', // Cache 1 giorno
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
           },
         });
       }
