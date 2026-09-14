@@ -177,12 +177,12 @@ export async function GET(req: NextRequest) {
 
      console.log('✅ [5/5] Generazione immagine Satori...');
 
-      //  COORDINATE MODIFICABILI MANUALMENTE
-      const GIRONE_A_START_Y = 720;   // Posizione Y prima riga Girone A
-      const GIRONE_B_START_Y = 1310;  // Posizione Y prima riga Girone B
-      const ROW_HEIGHT = 68;           // Distanza tra le righe
-      const ROW_LEFT = 125;            // ⬅️ AUMENTATO da 85 a 115 (sposta a destra)
-      const ROW_RIGHT = 40;            // ⬅️ RIDOTTO da 50 a 35 (allarga la riga)
+     //  COORDINATE MODIFICABILI MANUALMENTE
+      const GIRONE_A_START_Y = 720;
+      const GIRONE_B_START_Y = 1310;
+      const ROW_HEIGHT = 68;
+      const ROW_LEFT = 140;            // ✅ Aumentato per allineare logo con SQUADRA
+      const ROW_RIGHT = 30;            // ✅ Ridotto per dare più spazio a destra
 
       // Genera le righe della classifica
       const gironeARows = gironeA.slice(0, 6).map((team: any, index: number) => {
@@ -197,13 +197,13 @@ export async function GET(req: NextRequest) {
             display: 'flex', 
             alignItems: 'center', 
             height: 50,
-            background: 'transparent',    // ✅ TRASPARENTE (non più #fff)
+            background: 'transparent',
             borderRadius: 8,
-            paddingLeft: 10,
-            paddingRight: 15
+            paddingLeft: 5,
+            paddingRight: 5
           }}>
             {/* Logo squadra */}
-            <div style={{ display: 'flex', width: 35, justifyContent: 'center', alignItems: 'center' }}>
+            <div style={{ display: 'flex', width: 40, justifyContent: 'center', alignItems: 'center', flexShrink: 0 }}>
               {team.logo_url ? (
                 <img src={team.logo_url} width="38" height="38" style={{ objectFit: 'contain' }} />
               ) : (
@@ -211,20 +211,20 @@ export async function GET(req: NextRequest) {
               )}
             </div>
             
-            {/* Nome squadra */}
-            <div style={{ display: 'flex', flex: 0.5, paddingLeft: 12, fontWeight: '700', color: '#000', fontSize: 26, textTransform: 'uppercase' }}>
+            {/* Nome squadra - ridotto per dare spazio alle stats */}
+            <div style={{ display: 'flex', flex: 0.4, paddingLeft: 8, fontWeight: '700', color: '#000', fontSize: 26, textTransform: 'uppercase' }}>
               {team.name}
             </div>
             
-            {/* Statistiche - PIÙ SPAZIO TRA LORO */}
-            <div style={{ display: 'flex', width: 48, justifyContent: 'center', fontWeight: '900', color: '#800020', fontSize: 26 }}>{team.pt}</div>
-            <div style={{ display: 'flex', width: 40, justifyContent: 'center', fontSize: 26, color: '#333' }}>{team.pg}</div>
-            <div style={{ display: 'flex', width: 35, justifyContent: 'center', fontSize: 26, color: '#333' }}>{team.v}</div>
-            <div style={{ display: 'flex', width: 35, justifyContent: 'center', fontSize: 26, color: '#333' }}>{team.p}</div>
-            <div style={{ display: 'flex', width: 35, justifyContent: 'center', fontSize: 26, color: '#333' }}>{team.s}</div>
-            <div style={{ display: 'flex', width: 42, justifyContent: 'center', fontSize: 26, color: '#333' }}>{team.gf}</div>
-            <div style={{ display: 'flex', width: 42, justifyContent: 'center', fontSize: 26, color: '#333' }}>{team.gs}</div>
-            <div style={{ display: 'flex', width: 50, justifyContent: 'center', fontSize: 26, fontWeight: '700', color: team.dr > 0 ? '#16a34a' : team.dr < 0 ? '#dc2626' : '#333' }}>
+            {/* Statistiche - allineate con le colonne del template */}
+            <div style={{ display: 'flex', width: 55, justifyContent: 'center', fontWeight: '900', color: '#800020', fontSize: 26, flexShrink: 0 }}>{team.pt}</div>
+            <div style={{ display: 'flex', width: 50, justifyContent: 'center', fontSize: 26, color: '#333', flexShrink: 0 }}>{team.pg}</div>
+            <div style={{ display: 'flex', width: 45, justifyContent: 'center', fontSize: 26, color: '#333', flexShrink: 0 }}>{team.v}</div>
+            <div style={{ display: 'flex', width: 45, justifyContent: 'center', fontSize: 26, color: '#333', flexShrink: 0 }}>{team.p}</div>
+            <div style={{ display: 'flex', width: 45, justifyContent: 'center', fontSize: 26, color: '#333', flexShrink: 0 }}>{team.s}</div>
+            <div style={{ display: 'flex', width: 55, justifyContent: 'center', fontSize: 26, color: '#333', flexShrink: 0 }}>{team.gf}</div>
+            <div style={{ display: 'flex', width: 55, justifyContent: 'center', fontSize: 26, color: '#333', flexShrink: 0 }}>{team.gs}</div>
+            <div style={{ display: 'flex', width: 60, justifyContent: 'center', fontSize: 26, fontWeight: '700', color: team.dr > 0 ? '#16a34a' : team.dr < 0 ? '#dc2626' : '#333', flexShrink: 0 }}>
               {team.dr > 0 ? `+${team.dr}` : team.dr}
             </div>
           </div>
@@ -243,13 +243,13 @@ export async function GET(req: NextRequest) {
             display: 'flex', 
             alignItems: 'center', 
             height: 50,
-            background: 'transparent',    // ✅ TRASPARENTE (non più #fff)
+            background: 'transparent',
             borderRadius: 8,
-            paddingLeft: 10,
-            paddingRight: 15
+            paddingLeft: 5,
+            paddingRight: 5
           }}>
             {/* Logo squadra */}
-            <div style={{ display: 'flex', width: 35, justifyContent: 'center', alignItems: 'center' }}>
+            <div style={{ display: 'flex', width: 40, justifyContent: 'center', alignItems: 'center', flexShrink: 0 }}>
               {team.logo_url ? (
                 <img src={team.logo_url} width="38" height="38" style={{ objectFit: 'contain' }} />
               ) : (
@@ -258,19 +258,19 @@ export async function GET(req: NextRequest) {
             </div>
             
             {/* Nome squadra */}
-            <div style={{ display: 'flex', flex: 0.5, paddingLeft: 12, fontWeight: '700', color: '#000', fontSize: 26, textTransform: 'uppercase' }}>
+            <div style={{ display: 'flex', flex: 0.4, paddingLeft: 8, fontWeight: '700', color: '#000', fontSize: 26, textTransform: 'uppercase' }}>
               {team.name}
             </div>
             
-            {/* Statistiche - PIÙ SPAZIO TRA LORO */}
-            <div style={{ display: 'flex', width: 58, justifyContent: 'center', fontWeight: '900', color: '#800020', fontSize: 26 }}>{team.pt}</div>
-            <div style={{ display: 'flex', width: 50, justifyContent: 'center', fontSize: 26, color: '#333' }}>{team.pg}</div>
-            <div style={{ display: 'flex', width: 45, justifyContent: 'center', fontSize: 26, color: '#333' }}>{team.v}</div>
-            <div style={{ display: 'flex', width: 45, justifyContent: 'center', fontSize: 26, color: '#333' }}>{team.p}</div>
-            <div style={{ display: 'flex', width: 45, justifyContent: 'center', fontSize: 26, color: '#333' }}>{team.s}</div>
-            <div style={{ display: 'flex', width: 52, justifyContent: 'center', fontSize: 26, color: '#333' }}>{team.gf}</div>
-            <div style={{ display: 'flex', width: 52, justifyContent: 'center', fontSize: 26, color: '#333' }}>{team.gs}</div>
-            <div style={{ display: 'flex', width: 60, justifyContent: 'center', fontSize: 26, fontWeight: '700', color: team.dr > 0 ? '#16a34a' : team.dr < 0 ? '#dc2626' : '#333' }}>
+            {/* Statistiche - allineate con le colonne del template */}
+            <div style={{ display: 'flex', width: 55, justifyContent: 'center', fontWeight: '900', color: '#800020', fontSize: 26, flexShrink: 0 }}>{team.pt}</div>
+            <div style={{ display: 'flex', width: 50, justifyContent: 'center', fontSize: 26, color: '#333', flexShrink: 0 }}>{team.pg}</div>
+            <div style={{ display: 'flex', width: 45, justifyContent: 'center', fontSize: 26, color: '#333', flexShrink: 0 }}>{team.v}</div>
+            <div style={{ display: 'flex', width: 45, justifyContent: 'center', fontSize: 26, color: '#333', flexShrink: 0 }}>{team.p}</div>
+            <div style={{ display: 'flex', width: 45, justifyContent: 'center', fontSize: 26, color: '#333', flexShrink: 0 }}>{team.s}</div>
+            <div style={{ display: 'flex', width: 55, justifyContent: 'center', fontSize: 26, color: '#333', flexShrink: 0 }}>{team.gf}</div>
+            <div style={{ display: 'flex', width: 55, justifyContent: 'center', fontSize: 26, color: '#333', flexShrink: 0 }}>{team.gs}</div>
+            <div style={{ display: 'flex', width: 60, justifyContent: 'center', fontSize: 26, fontWeight: '700', color: team.dr > 0 ? '#16a34a' : team.dr < 0 ? '#dc2626' : '#333', flexShrink: 0 }}>
               {team.dr > 0 ? `+${team.dr}` : team.dr}
             </div>
           </div>
@@ -287,7 +287,7 @@ export async function GET(req: NextRequest) {
               style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
             />
             
-            <div style={{ position: 'absolute', top: 50, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 10 }}>
+            <div style={{ position: 'absolute', top: 45, left: 5, right: 0, display: 'flex', justifyContent: 'center', zIndex: 10 }}>
               <img 
                 src="https://trofeo-sarnonico.vercel.app/logo.png" 
                 width="200" 
