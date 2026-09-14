@@ -482,9 +482,10 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   const getMatchPostUrl = (type: 'PRE_MATCH' | 'POST_MATCH') => {
     if (!match) return '';
     const supabase = createClient();
+    // ✅ AGGIUNTO il suffisso _matchday per corrispondere al file generato dall'API
     const { data } = supabase.storage
       .from('tournament-files')
-      .getPublicUrl(`match-posts/${match.id}_${type}.png`);
+      .getPublicUrl(`match-posts/${match.id}_${type}_matchday.png`);
     return data.publicUrl;
   };
   const [uploading, setUploading] = useState(false);
@@ -1086,10 +1087,14 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       
       // Se non esiste, generala al volo chiamando l'API
       if (!checkRes.ok) {
-        const genRes = await fetch(`/api/matches/${match.id}/generate-post?type=${type}`);
-        if (!genRes.ok) throw new Error('Errore generazione post');
-        // Aspetta un attimo che Supabase propaghi il file
-        await new Promise((r) => setTimeout(r, 1000));
+        // ✅ Aggiunto &template=matchday per sicurezza
+        const genRes = await fetch(`/api/matches/${match.id}/generate-post?type=${type}&template=matchday`);
+        if (!genRes.ok) {
+            const errorText = await genRes.text();
+            throw new Error('Errore generazione post: ' + errorText);
+        }
+        // Aspetta un attimo in più che Supabase propaghi il file
+        await new Promise((r) => setTimeout(r, 1500));
       }
 
       // Scarica l'immagine come Blob
@@ -1123,7 +1128,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     } catch (err) {
       console.error('Errore condivisione:', err);
       if ((err as Error).name !== 'AbortError') {
-        alert('Errore nella condivisione');
+        alert('Errore nella condivisione: ' + (err as Error).message);
       }
     } finally {
       setIsSharing(false);
