@@ -237,6 +237,6 @@ export async function GET(req: NextRequest) {
     return new Response('Tipo non valido', { status: 400 });
   } catch (err) {
     console.error('❌ Errore generazione social:', err);
-    return new Response('Errore interno: ' + err.message, { status: 500 });
+    return new Response('Errore interno: ' + (err as Error).message, { status: 500 });
   }
 }
