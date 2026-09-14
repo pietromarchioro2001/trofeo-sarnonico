@@ -64,45 +64,45 @@ export async function GET(
         </div>
 
         {/* LOGO SQUADRA CASA nello scudo sinistro */}
-        <div style={{ position: 'absolute', top: 720, left: 150, display: 'flex' }}>
+        <div style={{ position: 'absolute', top: 720, left: 120, display: 'flex' }}>
           {homeLogo ? (
-            <img src={homeLogo} width="270" height="270" style={{ objectFit: 'contain' }} />
+            <img src={homeLogo} width="280" height="280" style={{ objectFit: 'contain' }} />
           ) : (
             <div style={{ display: 'flex', width: 220, height: 220 }}></div>
           )}
         </div>
 
         {/* LOGO SQUADRA OSPITE nello scudo destro */}
-        <div style={{ position: 'absolute', top: 720, right: 150, display: 'flex' }}>
+        <div style={{ position: 'absolute', top: 720, right: 120, display: 'flex' }}>
           {awayLogo ? (
-            <img src={awayLogo} width="270" height="270" style={{ objectFit: 'contain' }} />
+            <img src={awayLogo} width="280" height="280" style={{ objectFit: 'contain' }} />
           ) : (
             <div style={{ display: 'flex', width: 220, height: 220 }}></div>
           )}
         </div>
 
         {/* NOME SQUADRA CASA */}
-        <div style={{ position: 'absolute', top: 1100, left: 0, right: 0, display: 'flex', justifyContent: 'flex-start', paddingLeft: 130 }}>
+        <div style={{ position: 'absolute', top: 1080, left: 0, right: 0, display: 'flex', justifyContent: 'flex-start', paddingLeft: 130 }}>
           <div style={{ display: 'flex', width: 240, justifyContent: 'center' }}>
             <div style={{ display: 'flex', fontSize: 38, fontWeight: '900', color: '#800020', textAlign: 'center', letterSpacing: 1 }}>{homeName}</div>
           </div>
         </div>
 
         {/* NOME SQUADRA OSPITE */}
-        <div style={{ position: 'absolute', top: 1100, left: 0, right: 0, display: 'flex', justifyContent: 'flex-end', paddingRight: 130 }}>
+        <div style={{ position: 'absolute', top: 1080, left: 0, right: 0, display: 'flex', justifyContent: 'flex-end', paddingRight: 130 }}>
           <div style={{ display: 'flex', width: 240, justifyContent: 'center' }}>
             <div style={{ display: 'flex', fontSize: 38, fontWeight: '900', color: '#800020', textAlign: 'center', letterSpacing: 1 }}>{awayName}</div>
           </div>
         </div>
 
         {/* DATA (a sinistra) */}
-        <div style={{ position: 'absolute', top: 1080, left: 180, display: 'flex' }}>
-          <div style={{ display: 'flex', fontSize: 36, fontWeight: '700', color: '#800020' }}>{formattedDate}</div>
+        <div style={{ position: 'absolute', top: 1180, left: 180, display: 'flex' }}>
+          <div style={{ display: 'flex', fontSize: 38, fontWeight: '700', color: '#800020' }}>{formattedDate}</div>
         </div>
         
         {/* ORA (a destra) */}
-        <div style={{ position: 'absolute', top: 1080, right: 180, display: 'flex' }}>
-          <div style={{ display: 'flex', fontSize: 36, fontWeight: '700', color: '#800020' }}>{matchTime}</div>
+        <div style={{ position: 'absolute', top: 1180, right: 180, display: 'flex' }}>
+          <div style={{ display: 'flex', fontSize: 38, fontWeight: '700', color: '#800020' }}>{matchTime}</div>
         </div>
       </div>
     );
