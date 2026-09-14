@@ -417,16 +417,6 @@ export default function AltroPage() {
                           <span className="font-bold text-[#581C24]">Coming Soon</span>
                           <span className="text-xs text-gray-500 text-center">Annuncio inizio torneo</span>
                         </button>
-
-                        <button disabled className="flex flex-col items-center gap-3 p-6 bg-gray-100 rounded-xl border-2 border-gray-200 opacity-50 cursor-not-allowed">
-                          <div className="w-16 h-16 bg-gray-400 rounded-full flex items-center justify-center">
-                            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                          </div>
-                          <span className="font-bold text-gray-500">Matchday</span>
-                          <span className="text-xs text-gray-400 text-center">Disponibile a breve</span>
-                        </button>
                       </div>
                     </div>
                   )}
