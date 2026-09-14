@@ -1101,7 +1101,12 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       const imgRes = await fetch(imageUrl);
       if (!imgRes.ok) throw new Error('Immagine non disponibile');
       const blob = await imgRes.blob();
-      const file = new File([blob], `partita-${match.id}.png`, { type: 'image/png' });
+      // Nome file pulito e riconoscibile per il download
+      const safeHome = match.home_team.name.replace(/\s+/g, '_').substring(0, 15);
+      const safeAway = match.away_team.name.replace(/\s+/g, '_').substring(0, 15);
+      const downloadName = `Matchday_${safeHome}_vs_${safeAway}.png`;
+      
+      const file = new File([blob], downloadName, { type: 'image/png' });
 
       const shareText = type === 'PRE_MATCH'
         ? `🔥 ${match.home_team.name} vs ${match.away_team.name} - ${match.match_date} ${match.match_time}`
