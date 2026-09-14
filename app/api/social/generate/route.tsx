@@ -57,11 +57,19 @@ export async function GET(req: NextRequest) {
       const { data: matchesData, error: matchesError } = await supabase
         .from('matches')
         .select('id, home_team_id, away_team_id, home_score, away_score, status, phase')
-        .eq('phase', 'GIRONI')
-        .in('status', ['FINITA', 'LIVE', 'SUPP', 'RIGORI']);
+        .eq('phase', 'GIRONI');
 
-      if (matchesError) throw new Error('Errore database matches: ' + JSON.stringify(matchesError));
-      console.log('✅ [3/5] Partite recuperate:', matchesData?.length);
+      if (matchesError) {
+        console.error('❌ Errore fetch matches:', matchesError);
+        throw new Error('Errore database matches: ' + JSON.stringify(matchesError));
+      }
+      
+      // Filtra in JavaScript (istantaneo)
+      const validMatches = matchesData?.filter(m => 
+        ['FINITA', 'LIVE', 'SUPP', 'RIGORI'].includes(m.status)
+      ) || [];
+      
+      console.log('✅ [3/5] Partite recuperate e filtrate:', validMatches.length);
 
       const statsMap = new Map();
       
@@ -77,8 +85,8 @@ export async function GET(req: NextRequest) {
         });
       }
 
-      if (matchesData) {
-        matchesData.forEach((m) => {
+      if (validMatches.length > 0) {
+        validMatches.forEach((m) => {
           const homeStats = statsMap.get(m.home_team_id);
           const awayStats = statsMap.get(m.away_team_id);
           if (!homeStats || !awayStats) return;
