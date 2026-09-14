@@ -123,60 +123,81 @@ export async function GET(req: NextRequest) {
 
       console.log('✅ [4/5] Classifiche calcolate - Girone A:', gironeA.length, 'Girone B:', gironeB.length);
 
-      // ✅ JSX BLINDATO PER SATORI (ogni div ha display: 'flex')
-      const gironeAElements = gironeA.slice(0, 6).map((team: any, index: number) => (
-        <div key={team.id} style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.95)', borderRadius: 8, padding: '8px 12px', fontSize: 14, width: '100%' }}>
-          <div style={{ display: 'flex', width: 30, justifyContent: 'center', alignItems: 'center', fontWeight: '900', color: '#800020' }}>{index + 1}</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
-            {team.logo_url ? (
-              <img src={team.logo_url} width="24" height="24" style={{ objectFit: 'contain', display: 'flex' }} />
-            ) : (
-              <div style={{ display: 'flex', width: 24, height: 24, background: '#ddd', borderRadius: '50%' }} />
-            )}
-            <div style={{ display: 'flex', fontWeight: '700', color: '#000', fontSize: 13, textTransform: 'uppercase' }}>{team.name}</div>
+      // ✅ Genera le righe della classifica posizionate sopra gli spazi bianchi del template
+      const gironeARows = gironeA.slice(0, 6).map((team: any, index: number) => {
+        const rowY = 580 + (index * 55); // Posizione Y di ogni riga
+        
+        return (
+          <div key={team.id} style={{ position: 'absolute', top: rowY, left: 65, right: 65, display: 'flex', alignItems: 'center', height: 50 }}>
+            {/* Logo squadra */}
+            <div style={{ display: 'flex', width: 30, justifyContent: 'center', alignItems: 'center' }}>
+              {team.logo_url ? (
+                <img src={team.logo_url} width="28" height="28" style={{ objectFit: 'contain' }} />
+              ) : (
+                <div style={{ display: 'flex', width: 28, height: 28, background: '#ddd', borderRadius: '50%' }} />
+              )}
+            </div>
+            
+            {/* Nome squadra */}
+            <div style={{ display: 'flex', flex: 1, paddingLeft: 10, fontWeight: '700', color: '#000', fontSize: 14, textTransform: 'uppercase' }}>
+              {team.name}
+            </div>
+            
+            {/* Statistiche */}
+            <div style={{ display: 'flex', width: 30, justifyContent: 'center', fontWeight: '900', color: '#800020', fontSize: 14 }}>{team.pt}</div>
+            <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 12, color: '#333' }}>{team.pg}</div>
+            <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 12, color: '#333' }}>{team.v}</div>
+            <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 12, color: '#333' }}>{team.p}</div>
+            <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 12, color: '#333' }}>{team.s}</div>
+            <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 12, color: '#333' }}>{team.gf}</div>
+            <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 12, color: '#333' }}>{team.gs}</div>
+            <div style={{ display: 'flex', width: 30, justifyContent: 'center', fontSize: 12, fontWeight: '700', color: team.dr > 0 ? '#16a34a' : team.dr < 0 ? '#dc2626' : '#333' }}>
+              {team.dr > 0 ? `+${team.dr}` : team.dr}
+            </div>
           </div>
-          <div style={{ display: 'flex', width: 30, justifyContent: 'center', fontWeight: '900', color: '#800020' }}>{team.pt}</div>
-          <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 11, color: '#666' }}>{team.pg}</div>
-          <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 11, color: '#666' }}>{team.v}</div>
-          <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 11, color: '#666' }}>{team.p}</div>
-          <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 11, color: '#666' }}>{team.s}</div>
-          <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 11, color: '#666' }}>{team.gf}</div>
-          <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 11, color: '#666' }}>{team.gs}</div>
-          <div style={{ display: 'flex', width: 30, justifyContent: 'center', fontSize: 11, fontWeight: '700', color: team.dr > 0 ? '#16a34a' : team.dr < 0 ? '#dc2626' : '#666' }}>
-            {team.dr > 0 ? `+${team.dr}` : team.dr}
-          </div>
-        </div>
-      ));
+        );
+      });
 
-      const gironeBElements = gironeB.slice(0, 6).map((team: any, index: number) => (
-        <div key={team.id} style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.95)', borderRadius: 8, padding: '8px 12px', fontSize: 14, width: '100%' }}>
-          <div style={{ display: 'flex', width: 30, justifyContent: 'center', alignItems: 'center', fontWeight: '900', color: '#800020' }}>{index + 1}</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
-            {team.logo_url ? (
-              <img src={team.logo_url} width="24" height="24" style={{ objectFit: 'contain', display: 'flex' }} />
-            ) : (
-              <div style={{ display: 'flex', width: 24, height: 24, background: '#ddd', borderRadius: '50%' }} />
-            )}
-            <div style={{ display: 'flex', fontWeight: '700', color: '#000', fontSize: 13, textTransform: 'uppercase' }}>{team.name}</div>
+      const gironeBRows = gironeB.slice(0, 6).map((team: any, index: number) => {
+        const rowY = 1180 + (index * 55); // Posizione Y di ogni riga
+        
+        return (
+          <div key={team.id} style={{ position: 'absolute', top: rowY, left: 65, right: 65, display: 'flex', alignItems: 'center', height: 50 }}>
+            {/* Logo squadra */}
+            <div style={{ display: 'flex', width: 30, justifyContent: 'center', alignItems: 'center' }}>
+              {team.logo_url ? (
+                <img src={team.logo_url} width="28" height="28" style={{ objectFit: 'contain' }} />
+              ) : (
+                <div style={{ display: 'flex', width: 28, height: 28, background: '#ddd', borderRadius: '50%' }} />
+              )}
+            </div>
+            
+            {/* Nome squadra */}
+            <div style={{ display: 'flex', flex: 1, paddingLeft: 10, fontWeight: '700', color: '#000', fontSize: 14, textTransform: 'uppercase' }}>
+              {team.name}
+            </div>
+            
+            {/* Statistiche */}
+            <div style={{ display: 'flex', width: 30, justifyContent: 'center', fontWeight: '900', color: '#800020', fontSize: 14 }}>{team.pt}</div>
+            <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 12, color: '#333' }}>{team.pg}</div>
+            <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 12, color: '#333' }}>{team.v}</div>
+            <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 12, color: '#333' }}>{team.p}</div>
+            <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 12, color: '#333' }}>{team.s}</div>
+            <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 12, color: '#333' }}>{team.gf}</div>
+            <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 12, color: '#333' }}>{team.gs}</div>
+            <div style={{ display: 'flex', width: 30, justifyContent: 'center', fontSize: 12, fontWeight: '700', color: team.dr > 0 ? '#16a34a' : team.dr < 0 ? '#dc2626' : '#333' }}>
+              {team.dr > 0 ? `+${team.dr}` : team.dr}
+            </div>
           </div>
-          <div style={{ display: 'flex', width: 30, justifyContent: 'center', fontWeight: '900', color: '#800020' }}>{team.pt}</div>
-          <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 11, color: '#666' }}>{team.pg}</div>
-          <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 11, color: '#666' }}>{team.v}</div>
-          <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 11, color: '#666' }}>{team.p}</div>
-          <div style={{ display: 'flex', width: 20, justifyContent: 'center', fontSize: 11, color: '#666' }}>{team.s}</div>
-          <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 11, color: '#666' }}>{team.gf}</div>
-          <div style={{ display: 'flex', width: 25, justifyContent: 'center', fontSize: 11, color: '#666' }}>{team.gs}</div>
-          <div style={{ display: 'flex', width: 30, justifyContent: 'center', fontSize: 11, fontWeight: '700', color: team.dr > 0 ? '#16a34a' : team.dr < 0 ? '#dc2626' : '#666' }}>
-            {team.dr > 0 ? `+${team.dr}` : team.dr}
-          </div>
-        </div>
-      ));
+        );
+      });
 
       console.log('✅ [5/5] Generazione immagine Satori...');
 
       const imageResponse = new ImageResponse(
         (
           <div style={{ width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: '#fff' }}>
+            {/* Sfondo template */}
             <img 
               src="https://trofeo-sarnonico.vercel.app/template-classifica.png" 
               width="1080" 
@@ -184,22 +205,21 @@ export async function GET(req: NextRequest) {
               style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
             />
             
+            {/* LOGO TORNEO */}
             <div style={{ position: 'absolute', top: 65, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 10 }}>
               <img 
                 src="https://trofeo-sarnonico.vercel.app/logo.png" 
-                width="180" 
-                height="180" 
+                width="200" 
+                height="200" 
                 style={{ objectFit: 'contain' }} 
               />
             </div>
 
-            <div style={{ position: 'absolute', top: 580, left: 65, right: 65, display: 'flex', flexDirection: 'column', gap: 8, width: '920px' }}>
-              {gironeAElements}
-            </div>
+            {/* GIRONE A - Righe dati */}
+            {gironeARows}
 
-            <div style={{ position: 'absolute', top: 1180, left: 65, right: 65, display: 'flex', flexDirection: 'column', gap: 8, width: '920px' }}>
-              {gironeBElements}
-            </div>
+            {/* GIRONE B - Righe dati */}
+            {gironeBRows}
           </div>
         ),
         { width: 1080, height: 1920 }
