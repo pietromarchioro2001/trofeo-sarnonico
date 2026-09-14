@@ -96,13 +96,13 @@ export async function GET(
         </div>
 
         {/* DATA (a sinistra) */}
-        <div style={{ position: 'absolute', top: 1180, left: 120 }}>
-          <div style={{ display: 'flex', fontSize: 32, fontWeight: '700', color: '#800020' }}>{formattedDate}</div>
+        <div style={{ position: 'absolute', top: 1080, left: 180, display: 'flex' }}>
+          <div style={{ display: 'flex', fontSize: 36, fontWeight: '700', color: '#800020' }}>{formattedDate}</div>
         </div>
         
         {/* ORA (a destra) */}
-        <div style={{ position: 'absolute', top: 1180, right: 120 }}>
-          <div style={{ display: 'flex', fontSize: 32, fontWeight: '700', color: '#800020' }}>{matchTime}</div>
+        <div style={{ position: 'absolute', top: 1080, right: 180, display: 'flex' }}>
+          <div style={{ display: 'flex', fontSize: 36, fontWeight: '700', color: '#800020' }}>{matchTime}</div>
         </div>
       </div>
     );
