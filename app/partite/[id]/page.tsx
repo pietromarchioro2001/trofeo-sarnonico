@@ -1640,9 +1640,8 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                     </div>
                   )}
                   
-                  {/* ✅ SOLUZIONE INFALLIBILE: usa una label invece di un button con ref.click() */}
                   <label 
-                    onClick={(e) => e.stopPropagation()}  // ✅ AGGIUNGI QUESTO
+                    onClick={(e) => e.stopPropagation()}
                     className="flex items-center gap-2 px-4 py-2 bg-white text-[#581C24] rounded-lg font-bold text-xs uppercase hover:bg-gray-100 transition-colors cursor-pointer"
                   >
                     <Plus size={16} />
@@ -1666,14 +1665,18 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
             </div>
           </div>
           
-          {/* Contenuto */}
+          {/* Contenuto - TEMPORANEAMENTE DISABILITATO */}
           <div className="flex-1 overflow-y-auto p-4" onClick={(e) => e.stopPropagation()}>
-            <MatchdayPost
-              key={mediaRefreshKey} 
-              matchId={match.id} 
-              folderPath={`match-media/${getMatchFolderName()}`}
-              isStaffMode={isStaffMode}
-            />
+            {/* 
+              TODO: Reimplementare galleria media senza MatchdayPost
+              Per ora mostra un messaggio temporaneo
+            */}
+            <div className="flex items-center justify-center h-full">
+              <p className="text-white text-center">
+                Galleria media in aggiornamento...<br />
+                <span className="text-sm text-white/70">Torneremo presto!</span>
+              </p>
+            </div>
           </div>
         </div>
       )}
