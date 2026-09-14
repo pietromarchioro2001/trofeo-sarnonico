@@ -93,7 +93,7 @@ const MENU_ITEMS: { id: SectionId; title: string; restricted: boolean; icon: JSX
       </svg>
     ),
   },
-]; // ✅ Assicurati che questa parentesi quadra ci sia!
+];
 
 export default function AltroPage() {
   const { isStaffMode, isCaptainMode, accessTeamId } = useAuth();
@@ -121,7 +121,6 @@ export default function AltroPage() {
       const supabase = createClient();
 
       try {
-        // 1. SPONSOR
         const { data: sponsorsData } = await supabase
           .from('sponsors')
           .select('id, name, logo_url, website_url')
@@ -136,7 +135,6 @@ export default function AltroPage() {
           })));
         }
 
-        // 2. DOCUMENTI REGOLAMENTI/EVENTI/LIBERATORIE
         const { data: docsData } = await supabase
           .from('documents')
           .select('*')
@@ -171,7 +169,6 @@ export default function AltroPage() {
           }
         }
 
-        // 3. CONTROLLO BLOCCO FASE FINALE
         const { count: finalPhaseCount } = await supabase
           .from('matches')
           .select('*', { count: 'exact', head: true })
@@ -238,7 +235,6 @@ export default function AltroPage() {
 
   return (
     <div className="min-h-screen bg-[#F5F5F7] pb-24">
-      {/* HEADER */}
       <div className="relative h-40 sm:h-48 w-full overflow-hidden">
         <Image src="/header-altro.jpg" alt="Altro" fill className="object-cover" priority />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-transparent" />
@@ -247,9 +243,8 @@ export default function AltroPage() {
         </div>
       </div>
 
-      {/* MENU ITEMS */}
       <div className="relative z-10 mt-4 px-3 sm:px-4 space-y-3">
-        {.map((item) => {
+        {MENU_ITEMS.map((item) => {
           if (item.restricted && !showRestricted) return null;
           const isOpen = openSection === item.id;
 
@@ -266,7 +261,6 @@ export default function AltroPage() {
               {isOpen && (
                 <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 animate-in fade-in slide-in-from-top-2 duration-200">
                   
-                  {/* LIBERATORIE */}
                   {item.id === 'liberatorie' && (
                     <div>
                       <h2 className="text-lg font-black text-[#581C24] uppercase tracking-wider mb-4">Liberatorie</h2>
@@ -282,7 +276,6 @@ export default function AltroPage() {
                     </div>
                   )}
 
-                  {/* ALBO D'ORO */}
                   {item.id === 'albo-oro' && (
                     <div>
                       <h2 className="text-lg font-black text-[#581C24] uppercase tracking-wider mb-4">Albo d'Oro</h2>
@@ -307,7 +300,6 @@ export default function AltroPage() {
                     </div>
                   )}
 
-                  {/* REGOLAMENTO */}
                   {item.id === 'regolamento' && (
                     <div>
                       <h2 className="text-lg font-black text-[#581C24] uppercase tracking-wider mb-4">Regolamento</h2>
@@ -331,7 +323,6 @@ export default function AltroPage() {
                     </div>
                   )}
 
-                  {/* EVENTI */}
                   {item.id === 'eventi' && (
                     <div>
                       <h2 className="text-lg font-black text-[#581C24] uppercase tracking-wider mb-4">Eventi Pro Loco</h2>
@@ -353,7 +344,6 @@ export default function AltroPage() {
                     </div>
                   )}
 
-                  {/* SPONSOR */}
                   {item.id === 'sponsor' && (
                     <div>
                       <h2 className="text-lg font-black text-[#581C24] uppercase tracking-wider mb-4">Sponsor Ufficiali</h2>
@@ -375,7 +365,6 @@ export default function AltroPage() {
                     </div>
                   )}
 
-                  {/* CONTATTI */}
                   {item.id === 'contatti' && (
                     <div>
                       <h2 className="text-lg font-black text-[#581C24] uppercase tracking-wider mb-4">Contatti</h2>
@@ -394,14 +383,14 @@ export default function AltroPage() {
                       )}
                     </div>
                   )}
-                  {/* POST SOCIAL */}
+
+                  {/* ✅ POST SOCIAL (NUOVO) */}
                   {item.id === 'social' && isStaffMode && (
                     <div>
                       <h2 className="text-lg font-black text-[#581C24] uppercase tracking-wider mb-4">Genera Post Social</h2>
                       <p className="text-sm text-gray-600 mb-6">Genera immagini pronte per Instagram e Facebook</p>
                       
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {/* COMING SOON */}
                         <button 
                           onClick={async () => {
                             try {
@@ -428,12 +417,8 @@ export default function AltroPage() {
                           <span className="font-bold text-[#581C24]">Coming Soon</span>
                           <span className="text-xs text-gray-500 text-center">Annuncio inizio torneo</span>
                         </button>
-                  
-                        {/* MATCHDAY (placeholder) */}
-                        <button 
-                          disabled
-                          className="flex flex-col items-center gap-3 p-6 bg-gray-100 rounded-xl border-2 border-gray-200 opacity-50 cursor-not-allowed"
-                        >
+
+                        <button disabled className="flex flex-col items-center gap-3 p-6 bg-gray-100 rounded-xl border-2 border-gray-200 opacity-50 cursor-not-allowed">
                           <div className="w-16 h-16 bg-gray-400 rounded-full flex items-center justify-center">
                             <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -442,37 +427,10 @@ export default function AltroPage() {
                           <span className="font-bold text-gray-500">Matchday</span>
                           <span className="text-xs text-gray-400 text-center">Disponibile a breve</span>
                         </button>
-                  
-                        {/* CLASSIFICA (placeholder) */}
-                        <button 
-                          disabled
-                          className="flex flex-col items-center gap-3 p-6 bg-gray-100 rounded-xl border-2 border-gray-200 opacity-50 cursor-not-allowed"
-                        >
-                          <div className="w-16 h-16 bg-gray-400 rounded-full flex items-center justify-center">
-                            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                            </svg>
-                          </div>
-                          <span className="font-bold text-gray-500">Classifica</span>
-                          <span className="text-xs text-gray-400 text-center">Disponibile a breve</span>
-                        </button>
-                  
-                        {/* GIORNATA (placeholder) */}
-                        <button 
-                          disabled
-                          className="flex flex-col items-center gap-3 p-6 bg-gray-100 rounded-xl border-2 border-gray-200 opacity-50 cursor-not-allowed"
-                        >
-                          <div className="w-16 h-16 bg-gray-400 rounded-full flex items-center justify-center">
-                            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
-                          </div>
-                          <span className="font-bold text-gray-500">Partite Giornata</span>
-                          <span className="text-xs text-gray-400 text-center">Disponibile a breve</span>
-                        </button>
                       </div>
                     </div>
                   )}
+
                 </div>
               )}
             </div>
