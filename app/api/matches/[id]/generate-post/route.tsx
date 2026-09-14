@@ -3,7 +3,6 @@ import { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
-
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
