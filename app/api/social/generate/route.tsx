@@ -175,11 +175,16 @@ export async function GET(req: NextRequest) {
       const gironeA = allStats.filter((t: any) => t.girone === 'A').sort(sortFn);
       const gironeB = allStats.filter((t: any) => t.girone === 'B').sort(sortFn);
 
-      console.log('✅ [4/5] Classifiche calcolate - Girone A:', gironeA.length, 'Girone B:', gironeB.length);
+     console.log('✅ [5/5] Generazione immagine Satori...');
+
+      //  COORDINATE MODIFICABILI MANUALMENTE
+      const GIRONE_A_START_Y = 580;  // Posizione Y prima riga Girone A
+      const GIRONE_B_START_Y = 1180; // Posizione Y prima riga Girone B
+      const ROW_HEIGHT = 55;          // Distanza tra le righe
 
       // Genera le righe della classifica
       const gironeARows = gironeA.slice(0, 6).map((team: any, index: number) => {
-        const rowY = 580 + (index * 55);
+        const rowY = GIRONE_A_START_Y + (index * ROW_HEIGHT);
         
         return (
           <div key={team.id} style={{ position: 'absolute', top: rowY, left: 65, right: 65, display: 'flex', alignItems: 'center', height: 50 }}>
@@ -208,7 +213,7 @@ export async function GET(req: NextRequest) {
       });
 
       const gironeBRows = gironeB.slice(0, 6).map((team: any, index: number) => {
-        const rowY = 1180 + (index * 55);
+        const rowY = GIRONE_B_START_Y + (index * ROW_HEIGHT);
         
         return (
           <div key={team.id} style={{ position: 'absolute', top: rowY, left: 65, right: 65, display: 'flex', alignItems: 'center', height: 50 }}>
@@ -236,8 +241,6 @@ export async function GET(req: NextRequest) {
         );
       });
 
-      console.log('✅ [5/5] Generazione immagine Satori...');
-
       const imageResponse = new ImageResponse(
         (
           <div style={{ width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: '#fff' }}>
@@ -248,7 +251,7 @@ export async function GET(req: NextRequest) {
               style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
             />
             
-            <div style={{ position: 'absolute', top: 65, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 10 }}>
+            <div style={{ position: 'absolute', top: 60, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 10 }}>
               <img 
                 src="https://trofeo-sarnonico.vercel.app/logo.png" 
                 width="200" 
@@ -257,17 +260,15 @@ export async function GET(req: NextRequest) {
               />
             </div>
 
-            {/* BOX BIANCHI per coprire i numeri del template - GIRONE A */}
+            {/* BOX BIANCHI per coprire SOLO i numeri 1-6 del template - GIRONE A */}
             {[0, 1, 2, 3, 4, 5].map((i) => (
-              <div key={`cover-a-${i}`} style={{ position: 'absolute', top: 580 + (i * 55), left: 65, width: 40, height: 50, background: '#fff', zIndex: 5 }} />
+              <div key={`cover-a-${i}`} style={{ position: 'absolute', top: GIRONE_A_START_Y + (i * ROW_HEIGHT), left: 65, width: 40, height: 50, background: '#fff', zIndex: 5 }} />
             ))}
-            <div style={{ position: 'absolute', top: 530, left: 65, right: 65, height: 40, background: '#fff', zIndex: 5 }} />
 
-            {/* BOX BIANCHI per coprire i numeri del template - GIRONE B */}
+            {/* BOX BIANCHI per coprire SOLO i numeri 1-6 del template - GIRONE B */}
             {[0, 1, 2, 3, 4, 5].map((i) => (
-              <div key={`cover-b-${i}`} style={{ position: 'absolute', top: 1180 + (i * 55), left: 65, width: 40, height: 50, background: '#fff', zIndex: 5 }} />
+              <div key={`cover-b-${i}`} style={{ position: 'absolute', top: GIRONE_B_START_Y + (i * ROW_HEIGHT), left: 65, width: 40, height: 50, background: '#fff', zIndex: 5 }} />
             ))}
-            <div style={{ position: 'absolute', top: 1130, left: 65, right: 65, height: 40, background: '#fff', zIndex: 5 }} />
 
             {gironeARows}
             {gironeBRows}
