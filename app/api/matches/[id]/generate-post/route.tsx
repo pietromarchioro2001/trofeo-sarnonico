@@ -21,7 +21,6 @@ export async function GET(
     if (matchError || !match) {
       return new Response('Partita non trovata', { status: 404 });
     }
-
     const { data: teams } = await supabase
       .from('teams')
       .select('id, name, logo_url')
