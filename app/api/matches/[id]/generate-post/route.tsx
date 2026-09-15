@@ -58,8 +58,8 @@ export async function GET(
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
         
         {/* LOGO TORNEO */}
-        <div style={{ position: 'absolute', top: 50, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
-          <img src="https://trofeo-sarnonico.vercel.app/logo.png" width="180" height="180" style={{ objectFit: 'contain' }} />
+        <div style={{ position: 'absolute', top: 55, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
+          <img src="https://trofeo-sarnonico.vercel.app/logo.png" width="200" height="200" style={{ objectFit: 'contain' }} />
         </div>
 
         {/* LOGO CASA */}
@@ -81,7 +81,7 @@ export async function GET(
         </div>
 
         {/* RISULTATO */}
-        <div style={{ position: 'absolute', top: 720, left: 0, right: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 34 }}>
+        <div style={{ position: 'absolute', top: 720, left: 0, right: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 45 }}>
           <span style={{ fontSize: 84, fontWeight: '900', color: '#800020' }}>{match.home_score || 0}</span>
           <span style={{ fontSize: 84, fontWeight: '900', color: '#800020' }}>{match.away_score || 0}</span>
         </div>
@@ -173,7 +173,7 @@ export async function GET(
     // ✅ CONTENUTO DINAMICO PER PRE_MATCH
     const dynamicContentPreMatch = (
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
-        <div style={{ position: 'absolute', top: 70, left: 8, right: 0, display: 'flex', justifyContent: 'center' }}>
+        <div style={{ position: 'absolute', top: 65, left: 8, right: 0, display: 'flex', justifyContent: 'center' }}>
           <img src="https://trofeo-sarnonico.vercel.app/logo.png" width="200" height="200" style={{ objectFit: 'contain' }} />
         </div>
         <div style={{ position: 'absolute', top: 780, left: 110, display: 'flex' }}>
