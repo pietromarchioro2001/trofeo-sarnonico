@@ -419,12 +419,11 @@ export async function GET(req: NextRequest) {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 80 }}>
                 <span style={{ 
                   fontWeight: '900',
-                  -webkit-text-stroke: 1px currentColor;
+                  textShadow: '2px 2px 0px rgba(0,0,0,0.7), -2px -2px 0px rgba(0,0,0,0.7)
                   fontSize: 42, 
                   color: '#800020',
                   fontStyle: 'italic',        // ✅ CORSIVO
                   fontFamily: 'serif',        // ✅ FONT DIVERSO
-                  textShadow: '2px 2px 4px rgba(128,0,36,0.3)'  // ✅ OMBRA PER RISALTARE
                 }}>VS</span>
               </div>
               
@@ -481,8 +480,7 @@ export async function GET(req: NextRequest) {
                 color: '#FFFFFF', 
                 fontSize: 48,           // ✅ AUMENTATO (era 48)
                 fontWeight: '900',      // ✅ EXTRA BOLD
-                -webkit-text-stroke: 1px currentColor;
-                textShadow: '3px 3px 6px rgba(0,0,0,0.4)'  // ✅ OMBRA PER RISALTARE
+                textShadow: '2px 2px 0px rgba(0,0,0,0.7), -2px -2px 0px rgba(0,0,0,0.7)
               }}>{formattedDate}</span>
             </div>
 
