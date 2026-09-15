@@ -394,7 +394,7 @@ export async function GET(req: NextRequest) {
             flexDirection: 'column', 
             background: 'rgba(255,255,255,0.98)', 
             borderRadius: 16, 
-            padding: '8px 15px',
+            padding: '6px 15px',
             boxShadow: '0 4px 12px rgba(0,0,0,0.15)' 
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
@@ -428,7 +428,7 @@ export async function GET(req: NextRequest) {
               </div>
             </div>
             
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: -4 }}>
               <span style={{ fontSize: 26, color: '#666', fontWeight: '700' }}>{match.match_time || '--:--'}</span>
             </div>
           </div>
@@ -467,7 +467,7 @@ export async function GET(req: NextRequest) {
                 color: '#FFFFFF', 
                 fontSize: 48,
                 fontWeight: '900',
-                textShadow: '2px 2px 0px rgba(0,0,0,0.7), -2px -2px 0px rgba(0,0,0,0.7), 2px -2px 0px rgba(0,0,0,0.7), -2px 2px 0px rgba(0,0,0,0.7), 4px 4px 8px rgba(0,0,0,0.5)'
+                textShadow: '2px 2px 4px rgba(0,0,0,0.4)'  // ✅ Solo ombra morbida, niente contorno
               }}>{formattedDate}</span>
             </div>
 
