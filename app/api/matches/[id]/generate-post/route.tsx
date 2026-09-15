@@ -68,7 +68,7 @@ export async function GET(
           {homeLogo ? (
             <img src={homeLogo} width="220" height="220" style={{ objectFit: 'contain' }} />
           ) : (
-            <div style={{ width: 220, height: 220, background: 'rgba(128,0,36,0.1)', borderRadius: '50%' }} />
+            <div style={{ display: 'flex', width: 220, height: 220, background: 'rgba(128,0,36,0.1)', borderRadius: '50%' }} />
           )}
         </div>
 
@@ -77,7 +77,7 @@ export async function GET(
           {awayLogo ? (
             <img src={awayLogo} width="220" height="220" style={{ objectFit: 'contain' }} />
           ) : (
-            <div style={{ width: 220, height: 220, background: 'rgba(128,0,36,0.1)', borderRadius: '50%' }} />
+            <div style={{ display: 'flex', width: 220, height: 220, background: 'rgba(128,0,36,0.1)', borderRadius: '50%' }} />
           )}
         </div>
 
@@ -97,12 +97,12 @@ export async function GET(
           </div>
         )}
 
-        {/* NOMI SQUADRE - ✅ CORRETTO: paddingLeft e paddingRight invece di paddingHorizontal */}
+        {/* NOMI SQUADRE */}
         <div style={{ position: 'absolute', top: 840, left: 0, right: 0, display: 'flex', justifyContent: 'space-between', paddingLeft: 120, paddingRight: 120 }}>
-          <div style={{ flex: 1, textAlign: 'right', paddingRight: 280 }}>
+          <div style={{ display: 'flex', flex: 1, justifyContent: 'flex-end', paddingRight: 280 }}>
             <span style={{ fontSize: 32, fontWeight: '800', color: '#800020', textTransform: 'uppercase' }}>{homeName}</span>
           </div>
-          <div style={{ flex: 1, textAlign: 'left', paddingLeft: 280 }}>
+          <div style={{ display: 'flex', flex: 1, justifyContent: 'flex-start', paddingLeft: 280 }}>
             <span style={{ fontSize: 32, fontWeight: '800', color: '#800020', textTransform: 'uppercase' }}>{awayName}</span>
           </div>
         </div>
@@ -114,7 +114,7 @@ export async function GET(
           
           {/* Marcatori Casa */}
           <div style={{ position: 'absolute', left: 40, right: '50%', top: 30, bottom: 30, paddingRight: 30 }}>
-            <div style={{ fontSize: 24, fontWeight: '800', color: '#800026', marginBottom: 20, textAlign: 'center', textTransform: 'uppercase' }}>
+            <div style={{ display: 'flex', fontSize: 24, fontWeight: '800', color: '#800026', marginBottom: 20, justifyContent: 'center', textTransform: 'uppercase' }}>
               {homeName}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -126,14 +126,14 @@ export async function GET(
                   </span>
                 </div>
               )) : (
-                <div style={{ textAlign: 'center', color: '#999', fontSize: 18, marginTop: 40 }}>Nessun marcatore</div>
+                <div style={{ display: 'flex', justifyContent: 'center', color: '#999', fontSize: 18, marginTop: 40 }}>Nessun marcatore</div>
               )}
             </div>
           </div>
 
           {/* Marcatori Ospite */}
           <div style={{ position: 'absolute', left: '50%', right: 40, top: 30, bottom: 30, paddingLeft: 30 }}>
-            <div style={{ fontSize: 24, fontWeight: '800', color: '#800026', marginBottom: 20, textAlign: 'center', textTransform: 'uppercase' }}>
+            <div style={{ display: 'flex', fontSize: 24, fontWeight: '800', color: '#800026', marginBottom: 20, justifyContent: 'center', textTransform: 'uppercase' }}>
               {awayName}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -145,7 +145,7 @@ export async function GET(
                   </span>
                 </div>
               )) : (
-                <div style={{ textAlign: 'center', color: '#999', fontSize: 18, marginTop: 40 }}>Nessun marcatore</div>
+                <div style={{ display: 'flex', justifyContent: 'center', color: '#999', fontSize: 18, marginTop: 40 }}>Nessun marcatore</div>
               )}
             </div>
           </div>
