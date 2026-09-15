@@ -183,10 +183,10 @@ export async function GET(req: NextRequest) {
       const ROW_HEIGHT = 68;
       
       // LARGHEZZE COLONNE
-      const TEAM_SECTION_WIDTH = 360;    // ✅ Larghezza totale logo + nome squadra
-      const STAT_COLUMN_WIDTH = 30;      // ✅ Larghezza di OGNI colonna statistica
+      const TEAM_SECTION_WIDTH = 360;    // Larghezza totale logo + nome squadra
+      const STAT_COLUMN_WIDTH = 35;      // Larghezza di OGNI colonna statistica
       const LOGO_MARGIN_LEFT = 70;
-      const STATS_GAP = 2;               // ✅ Spazio tra le colonne statistiche
+      const STATS_MARGIN_LEFT = 10;      // ✅ SPAZIO tra nome squadra e prima statistica
 
       // Genera le righe della classifica
       const gironeARows = gironeA.slice(0, 6).map((team: any, index: number) => {
@@ -221,16 +221,16 @@ export async function GET(req: NextRequest) {
               </div>
             </div>
             
-            {/* SEZIONE STATISTICHE - si distribuiscono nello spazio rimanente */}
-            <div style={{ display: 'flex', flex: 1, justifyContent: 'space-between', alignItems: 'center' }}>
+            {/* SEZIONE STATISTICHE - compatte con margini */}
+            <div style={{ display: 'flex', marginLeft: STATS_MARGIN_LEFT }}>
               <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontWeight: '900', color: '#800020', fontSize: 26 }}>{team.pt}</div>
-              <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontSize: 26, color: '#333' }}>{team.pg}</div>
-              <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontSize: 26, color: '#333' }}>{team.v}</div>
-              <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontSize: 26, color: '#333' }}>{team.p}</div>
-              <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontSize: 26, color: '#333' }}>{team.s}</div>
-              <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontSize: 26, color: '#333' }}>{team.gf}</div>
-              <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontSize: 26, color: '#333' }}>{team.gs}</div>
-              <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontSize: 26, fontWeight: '700', color: team.dr > 0 ? '#16a34a' : team.dr < 0 ? '#dc2626' : '#333' }}>
+              <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontSize: 26, color: '#333', marginLeft: 8 }}>{team.pg}</div>
+              <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontSize: 26, color: '#333', marginLeft: 8 }}>{team.v}</div>
+              <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontSize: 26, color: '#333', marginLeft: 8 }}>{team.p}</div>
+              <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontSize: 26, color: '#333', marginLeft: 8 }}>{team.s}</div>
+              <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontSize: 26, color: '#333', marginLeft: 8 }}>{team.gf}</div>
+              <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontSize: 26, color: '#333', marginLeft: 8 }}>{team.gs}</div>
+              <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontSize: 26, fontWeight: '700', color: team.dr > 0 ? '#16a34a' : team.dr < 0 ? '#dc2626' : '#333', marginLeft: 8 }}>
                 {team.dr > 0 ? `+${team.dr}` : team.dr}
               </div>
             </div>
@@ -270,16 +270,16 @@ export async function GET(req: NextRequest) {
               </div>
             </div>
             
-            {/* SEZIONE STATISTICHE - si distribuiscono nello spazio rimanente */}
-            <div style={{ display: 'flex', flex: 1, justifyContent: 'space-between', alignItems: 'center' }}>
+            {/* SEZIONE STATISTICHE - compatte con margini */}
+            <div style={{ display: 'flex', marginLeft: STATS_MARGIN_LEFT }}>
               <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontWeight: '900', color: '#800020', fontSize: 26 }}>{team.pt}</div>
-              <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontSize: 26, color: '#333' }}>{team.pg}</div>
-              <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontSize: 26, color: '#333' }}>{team.v}</div>
-              <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontSize: 26, color: '#333' }}>{team.p}</div>
-              <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontSize: 26, color: '#333' }}>{team.s}</div>
-              <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontSize: 26, color: '#333' }}>{team.gf}</div>
-              <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontSize: 26, color: '#333' }}>{team.gs}</div>
-              <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontSize: 26, fontWeight: '700', color: team.dr > 0 ? '#16a34a' : team.dr < 0 ? '#dc2626' : '#333' }}>
+              <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontSize: 26, color: '#333', marginLeft: 8 }}>{team.pg}</div>
+              <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontSize: 26, color: '#333', marginLeft: 8 }}>{team.v}</div>
+              <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontSize: 26, color: '#333', marginLeft: 8 }}>{team.p}</div>
+              <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontSize: 26, color: '#333', marginLeft: 8 }}>{team.s}</div>
+              <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontSize: 26, color: '#333', marginLeft: 8 }}>{team.gf}</div>
+              <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontSize: 26, color: '#333', marginLeft: 8 }}>{team.gs}</div>
+              <div style={{ display: 'flex', width: STAT_COLUMN_WIDTH, justifyContent: 'center', fontSize: 26, fontWeight: '700', color: team.dr > 0 ? '#16a34a' : team.dr < 0 ? '#dc2626' : '#333', marginLeft: 8 }}>
                 {team.dr > 0 ? `+${team.dr}` : team.dr}
               </div>
             </div>
