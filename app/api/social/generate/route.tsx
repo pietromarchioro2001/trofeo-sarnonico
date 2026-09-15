@@ -184,7 +184,7 @@ export async function GET(req: NextRequest) {
       
       // LARGHEZZE COLONNE
       const TEAM_SECTION_WIDTH = 360;    // Larghezza totale logo + nome squadra
-      const STAT_COLUMN_WIDTH = 35;      // Larghezza di OGNI colonna statistica
+      const STAT_COLUMN_WIDTH = 45;      // Larghezza di OGNI colonna statistica
       const LOGO_MARGIN_LEFT = 70;
       const STATS_MARGIN_LEFT = 10;      // ✅ SPAZIO tra nome squadra e prima statistica
 
