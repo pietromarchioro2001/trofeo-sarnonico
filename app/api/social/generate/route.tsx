@@ -428,7 +428,16 @@ export async function GET(req: NextRequest) {
               </div>
             </div>
             
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: -4 }}>
+              {/* ORA SPOSTATA IN ALTO in modo affidabile */}
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                position: 'relative',
+                top: -12  // ✅ Usa questo invece di marginTop. Aumenta il numero (es. -15, -20) per salire ancora
+              }}>
+                <span style={{ fontSize: 22, color: '#666', fontWeight: '700' }}>{match.match_time || '--:--'}</span>
+              </div>
               <span style={{ fontSize: 26, color: '#666', fontWeight: '700' }}>{match.match_time || '--:--'}</span>
             </div>
           </div>
