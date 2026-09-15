@@ -386,38 +386,43 @@ export async function GET(req: NextRequest) {
       const matchCards = dayMatches.map((match, index) => {
         const homeTeam = teamsData?.find(t => t.id === match.home_team_id);
         const awayTeam = teamsData?.find(t => t.id === match.away_team_id);
-        const cardY = 520 + (index * 140); // Posizione Y di ogni card
+        const cardY = 520 + (index * 110); // Posizione Y di ogni card (ridotta da 140 a 110)
 
         return (
-          <div key={match.id} style={{ position: 'absolute', top: cardY, left: 65, right: 65, display: 'flex', flexDirection: 'column', background: 'rgba(255,255,255,0.95)', borderRadius: 12, padding: 15, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-            {/* Squadra Casa */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
+          <div key={match.id} style={{ position: 'absolute', top: cardY, left: 65, right: 65, display: 'flex', flexDirection: 'column', background: 'rgba(255,255,255,0.95)', borderRadius: 12, padding: '12px 15px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+            
+            {/* RIGA PRINCIPALE: Logo Casa - Nome Casa - VS - Nome Ospite - Logo Ospite */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              
+              {/* Squadra Casa */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
                 {homeTeam?.logo_url ? (
-                  <img src={homeTeam.logo_url} width="32" height="32" style={{ objectFit: 'contain' }} />
+                  <img src={homeTeam.logo_url} width="28" height="28" style={{ objectFit: 'contain' }} />
                 ) : (
-                  <div style={{ width: 32, height: 32, background: '#ddd', borderRadius: '50%' }} />
+                  <div style={{ width: 28, height: 28, background: '#ddd', borderRadius: '50%' }} />
                 )}
-                <span style={{ fontWeight: '700', fontSize: 20, color: '#000', textTransform: 'uppercase' }}>{homeTeam?.name || 'CASA'}</span>
+                <span style={{ fontWeight: '700', fontSize: 18, color: '#000', textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{homeTeam?.name || 'CASA'}</span>
               </div>
-            </div>
-            
-            {/* VS e Ora */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '8px 0' }}>
-              <span style={{ fontWeight: '900', fontSize: 28, color: '#800020' }}>VS</span>
-              <span style={{ marginLeft: 15, fontSize: 18, color: '#666', fontWeight: '600' }}>{match.match_time || '--:--'}</span>
-            </div>
-            
-            {/* Squadra Trasferta */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
+              
+              {/* VS */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 50 }}>
+                <span style={{ fontWeight: '900', fontSize: 24, color: '#800020' }}>VS</span>
+              </div>
+              
+              {/* Squadra Ospite */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, justifyContent: 'flex-end' }}>
+                <span style={{ fontWeight: '700', fontSize: 18, color: '#000', textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>{awayTeam?.name || 'OSPITE'}</span>
                 {awayTeam?.logo_url ? (
-                  <img src={awayTeam.logo_url} width="32" height="32" style={{ objectFit: 'contain' }} />
+                  <img src={awayTeam.logo_url} width="28" height="28" style={{ objectFit: 'contain' }} />
                 ) : (
-                  <div style={{ width: 32, height: 32, background: '#ddd', borderRadius: '50%' }} />
+                  <div style={{ width: 28, height: 28, background: '#ddd', borderRadius: '50%' }} />
                 )}
-                <span style={{ fontWeight: '700', fontSize: 20, color: '#000', textTransform: 'uppercase' }}>{awayTeam?.name || 'OSPITE'}</span>
               </div>
+            </div>
+            
+            {/* ORA SOTTO */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 6 }}>
+              <span style={{ fontSize: 16, color: '#666', fontWeight: '600' }}>{match.match_time || '--:--'}</span>
             </div>
           </div>
         );
