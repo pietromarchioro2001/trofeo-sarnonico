@@ -443,11 +443,11 @@ export async function GET(req: NextRequest) {
         (
           <div style={{ width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: '#fff' }}>
             <img 
-                src="https://trofeo-sarnonico.vercel.app/template-partite.png" 
-                width="1080" 
-                height="1920" 
-                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'contain' }} 
-              />
+              src="https://trofeo-sarnonico.vercel.app/template-partite.png" 
+              width="1080" 
+              height="1920" 
+              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
+            />
             
             {/* Logo Torneo */}
             <div style={{ position: 'absolute', top: 50, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 10 }}>
@@ -463,8 +463,8 @@ export async function GET(req: NextRequest) {
             <div style={{ 
               position: 'absolute', 
               top: 320, 
-              left: 200,        // ✅ Aumenta questo valore per spostare più a destra
-              right: 50, 
+              left: 0,        // ✅ Aumenta questo valore per spostare più a destra
+              right: 200, 
               display: 'flex', 
               justifyContent: 'flex-start',  // ✅ Cambiato da 'center' a 'flex-start'
               zIndex: 10 
