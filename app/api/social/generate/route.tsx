@@ -386,43 +386,54 @@ export async function GET(req: NextRequest) {
       const matchCards = dayMatches.map((match, index) => {
         const homeTeam = teamsData?.find(t => t.id === match.home_team_id);
         const awayTeam = teamsData?.find(t => t.id === match.away_team_id);
-        const cardY = 520 + (index * 110); // Posizione Y di ogni card (ridotta da 140 a 110)
+        const cardY = 520 + (index * 120); // Spazio tra le card
 
         return (
-          <div key={match.id} style={{ position: 'absolute', top: cardY, left: 65, right: 65, display: 'flex', flexDirection: 'column', background: 'rgba(255,255,255,0.95)', borderRadius: 12, padding: '12px 15px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+          <div key={match.id} style={{ 
+            position: 'absolute', 
+            top: cardY, 
+            left: 50, 
+            right: 50, 
+            display: 'flex', 
+            flexDirection: 'column', 
+            background: 'rgba(255,255,255,0.95)', 
+            borderRadius: 12, 
+            padding: '15px 20px', 
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)' 
+          }}>
             
-            {/* RIGA PRINCIPALE: Logo Casa - Nome Casa - VS - Nome Ospite - Logo Ospite */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            {/* RIGA PRINCIPALE */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
               
-              {/* Squadra Casa */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+              {/* Squadra Casa - Logo + Nome */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
                 {homeTeam?.logo_url ? (
-                  <img src={homeTeam.logo_url} width="28" height="28" style={{ objectFit: 'contain' }} />
+                  <img src={homeTeam.logo_url} width="35" height="35" style={{ objectFit: 'contain', flexShrink: 0 }} />
                 ) : (
-                  <div style={{ width: 28, height: 28, background: '#ddd', borderRadius: '50%' }} />
+                  <div style={{ width: 35, height: 35, background: '#ddd', borderRadius: '50%', flexShrink: 0 }} />
                 )}
-                <span style={{ fontWeight: '700', fontSize: 18, color: '#000', textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{homeTeam?.name || 'CASA'}</span>
+                <span style={{ fontWeight: '700', fontSize: 24, color: '#000', textTransform: 'uppercase' }}>{homeTeam?.name || 'CASA'}</span>
               </div>
               
               {/* VS */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 50 }}>
-                <span style={{ fontWeight: '900', fontSize: 24, color: '#800020' }}>VS</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 60 }}>
+                <span style={{ fontWeight: '900', fontSize: 28, color: '#800020' }}>VS</span>
               </div>
               
-              {/* Squadra Ospite */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, justifyContent: 'flex-end' }}>
-                <span style={{ fontWeight: '700', fontSize: 18, color: '#000', textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>{awayTeam?.name || 'OSPITE'}</span>
+              {/* Squadra Ospite - Nome + Logo */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, justifyContent: 'flex-end' }}>
+                <span style={{ fontWeight: '700', fontSize: 24, color: '#000', textTransform: 'uppercase', textAlign: 'right' }}>{awayTeam?.name || 'OSPITE'}</span>
                 {awayTeam?.logo_url ? (
-                  <img src={awayTeam.logo_url} width="28" height="28" style={{ objectFit: 'contain' }} />
+                  <img src={awayTeam.logo_url} width="35" height="35" style={{ objectFit: 'contain', flexShrink: 0 }} />
                 ) : (
-                  <div style={{ width: 28, height: 28, background: '#ddd', borderRadius: '50%' }} />
+                  <div style={{ width: 35, height: 35, background: '#ddd', borderRadius: '50%', flexShrink: 0 }} />
                 )}
               </div>
             </div>
             
-            {/* ORA SOTTO */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 6 }}>
-              <span style={{ fontSize: 16, color: '#666', fontWeight: '600' }}>{match.match_time || '--:--'}</span>
+            {/* ORA SOTTO - Centrata */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 8 }}>
+              <span style={{ fontSize: 18, color: '#666', fontWeight: '600' }}>{match.match_time || '--:--'}</span>
             </div>
           </div>
         );
@@ -432,7 +443,7 @@ export async function GET(req: NextRequest) {
         (
           <div style={{ width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: '#fff' }}>
             <img 
-              src="https://trofeo-sarnonico.vercel.app/template-partite-giornata.png" 
+              src="https://trofeo-sarnonico.vercel.app/template-partite.png" 
               width="1080" 
               height="1920" 
               style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
