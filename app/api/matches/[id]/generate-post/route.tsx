@@ -65,7 +65,7 @@ export async function GET(
         {/* LOGO CASA */}
         <div style={{ position: 'absolute', top: 520, left: 80, display: 'flex' }}>
           {homeLogo ? (
-            <img src={homeLogo} width="220" height="220" style={{ objectFit: 'contain' }} />
+            <img src={homeLogo} width="260" height="260" style={{ objectFit: 'contain' }} />
           ) : (
             <div style={{ display: 'flex', width: 220, height: 220, background: 'rgba(128,0,36,0.1)', borderRadius: '50%' }} />
           )}
@@ -74,7 +74,7 @@ export async function GET(
         {/* LOGO OSPITE */}
         <div style={{ position: 'absolute', top: 520, right: 80, display: 'flex' }}>
           {awayLogo ? (
-            <img src={awayLogo} width="220" height="220" style={{ objectFit: 'contain' }} />
+            <img src={awayLogo} width="260" height="260" style={{ objectFit: 'contain' }} />
           ) : (
             <div style={{ display: 'flex', width: 220, height: 220, background: 'rgba(128,0,36,0.1)', borderRadius: '50%' }} />
           )}
@@ -154,7 +154,7 @@ export async function GET(
           </div>
 
           {/* Lista Marcatori Ospite - AGGIUNTO display: 'flex', flexDirection: 'column' */}
-          <div style={{ position: 'absolute', left: '50%', right: 60, top: 80, bottom: 40, paddingLeft: 40, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ position: 'absolute', left: '50%', right: 60, top: 35, bottom: 40, paddingLeft: 40, display: 'flex', flexDirection: 'column' }}>
             {awayScorers.length > 0 ? awayScorers.map((scorer: any, idx: number) => (
               <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16, fontSize: 26, color: '#333' }}>
                 <span style={{ color: '#800026', minWidth: 48, fontSize: 26, fontWeight: '800', }}>{scorer.minute}'</span>
