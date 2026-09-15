@@ -386,7 +386,7 @@ export async function GET(req: NextRequest) {
       const matchCards = dayMatches.map((match, index) => {
         const homeTeam = teamsData?.find(t => t.id === match.home_team_id);
         const awayTeam = teamsData?.find(t => t.id === match.away_team_id);
-        const cardY = 1120 + (index * 160); // ✅ CARD PIÙ BASSE (da 520 a 420, spazio aumentato a 160)
+        const cardY = 1020 + (index * 160); // ✅ CARD PIÙ BASSE (da 520 a 420, spazio aumentato a 160)
 
         return (
           <div key={match.id} style={{ 
@@ -403,7 +403,7 @@ export async function GET(req: NextRequest) {
           }}>
             
             {/* RIGA PRINCIPALE */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 18 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
               
               {/* Squadra Casa - Logo + Nome */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 15, flex: 1, minWidth: 0 }}>
@@ -432,7 +432,7 @@ export async function GET(req: NextRequest) {
             </div>
             
             {/* ORA SOTTO */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 6 }}>
               <span style={{ fontSize: 26, color: '#666', fontWeight: '700' }}>{match.match_time || '--:--'}</span>
             </div>
           </div>
@@ -462,8 +462,8 @@ export async function GET(req: NextRequest) {
             {/* Data - SPOSTATA A DESTRA */}
             <div style={{ 
               position: 'absolute', 
-              top: 800, 
-              left: 400,        // ✅ Aumenta questo valore per spostare più a destra
+              top: 810, 
+              left: 800,        // ✅ Aumenta questo valore per spostare più a destra
               right: 0, 
               display: 'flex', 
               justifyContent: 'flex-start',  // ✅ Cambiato da 'center' a 'flex-start'
