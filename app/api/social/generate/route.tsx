@@ -386,7 +386,7 @@ export async function GET(req: NextRequest) {
       const matchCards = dayMatches.map((match, index) => {
         const homeTeam = teamsData?.find(t => t.id === match.home_team_id);
         const awayTeam = teamsData?.find(t => t.id === match.away_team_id);
-        const cardY = 420 + (index * 160); // ✅ CARD PIÙ BASSE (da 520 a 420, spazio aumentato a 160)
+        const cardY = 520 + (index * 160); // ✅ CARD PIÙ BASSE (da 520 a 420, spazio aumentato a 160)
 
         return (
           <div key={match.id} style={{ 
@@ -443,11 +443,11 @@ export async function GET(req: NextRequest) {
         (
           <div style={{ width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: '#fff' }}>
             <img 
-              src="https://trofeo-sarnonico.vercel.app/template-partite.png" 
-              width="1080" 
-              height="1920" 
-              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
-            />
+                src="https://trofeo-sarnonico.vercel.app/template-partite.png" 
+                width="1080" 
+                height="1920" 
+                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'contain' }} 
+              />
             
             {/* Logo Torneo */}
             <div style={{ position: 'absolute', top: 50, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 10 }}>
@@ -459,8 +459,16 @@ export async function GET(req: NextRequest) {
               />
             </div>
 
-            {/* Data - SEMPLICE, GRANDE E SENZA SFONDO */}
-            <div style={{ position: 'absolute', top: 320, left: 0, right: 50, display: 'flex', justifyContent: 'center', zIndex: 10 }}>
+            {/* Data - SPOSTATA A DESTRA */}
+            <div style={{ 
+              position: 'absolute', 
+              top: 320, 
+              left: 200,        // ✅ Aumenta questo valore per spostare più a destra
+              right: 50, 
+              display: 'flex', 
+              justifyContent: 'flex-start',  // ✅ Cambiato da 'center' a 'flex-start'
+              zIndex: 10 
+            }}>
               <span style={{ color: '#800020', fontSize: 48, fontWeight: '900' }}>{formattedDate}</span>
             </div>
 
