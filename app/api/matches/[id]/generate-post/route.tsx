@@ -123,12 +123,8 @@ export async function GET(
 
     const arrayBuffer = await imageResponse.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    // Crea nomi sicuri (rimuove spazi e caratteri speciali, limita a 15 caratteri per squadra)
-    const safeHomeName = homeName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '').substring(0, 15);
-    const safeAwayName = awayName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '').substring(0, 15);
-    
-    // Nome file riconoscibile: ID_NomeCasa_vs_NomeOspite_TIPO.png
-    const fileName = `${params.id}_${safeHomeName}_vs_${safeAwayName}_${type}.png`;
+    // ✅ Nome file prevedibile e allineato con ciò che il frontend si aspetta
+    const fileName = `${params.id}_${type}_${template}.png`;
 
     const { error: uploadError } = await supabase.storage
       .from('tournament-files')
