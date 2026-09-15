@@ -223,6 +223,38 @@ export default function AltroPage() {
 
   const showRestricted = isStaffMode || isCaptainMode;
 
+    const handleSharePost = async (type: 'coming-soon' | 'classifica' | 'partite-giornata', fileName: string) => {
+    setIsGenerating(type);
+    try {
+      const res = await fetch(`/api/social/generate?type=${type}&t=${Date.now()}`);
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const file = new File([blob], fileName, { type: 'image/png' });
+
+      // ✅ 1. Prova a usare la condivisione nativa (funziona su mobile e Safari/Chrome recenti)
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'Trofeo Sarnonico',
+          text: 'Ecco il post del torneo!'
+        });
+      } else {
+        // ✅ 2. Fallback: scarica il file se la condivisione non è supportata (es. desktop)
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Errore generazione post');
+    } finally {
+      setIsGenerating(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center">
@@ -385,149 +417,96 @@ export default function AltroPage() {
                     </div>
                   )}
 
-                  {/* ✅ POST SOCIAL (NUOVO) */}
+                  {/* ✅ POST SOCIAL */}
                   {item.id === 'social' && isStaffMode && (
                     <div>
-                      <h2 className="text-lg font-black text-[#581C24] uppercase tracking-wider mb-4">Genera Post Social</h2>
-                      <p className="text-sm text-gray-600 mb-6">Genera immagini pronte per Instagram e Facebook</p>
+                      <h2 className="text-lg font-black text-[#581C24] uppercase tracking-wider mb-2">Genera Post Social</h2>
+                      <p className="text-xs text-gray-500 mb-4">Clicca per generare e condividere l'immagine</p>
                       
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         {/* COMING SOON */}
                         <button 
-                          onClick={async () => {
-                            setIsGenerating('coming-soon');
-                            try {
-                              const res = await fetch(`/api/social/generate?type=coming-soon&t=${Date.now()}`);
-                              if (!res.ok) throw new Error();
-                              const blob = await res.blob();
-                              const url = URL.createObjectURL(blob);
-                              const a = document.createElement('a');
-                              a.href = url;
-                              a.download = 'Coming_Soon_Trofeo_Sarnonico.png';
-                              a.click();
-                              URL.revokeObjectURL(url);
-                            } catch (err) {
-                              alert('Errore generazione post');
-                            } finally {
-                              setIsGenerating(null);
-                            }
-                          }}
+                          onClick={() => handleSharePost('coming-soon', `Coming_Soon_Trofeo_Sarnonico.png`)}
                           disabled={isGenerating !== null}
-                          className="flex flex-col items-center gap-3 p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border-2 border-blue-200 hover:border-blue-400 hover:shadow-lg transition-all group min-h-[220px] disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border-2 border-blue-200 hover:border-blue-400 hover:shadow-lg transition-all group min-h-[140px] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {isGenerating === 'coming-soon' ? (
                             <>
-                              <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center">
-                                <svg className="animate-spin h-8 w-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                                <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
                               </div>
-                              <span className="font-bold text-[#581C24]">Generazione...</span>
-                              <span className="text-xs text-gray-500 text-center">Attendere prego</span>
+                              <span className="font-bold text-[#581C24] text-sm">Generazione...</span>
                             </>
                           ) : (
                             <>
-                              <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                               </div>
-                              <span className="font-bold text-[#581C24]">Coming Soon</span>
-                              <span className="text-xs text-gray-500 text-center">Annuncio inizio torneo</span>
+                              <span className="font-bold text-[#581C24] text-sm">Coming Soon</span>
+                              <span className="text-[10px] text-gray-500 text-center leading-tight">Annuncio inizio torneo</span>
                             </>
                           )}
                         </button>
 
                         {/* CLASSIFICA */}
                         <button 
-                          onClick={async () => {
-                            setIsGenerating('classifica');
-                            try {
-                              const res = await fetch(`/api/social/generate?type=classifica&t=${Date.now()}`);
-                              if (!res.ok) throw new Error();
-                              const blob = await res.blob();
-                              const url = URL.createObjectURL(blob);
-                              const a = document.createElement('a');
-                              a.href = url;
-                              a.download = `Classifica_Trofeo_Sarnonico_${Date.now()}.png`;
-                              a.click();
-                              URL.revokeObjectURL(url);
-                            } catch (err) {
-                              alert('Errore generazione post');
-                            } finally {
-                              setIsGenerating(null);
-                            }
-                          }}
+                          onClick={() => handleSharePost('classifica', `Classifica_Trofeo_Sarnonico_${Date.now()}.png`)}
                           disabled={isGenerating !== null}
-                          className="flex flex-col items-center gap-3 p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border-2 border-purple-200 hover:border-purple-400 hover:shadow-lg transition-all group min-h-[220px] disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border-2 border-purple-200 hover:border-purple-400 hover:shadow-lg transition-all group min-h-[140px] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {isGenerating === 'classifica' ? (
                             <>
-                              <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center">
-                                <svg className="animate-spin h-8 w-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
+                                <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
                               </div>
-                              <span className="font-bold text-[#581C24]">Generazione...</span>
-                              <span className="text-xs text-gray-500 text-center">Attendere prego</span>
+                              <span className="font-bold text-[#581C24] text-sm">Generazione...</span>
                             </>
                           ) : (
                             <>
-                              <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                 </svg>
                               </div>
-                              <span className="font-bold text-[#581C24]">Classifica</span>
-                              <span className="text-xs text-gray-500 text-center">Classifica aggiornata gironi</span>
+                              <span className="font-bold text-[#581C24] text-sm">Classifica</span>
+                              <span className="text-[10px] text-gray-500 text-center leading-tight">Classifica aggiornata gironi</span>
                             </>
                           )}
                         </button>
-                                                {/* PARTITE DELLA GIORNATA */}
+
+                        {/* PARTITE DELLA GIORNATA */}
                         <button 
-                          onClick={async () => {
-                            setIsGenerating('partite-giornata');
-                            try {
-                              const res = await fetch(`/api/social/generate?type=partite-giornata&t=${Date.now()}`);
-                              if (!res.ok) throw new Error();
-                              const blob = await res.blob();
-                              const url = URL.createObjectURL(blob);
-                              const a = document.createElement('a');
-                              a.href = url;
-                              a.download = `Partite_Giornata_${Date.now()}.png`;
-                              a.click();
-                              URL.revokeObjectURL(url);
-                            } catch (err) {
-                              alert('Errore generazione post');
-                            } finally {
-                              setIsGenerating(null);
-                            }
-                          }}
+                          onClick={() => handleSharePost('partite-giornata', `Partite_Giornata_${Date.now()}.png`)}
                           disabled={isGenerating !== null}
-                          className="flex flex-col items-center gap-3 p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border-2 border-green-200 hover:border-green-400 hover:shadow-lg transition-all group min-h-[220px] disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border-2 border-green-200 hover:border-green-400 hover:shadow-lg transition-all group min-h-[140px] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {isGenerating === 'partite-giornata' ? (
                             <>
-                              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center">
-                                <svg className="animate-spin h-8 w-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                                <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
                               </div>
-                              <span className="font-bold text-[#581C24]">Generazione...</span>
-                              <span className="text-xs text-gray-500 text-center">Attendere prego</span>
+                              <span className="font-bold text-[#581C24] text-sm">Generazione...</span>
                             </>
                           ) : (
                             <>
-                              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
                               </div>
-                              <span className="font-bold text-[#581C24]">Partite Giornata</span>
-                              <span className="text-xs text-gray-500 text-center">Prossime partite in programma</span>
+                              <span className="font-bold text-[#581C24] text-sm">Partite Giornata</span>
+                              <span className="text-[10px] text-gray-500 text-center leading-tight">Prossime partite in programma</span>
                             </>
                           )}
                         </button>
