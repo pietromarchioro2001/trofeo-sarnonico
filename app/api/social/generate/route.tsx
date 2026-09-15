@@ -346,11 +346,10 @@ export async function GET(req: NextRequest) {
         },
       });
     }
-    // ✅ PARTITE DELLA GIORNATA
+        // ✅ PARTITE DELLA GIORNATA
     if (type === 'partite-giornata') {
       console.log('📅 [1/4] Generazione post partite giornata...');
 
-      // Recupera le partite ordinate per data
       const { data: matchesData, error: matchesError } = await supabase
         .from('matches')
         .select('id, match_date, match_time, home_team_id, away_team_id, status')
@@ -365,28 +364,25 @@ export async function GET(req: NextRequest) {
 
       console.log('✅ [2/4] Partite recuperate:', matchesData.length);
 
-      // Trova la prima data disponibile
       const firstDate = matchesData[0].match_date;
-      const dayMatches = matchesData.filter(m => m.match_date === firstDate);
+      const dayMatches = matchesData.filter((m: any) => m.match_date === firstDate);
 
       console.log('✅ [3/4] Partite della giornata:', dayMatches.length);
 
-      // Recupera dati squadre
-      const teamIds = Array.from(new Set(dayMatches.flatMap(m => [m.home_team_id, m.away_team_id])));
+      const teamIds = Array.from(new Set(dayMatches.flatMap((m: any) => [m.home_team_id, m.away_team_id])));
       const { data: teamsData } = await supabase
         .from('teams')
         .select('id, name, logo_url')
         .in('id', teamIds);
 
-      // Formatta data
       const dateObj = new Date(firstDate);
       const formattedDate = `${String(dateObj.getUTCDate()).padStart(2, '0')}/${String(dateObj.getUTCMonth() + 1).padStart(2, '0')}/${dateObj.getUTCFullYear()}`;
 
-      // Genera card partite - PIÙ STACCATE MA PIÙ BASSE
-      const matchCards = dayMatches.map((match, index) => {
-        const homeTeam = teamsData?.find(t => t.id === match.home_team_id);
-        const awayTeam = teamsData?.find(t => t.id === match.away_team_id);
-        const cardY = 980 + (index * 170); // ✅ PIÙ STACCATE (da 160 a 180)
+      // Genera card partite
+      const matchCards = dayMatches.map((match: any, index: number) => {
+        const homeTeam = teamsData?.find((t: any) => t.id === match.home_team_id);
+        const awayTeam = teamsData?.find((t: any) => t.id === match.away_team_id);
+        const cardY = 980 + (index * 180);
 
         return (
           <div key={match.id} style={{ 
@@ -398,38 +394,32 @@ export async function GET(req: NextRequest) {
             flexDirection: 'column', 
             background: 'rgba(255,255,255,0.98)', 
             borderRadius: 16, 
-            padding: '12px 20px',  // ✅ RIDOTTO padding (era 20px 25px)
+            padding: '12px 20px',
             boxShadow: '0 4px 12px rgba(0,0,0,0.15)' 
           }}>
-            
-            {/* RIGA PRINCIPALE */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-              
-              {/* Squadra Casa - Logo + Nome */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
                 {homeTeam?.logo_url ? (
                   <img src={homeTeam.logo_url} width="50" height="50" style={{ objectFit: 'contain', flexShrink: 0 }} />
                 ) : (
                   <div style={{ width: 50, height: 50, background: '#ddd', borderRadius: '50%', flexShrink: 0 }} />
                 )}
-                <span style={{ fontWeight: '800', fontSize: 38, color: '#000', textTransform: 'uppercase' }}>{homeTeam?.name || 'CASA'}</span>
+                <span style={{ fontWeight: '800', fontSize: 36, color: '#000', textTransform: 'uppercase' }}>{homeTeam?.name || 'CASA'}</span>
               </div>
               
-              {/* VS - CORSIVO E STILE DIVERSO */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 80 }}>
                 <span style={{ 
-                  fontWeight: '900',
-                  textShadow: '2px 2px 0px rgba(0,0,0,0.7), -2px -2px 0px rgba(0,0,0,0.7)
+                  fontWeight: '900', 
                   fontSize: 42, 
                   color: '#800020',
-                  fontStyle: 'italic',        // ✅ CORSIVO
-                  fontFamily: 'serif',        // ✅ FONT DIVERSO
+                  fontStyle: 'italic',
+                  fontFamily: 'serif',
+                  textShadow: '2px 2px 4px rgba(128,0,36,0.3)'
                 }}>VS</span>
               </div>
               
-              {/* Squadra Ospite - Nome + Logo */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0, justifyContent: 'flex-end' }}>
-                <span style={{ fontWeight: '800', fontSize: 38, color: '#000', textTransform: 'uppercase', textAlign: 'right' }}>{awayTeam?.name || 'OSPITE'}</span>
+                <span style={{ fontWeight: '800', fontSize: 36, color: '#000', textTransform: 'uppercase', textAlign: 'right' }}>{awayTeam?.name || 'OSPITE'}</span>
                 {awayTeam?.logo_url ? (
                   <img src={awayTeam.logo_url} width="50" height="50" style={{ objectFit: 'contain', flexShrink: 0 }} />
                 ) : (
@@ -438,7 +428,6 @@ export async function GET(req: NextRequest) {
               </div>
             </div>
             
-            {/* ORA SOTTO */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 4 }}>
               <span style={{ fontSize: 22, color: '#666', fontWeight: '700' }}>{match.match_time || '--:--'}</span>
             </div>
@@ -456,7 +445,6 @@ export async function GET(req: NextRequest) {
               style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
             />
             
-            {/* Logo Torneo */}
             <div style={{ position: 'absolute', top: 60, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 10 }}>
               <img 
                 src="https://trofeo-sarnonico.vercel.app/logo.png" 
@@ -466,7 +454,6 @@ export async function GET(req: NextRequest) {
               />
             </div>
 
-            {/* Data - PIÙ GROSSA/BOLD */}
             <div style={{ 
               position: 'absolute', 
               top: 810, 
@@ -478,13 +465,12 @@ export async function GET(req: NextRequest) {
             }}>
               <span style={{ 
                 color: '#FFFFFF', 
-                fontSize: 48,           // ✅ AUMENTATO (era 48)
-                fontWeight: '900',      // ✅ EXTRA BOLD
-                textShadow: '2px 2px 0px rgba(0,0,0,0.7), -2px -2px 0px rgba(0,0,0,0.7)
+                fontSize: 56,
+                fontWeight: '900',
+                textShadow: '2px 2px 0px rgba(0,0,0,0.7), -2px -2px 0px rgba(0,0,0,0.7), 2px -2px 0px rgba(0,0,0,0.7), -2px 2px 0px rgba(0,0,0,0.7), 4px 4px 8px rgba(0,0,0,0.5)'
               }}>{formattedDate}</span>
             </div>
 
-            {/* Card Partite */}
             {matchCards}
           </div>
         ),
@@ -494,16 +480,14 @@ export async function GET(req: NextRequest) {
       const arrayBuffer = await imageResponse.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
       
-      // Conta quante partite della giornata esistono già
       const { data: existingPartite, error: listErrorPartite } = await supabase.storage
         .from('tournament-files')
         .list('social', { limit: 100 });
 
-      const partiteFiles = existingPartite?.filter(f => f.name.startsWith('PARTITE_GIORNATA_')) || [];
+      const partiteFiles = existingPartite?.filter((f: any) => f.name.startsWith('PARTITE_GIORNATA_')) || [];
       const nextNumber = partiteFiles.length + 1;
       const fileName = `PARTITE_GIORNATA_${nextNumber}.png`;
       
-      // Salva su Supabase
       const { error: uploadError } = await supabase.storage
         .from('tournament-files')
         .upload(`social/${fileName}`, buffer, {
