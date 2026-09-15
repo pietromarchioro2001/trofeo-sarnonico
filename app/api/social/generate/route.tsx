@@ -408,11 +408,11 @@ export async function GET(req: NextRequest) {
               {/* Squadra Casa - Logo + Nome */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 15, flex: 1, minWidth: 0 }}>
                 {homeTeam?.logo_url ? (
-                  <img src={homeTeam.logo_url} width="50" height="50" style={{ objectFit: 'contain', flexShrink: 0 }} />
+                  <img src={homeTeam.logo_url} width="80" height="80" style={{ objectFit: 'contain', flexShrink: 0 }} />
                 ) : (
                   <div style={{ width: 50, height: 50, background: '#ddd', borderRadius: '50%', flexShrink: 0 }} />
                 )}
-                <span style={{ fontWeight: '800', fontSize: 32, color: '#000', textTransform: 'uppercase' }}>{homeTeam?.name || 'CASA'}</span>
+                <span style={{ fontWeight: '800', fontSize: 38, color: '#000', textTransform: 'uppercase' }}>{homeTeam?.name || 'CASA'}</span>
               </div>
               
               {/* VS */}
@@ -422,9 +422,9 @@ export async function GET(req: NextRequest) {
               
               {/* Squadra Ospite - Nome + Logo */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 15, flex: 1, minWidth: 0, justifyContent: 'flex-end' }}>
-                <span style={{ fontWeight: '800', fontSize: 32, color: '#000', textTransform: 'uppercase', textAlign: 'right' }}>{awayTeam?.name || 'OSPITE'}</span>
+                <span style={{ fontWeight: '800', fontSize: 38, color: '#000', textTransform: 'uppercase', textAlign: 'right' }}>{awayTeam?.name || 'OSPITE'}</span>
                 {awayTeam?.logo_url ? (
-                  <img src={awayTeam.logo_url} width="50" height="50" style={{ objectFit: 'contain', flexShrink: 0 }} />
+                  <img src={awayTeam.logo_url} width="80" height="80" style={{ objectFit: 'contain', flexShrink: 0 }} />
                 ) : (
                   <div style={{ width: 50, height: 50, background: '#ddd', borderRadius: '50%', flexShrink: 0 }} />
                 )}
@@ -443,7 +443,7 @@ export async function GET(req: NextRequest) {
         (
           <div style={{ width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: '#fff' }}>
             <img 
-              src="https://trofeo-sarnonico.vercel.app/template-partite-giornata.png" 
+              src="https://trofeo-sarnonico.vercel.app/template-partite.png" 
               width="1080" 
               height="1920" 
               style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
@@ -460,7 +460,7 @@ export async function GET(req: NextRequest) {
             </div>
 
             {/* Data - SEMPLICE, GRANDE E SENZA SFONDO */}
-            <div style={{ position: 'absolute', top: 320, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 10 }}>
+            <div style={{ position: 'absolute', top: 320, left: 0, right: 50, display: 'flex', justifyContent: 'center', zIndex: 10 }}>
               <span style={{ color: '#800020', fontSize: 48, fontWeight: '900' }}>{formattedDate}</span>
             </div>
 
