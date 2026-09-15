@@ -382,7 +382,7 @@ export async function GET(req: NextRequest) {
       const matchCards = dayMatches.map((match: any, index: number) => {
         const homeTeam = teamsData?.find((t: any) => t.id === match.home_team_id);
         const awayTeam = teamsData?.find((t: any) => t.id === match.away_team_id);
-        const cardY = 980 + (index * 175);
+        const cardY = 970 + (index * 175);
 
         return (
           <div key={match.id} style={{ 
@@ -438,7 +438,7 @@ export async function GET(req: NextRequest) {
               alignItems: 'center', 
               justifyContent: 'center', 
               position: 'relative',
-              top: -14
+              top: -16
             }}>
               <span style={{ fontSize: 28, color: '#666', fontWeight: '700' }}>{match.match_time || '--:--'}</span>
             </div>
