@@ -386,54 +386,54 @@ export async function GET(req: NextRequest) {
       const matchCards = dayMatches.map((match, index) => {
         const homeTeam = teamsData?.find(t => t.id === match.home_team_id);
         const awayTeam = teamsData?.find(t => t.id === match.away_team_id);
-        const cardY = 520 + (index * 120); // Spazio tra le card
+        const cardY = 420 + (index * 160); // ✅ CARD PIÙ BASSE (da 520 a 420, spazio aumentato a 160)
 
         return (
           <div key={match.id} style={{ 
             position: 'absolute', 
             top: cardY, 
-            left: 50, 
-            right: 50, 
+            left: 40, 
+            right: 40, 
             display: 'flex', 
             flexDirection: 'column', 
-            background: 'rgba(255,255,255,0.95)', 
-            borderRadius: 12, 
-            padding: '15px 20px', 
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)' 
+            background: 'rgba(255,255,255,0.98)', 
+            borderRadius: 16, 
+            padding: '20px 25px', 
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)' 
           }}>
             
             {/* RIGA PRINCIPALE */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 15 }}>
               
               {/* Squadra Casa - Logo + Nome */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 15, flex: 1, minWidth: 0 }}>
                 {homeTeam?.logo_url ? (
-                  <img src={homeTeam.logo_url} width="35" height="35" style={{ objectFit: 'contain', flexShrink: 0 }} />
+                  <img src={homeTeam.logo_url} width="50" height="50" style={{ objectFit: 'contain', flexShrink: 0 }} />
                 ) : (
-                  <div style={{ width: 35, height: 35, background: '#ddd', borderRadius: '50%', flexShrink: 0 }} />
+                  <div style={{ width: 50, height: 50, background: '#ddd', borderRadius: '50%', flexShrink: 0 }} />
                 )}
-                <span style={{ fontWeight: '700', fontSize: 24, color: '#000', textTransform: 'uppercase' }}>{homeTeam?.name || 'CASA'}</span>
+                <span style={{ fontWeight: '800', fontSize: 32, color: '#000', textTransform: 'uppercase' }}>{homeTeam?.name || 'CASA'}</span>
               </div>
               
               {/* VS */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 60 }}>
-                <span style={{ fontWeight: '900', fontSize: 28, color: '#800020' }}>VS</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 80 }}>
+                <span style={{ fontWeight: '900', fontSize: 36, color: '#800020' }}>VS</span>
               </div>
               
               {/* Squadra Ospite - Nome + Logo */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, justifyContent: 'flex-end' }}>
-                <span style={{ fontWeight: '700', fontSize: 24, color: '#000', textTransform: 'uppercase', textAlign: 'right' }}>{awayTeam?.name || 'OSPITE'}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 15, flex: 1, minWidth: 0, justifyContent: 'flex-end' }}>
+                <span style={{ fontWeight: '800', fontSize: 32, color: '#000', textTransform: 'uppercase', textAlign: 'right' }}>{awayTeam?.name || 'OSPITE'}</span>
                 {awayTeam?.logo_url ? (
-                  <img src={awayTeam.logo_url} width="35" height="35" style={{ objectFit: 'contain', flexShrink: 0 }} />
+                  <img src={awayTeam.logo_url} width="50" height="50" style={{ objectFit: 'contain', flexShrink: 0 }} />
                 ) : (
-                  <div style={{ width: 35, height: 35, background: '#ddd', borderRadius: '50%', flexShrink: 0 }} />
+                  <div style={{ width: 50, height: 50, background: '#ddd', borderRadius: '50%', flexShrink: 0 }} />
                 )}
               </div>
             </div>
             
-            {/* ORA SOTTO - Centrata */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 8 }}>
-              <span style={{ fontSize: 18, color: '#666', fontWeight: '600' }}>{match.match_time || '--:--'}</span>
+            {/* ORA SOTTO */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 12 }}>
+              <span style={{ fontSize: 22, color: '#666', fontWeight: '700' }}>{match.match_time || '--:--'}</span>
             </div>
           </div>
         );
@@ -443,7 +443,7 @@ export async function GET(req: NextRequest) {
         (
           <div style={{ width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: '#fff' }}>
             <img 
-              src="https://trofeo-sarnonico.vercel.app/template-partite.png" 
+              src="https://trofeo-sarnonico.vercel.app/template-partite-giornata.png" 
               width="1080" 
               height="1920" 
               style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
@@ -459,18 +459,12 @@ export async function GET(req: NextRequest) {
               />
             </div>
 
-            {/* Data */}
-            <div style={{ position: 'absolute', top: 380, left: 120, right: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#800020', borderRadius: 12, padding: '12px 20px' }}>
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" style={{ marginRight: 10 }}>
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
-              </svg>
-              <span style={{ color: 'white', fontSize: 28, fontWeight: '700' }}>{formattedDate}</span>
+            {/* Data - SEMPLICE, GRANDE E SENZA SFONDO */}
+            <div style={{ position: 'absolute', top: 320, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 10 }}>
+              <span style={{ color: '#800020', fontSize: 48, fontWeight: '900' }}>{formattedDate}</span>
             </div>
 
-            {/* Card Partite */}
+            {/* Card Partite - POSIZIONATE PIÙ IN BASSO */}
             {matchCards}
           </div>
         ),
