@@ -434,7 +434,7 @@ export async function GET(req: NextRequest) {
                 alignItems: 'center', 
                 justifyContent: 'center', 
                 position: 'relative',
-                top: -12  // ✅ Usa questo invece di marginTop. Aumenta il numero (es. -15, -20) per salire ancora
+                top: -12
               }}>
                 <span style={{ fontSize: 22, color: '#666', fontWeight: '700' }}>{match.match_time || '--:--'}</span>
               </div>
