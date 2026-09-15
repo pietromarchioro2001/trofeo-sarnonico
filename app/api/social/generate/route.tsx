@@ -346,7 +346,153 @@ export async function GET(req: NextRequest) {
         },
       });
     }
+    // ✅ PARTITE DELLA GIORNATA
+    if (type === 'partite-giornata') {
+      console.log('📅 [1/4] Generazione post partite giornata...');
 
+      // Recupera le partite ordinate per data
+      const { data: matchesData, error: matchesError } = await supabase
+        .from('matches')
+        .select('id, match_date, match_time, home_team_id, away_team_id, status')
+        .eq('phase', 'GIRONI')
+        .in('status', ['PROGRAMMATA', 'LIVE'])
+        .order('match_date', { ascending: true })
+        .order('match_time', { ascending: true });
+
+      if (matchesError || !matchesData || matchesData.length === 0) {
+        throw new Error('Nessuna partita programmata trovata');
+      }
+
+      console.log('✅ [2/4] Partite recuperate:', matchesData.length);
+
+      // Trova la prima data disponibile
+      const firstDate = matchesData[0].match_date;
+      const dayMatches = matchesData.filter(m => m.match_date === firstDate);
+
+      console.log('✅ [3/4] Partite della giornata:', dayMatches.length);
+
+      // Recupera dati squadre
+      const teamIds = Array.from(new Set(dayMatches.flatMap(m => [m.home_team_id, m.away_team_id])));
+      const { data: teamsData } = await supabase
+        .from('teams')
+        .select('id, name, logo_url')
+        .in('id', teamIds);
+
+      // Formatta data
+      const dateObj = new Date(firstDate);
+      const formattedDate = `${String(dateObj.getUTCDate()).padStart(2, '0')}/${String(dateObj.getUTCMonth() + 1).padStart(2, '0')}/${dateObj.getUTCFullYear()}`;
+
+      // Genera card partite
+      const matchCards = dayMatches.map((match, index) => {
+        const homeTeam = teamsData?.find(t => t.id === match.home_team_id);
+        const awayTeam = teamsData?.find(t => t.id === match.away_team_id);
+        const cardY = 520 + (index * 140); // Posizione Y di ogni card
+
+        return (
+          <div key={match.id} style={{ position: 'absolute', top: cardY, left: 65, right: 65, display: 'flex', flexDirection: 'column', background: 'rgba(255,255,255,0.95)', borderRadius: 12, padding: 15, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+            {/* Squadra Casa */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
+                {homeTeam?.logo_url ? (
+                  <img src={homeTeam.logo_url} width="32" height="32" style={{ objectFit: 'contain' }} />
+                ) : (
+                  <div style={{ width: 32, height: 32, background: '#ddd', borderRadius: '50%' }} />
+                )}
+                <span style={{ fontWeight: '700', fontSize: 20, color: '#000', textTransform: 'uppercase' }}>{homeTeam?.name || 'CASA'}</span>
+              </div>
+            </div>
+            
+            {/* VS e Ora */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '8px 0' }}>
+              <span style={{ fontWeight: '900', fontSize: 28, color: '#800020' }}>VS</span>
+              <span style={{ marginLeft: 15, fontSize: 18, color: '#666', fontWeight: '600' }}>{match.match_time || '--:--'}</span>
+            </div>
+            
+            {/* Squadra Trasferta */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
+                {awayTeam?.logo_url ? (
+                  <img src={awayTeam.logo_url} width="32" height="32" style={{ objectFit: 'contain' }} />
+                ) : (
+                  <div style={{ width: 32, height: 32, background: '#ddd', borderRadius: '50%' }} />
+                )}
+                <span style={{ fontWeight: '700', fontSize: 20, color: '#000', textTransform: 'uppercase' }}>{awayTeam?.name || 'OSPITE'}</span>
+              </div>
+            </div>
+          </div>
+        );
+      });
+
+      const imageResponse = new ImageResponse(
+        (
+          <div style={{ width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: '#fff' }}>
+            <img 
+              src="https://trofeo-sarnonico.vercel.app/template-partite-giornata.png" 
+              width="1080" 
+              height="1920" 
+              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
+            />
+            
+            {/* Logo Torneo */}
+            <div style={{ position: 'absolute', top: 50, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 10 }}>
+              <img 
+                src="https://trofeo-sarnonico.vercel.app/logo.png" 
+                width="180" 
+                height="180" 
+                style={{ objectFit: 'contain' }} 
+              />
+            </div>
+
+            {/* Data */}
+            <div style={{ position: 'absolute', top: 380, left: 120, right: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#800020', borderRadius: 12, padding: '12px 20px' }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" style={{ marginRight: 10 }}>
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              <span style={{ color: 'white', fontSize: 28, fontWeight: '700' }}>{formattedDate}</span>
+            </div>
+
+            {/* Card Partite */}
+            {matchCards}
+          </div>
+        ),
+        { width: 1080, height: 1920 }
+      );
+
+      const arrayBuffer = await imageResponse.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      
+      // Conta quante partite della giornata esistono già
+      const { data: existingPartite, error: listErrorPartite } = await supabase.storage
+        .from('tournament-files')
+        .list('social', { limit: 100 });
+
+      const partiteFiles = existingPartite?.filter(f => f.name.startsWith('PARTITE_GIORNATA_')) || [];
+      const nextNumber = partiteFiles.length + 1;
+      const fileName = `PARTITE_GIORNATA_${nextNumber}.png`;
+      
+      // Salva su Supabase
+      const { error: uploadError } = await supabase.storage
+        .from('tournament-files')
+        .upload(`social/${fileName}`, buffer, {
+          contentType: 'image/png',
+          cacheControl: '31536000',
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+      
+      console.log('✅ Partite giornata salvate:', fileName);
+
+      return new Response(new Uint8Array(buffer), {
+        headers: {
+          'Content-Type': 'image/png',
+          'Cache-Control': 'no-store, max-age=0',
+        },
+      });
+    }
     return new Response('Tipo non valido', { status: 400 });
   } catch (err) {
     console.error('❌ Errore generazione social:', err);
