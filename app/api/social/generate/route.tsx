@@ -394,7 +394,7 @@ export async function GET(req: NextRequest) {
             flexDirection: 'column', 
             background: 'rgba(255,255,255,0.98)', 
             borderRadius: 16, 
-            padding: '12px 20px',
+            padding: '8px 15px',
             boxShadow: '0 4px 12px rgba(0,0,0,0.15)' 
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
@@ -413,7 +413,7 @@ export async function GET(req: NextRequest) {
                   fontSize: 42, 
                   color: '#800020',
                   fontStyle: 'italic',
-                  fontFamily: 'serif',
+                  fontFamily: 'Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif',
                   textShadow: '2px 2px 4px rgba(128,0,36,0.3)'
                 }}>VS</span>
               </div>
