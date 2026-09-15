@@ -183,8 +183,9 @@ export async function GET(req: NextRequest) {
       const ROW_HEIGHT = 68;
       
       // LARGHEZZE COLONNE
-      const TEAM_SECTION_WIDTH = 420;    // ✅ Larghezza totale logo + nome squadra
-      const STAT_COLUMN_WIDTH = 55;      // ✅ Larghezza di OGNI colonna statistica
+      const TEAM_SECTION_WIDTH = 400;    // ✅ Larghezza totale logo + nome squadra
+      const STAT_COLUMN_WIDTH = 50;      // ✅ Larghezza di OGNI colonna statistica
+      const LOGO_MARGIN_LEFT = 15;
       const STATS_GAP = 5;               // ✅ Spazio tra le colonne statistiche
 
       // Genera le righe della classifica
@@ -206,7 +207,7 @@ export async function GET(req: NextRequest) {
             {/* SEZIONE SQUADRA (logo + nome) - larghezza fissa */}
             <div style={{ display: 'flex', width: TEAM_SECTION_WIDTH, alignItems: 'center', flexShrink: 0 }}>
               {/* Logo */}
-              <div style={{ display: 'flex', width: 45, justifyContent: 'center', alignItems: 'center' }}>
+              <div style={{ display: 'flex', width: 45, marginLeft: LOGO_MARGIN_LEFT, justifyContent: 'center', alignItems: 'center' }}>
                 {team.logo_url ? (
                   <img src={team.logo_url} width="38" height="38" style={{ objectFit: 'contain' }} />
                 ) : (
@@ -255,7 +256,7 @@ export async function GET(req: NextRequest) {
             {/* SEZIONE SQUADRA (logo + nome) - larghezza fissa */}
             <div style={{ display: 'flex', width: TEAM_SECTION_WIDTH, alignItems: 'center', flexShrink: 0 }}>
               {/* Logo */}
-              <div style={{ display: 'flex', width: 45, justifyContent: 'center', alignItems: 'center' }}>
+              <div style={{ display: 'flex', width: 45, marginLeft: LOGO_MARGIN_LEFT, justifyContent: 'center', alignItems: 'center' }}>
                 {team.logo_url ? (
                   <img src={team.logo_url} width="38" height="38" style={{ objectFit: 'contain' }} />
                 ) : (
@@ -299,8 +300,8 @@ export async function GET(req: NextRequest) {
             <div style={{ position: 'absolute', top: 42, left: 5, right: 0, display: 'flex', justifyContent: 'center', zIndex: 10 }}>
               <img 
                 src="https://trofeo-sarnonico.vercel.app/logo.png" 
-                width="200" 
-                height="200" 
+                width="190" 
+                height="190" 
                 style={{ objectFit: 'contain' }} 
               />
             </div>
