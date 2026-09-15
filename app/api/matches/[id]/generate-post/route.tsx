@@ -97,8 +97,8 @@ export async function GET(
           </div>
         )}
 
-        {/* NOMI SQUADRE */}
-        <div style={{ position: 'absolute', top: 840, left: 0, right: 0, display: 'flex', justifyContent: 'space-between', paddingHorizontal: 120 }}>
+        {/* NOMI SQUADRE - ✅ CORRETTO: paddingLeft e paddingRight invece di paddingHorizontal */}
+        <div style={{ position: 'absolute', top: 840, left: 0, right: 0, display: 'flex', justifyContent: 'space-between', paddingLeft: 120, paddingRight: 120 }}>
           <div style={{ flex: 1, textAlign: 'right', paddingRight: 280 }}>
             <span style={{ fontSize: 32, fontWeight: '800', color: '#800020', textTransform: 'uppercase' }}>{homeName}</span>
           </div>
