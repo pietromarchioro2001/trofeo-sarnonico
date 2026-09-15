@@ -44,8 +44,37 @@ export async function GET(
       .eq('event_type', 'GOAL')
       .order('minute', { ascending: true });
 
-    const homeScorers = (eventsData || []).filter((e: any) => e.team_id === match.home_team_id);
-    const awayScorers = (eventsData || []).filter((e: any) => e.team_id === match.away_team_id);
+    const groupScorers = (events: any[]) => {
+    const map = new Map();
+  
+    events.forEach((e) => {
+      const name = e.player
+        ? `${e.player.first_name?.[0] || ''}. ${e.player.last_name || ''}`
+        : 'Sconosciuto';
+  
+      if (!map.has(name)) {
+        map.set(name, {
+          name,
+          goals: 0,
+          minutes: [],
+        });
+      }
+  
+      const p = map.get(name);
+      p.goals++;
+      p.minutes.push(e.minute);
+    });
+  
+    return Array.from(map.values());
+  };
+  
+  const homeScorers = groupScorers(
+    (eventsData || []).filter((e: any) => e.team_id === match.home_team_id)
+  );
+  
+  const awayScorers = groupScorers(
+    (eventsData || []).filter((e: any) => e.team_id === match.away_team_id)
+  );
 
     console.log(`Generazione post ${type} per ${homeName} vs ${awayName}`);
 
@@ -137,17 +166,39 @@ export async function GET(
       </div>
 
         {/* ✅ BOX MARCATORI - AGGIUNTO display: 'flex' e flexDirection: 'column' */}
-        <div style={{ position: 'absolute', top: 1020, left: 60, right: 60, bottom: 100, display: 'flex', flexDirection: 'column', background: 'rgba(255,255,255,0.95)', borderRadius: 20, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+        <div style={{ position: 'absolute', top: 1020, left: 60, right: 60, bottom: 100, display: 'flex', flexDirection: 'column', background: 'transparent' }}>
 
           {/* Lista Marcatori Casa - AGGIUNTO display: 'flex', flexDirection: 'column' */}
           <div style={{ position: 'absolute', left: 60, right: '50%', top: 35, bottom: 40, paddingRight: 40, display: 'flex', flexDirection: 'column' }}>
-            {homeScorers.length > 0 ? homeScorers.map((scorer: any, idx: number) => (
-              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16, fontSize: 32, color: '#333' }}>
-                <span style={{ color: '#800026', minWidth: 48, fontSize: 28, fontWeight: '800', }}>{scorer.minute}'</span>
-                <span style={{ fontWeight: '600' }}>
-                  {scorer.player ? `${scorer.player.first_name?.[0] || ''}. ${scorer.player.last_name || ''}` : 'Sconosciuto'}
-                </span>
-              </div>
+            <div
+            key={idx}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              marginBottom: 18,
+            }}
+          >
+            <span
+              style={{
+                fontSize: 32,
+                fontWeight: '700',
+                color: '#333',
+              }}
+            >
+              {scorer.name}
+              {scorer.goals > 1 ? ` x${scorer.goals}` : ''}
+            </span>
+          
+            <span
+              style={{
+                fontSize: 24,
+                fontWeight: '800',
+                color: '#800026',
+              }}
+            >
+              {scorer.minutes.map((m: number) => `${m}'`).join(', ')}
+            </span>
+          </div>
             )) : (
               <div style={{ display: 'flex', justifyContent: 'center', color: '#999', fontSize: 16, marginTop: 60 }}>Nessun marcatore</div>
             )}
@@ -156,12 +207,35 @@ export async function GET(
           {/* Lista Marcatori Ospite - AGGIUNTO display: 'flex', flexDirection: 'column' */}
           <div style={{ position: 'absolute', left: '50%', right: 60, top: 35, bottom: 40, paddingLeft: 40, display: 'flex', flexDirection: 'column' }}>
             {awayScorers.length > 0 ? awayScorers.map((scorer: any, idx: number) => (
-              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16, fontSize: 32, color: '#333' }}>
-                <span style={{ color: '#800026', minWidth: 48, fontSize: 28, fontWeight: '800', }}>{scorer.minute}'</span>
-                <span style={{ fontWeight: '600' }}>
-                  {scorer.player ? `${scorer.player.first_name?.[0] || ''}. ${scorer.player.last_name || ''}` : 'Sconosciuto'}
-                </span>
-              </div>
+              <div
+              key={idx}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                marginBottom: 18,
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 32,
+                  fontWeight: '700',
+                  color: '#333',
+                }}
+              >
+                {scorer.name}
+                {scorer.goals > 1 ? ` x${scorer.goals}` : ''}
+              </span>
+            
+              <span
+                style={{
+                  fontSize: 24,
+                  fontWeight: '800',
+                  color: '#800026',
+                }}
+              >
+                {scorer.minutes.map((m: number) => `${m}'`).join(', ')}
+              </span>
+            </div>
             )) : (
               <div style={{ display: 'flex', justifyContent: 'center', color: '#999', fontSize: 16, marginTop: 60 }}>Nessun marcatore</div>
             )}
