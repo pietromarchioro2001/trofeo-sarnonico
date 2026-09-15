@@ -378,7 +378,7 @@ export async function GET(req: NextRequest) {
       const dateObj = new Date(firstDate);
       const formattedDate = `${String(dateObj.getUTCDate()).padStart(2, '0')}/${String(dateObj.getUTCMonth() + 1).padStart(2, '0')}/${dateObj.getUTCFullYear()}`;
 
-      // Genera card partite
+            // Genera card partite
       const matchCards = dayMatches.map((match: any, index: number) => {
         const homeTeam = teamsData?.find((t: any) => t.id === match.home_team_id);
         const awayTeam = teamsData?.find((t: any) => t.id === match.away_team_id);
@@ -397,7 +397,9 @@ export async function GET(req: NextRequest) {
             padding: '6px 15px',
             boxShadow: '0 4px 12px rgba(0,0,0,0.15)' 
           }}>
+            {/* RIGA PRINCIPALE */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+              {/* Squadra Casa */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
                 {homeTeam?.logo_url ? (
                   <img src={homeTeam.logo_url} width="120" height="120" style={{ objectFit: 'contain', flexShrink: 0 }} />
@@ -407,6 +409,7 @@ export async function GET(req: NextRequest) {
                 <span style={{ fontWeight: '800', fontSize: 38, color: '#000', textTransform: 'uppercase' }}>{homeTeam?.name || 'CASA'}</span>
               </div>
               
+              {/* VS */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 80 }}>
                 <span style={{ 
                   fontWeight: '900', 
@@ -418,6 +421,7 @@ export async function GET(req: NextRequest) {
                 }}>VS</span>
               </div>
               
+              {/* Squadra Ospite */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0, justifyContent: 'flex-end' }}>
                 <span style={{ fontWeight: '800', fontSize: 38, color: '#000', textTransform: 'uppercase', textAlign: 'right' }}>{awayTeam?.name || 'OSPITE'}</span>
                 {awayTeam?.logo_url ? (
@@ -428,17 +432,15 @@ export async function GET(req: NextRequest) {
               </div>
             </div>
             
-              {/* ORA SPOSTATA IN ALTO in modo affidabile */}
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                position: 'relative',
-                top: -12
-              }}>
-                <span style={{ fontSize: 22, color: '#666', fontWeight: '700' }}>{match.match_time || '--:--'}</span>
-              </div>
-              <span style={{ fontSize: 26, color: '#666', fontWeight: '700' }}>{match.match_time || '--:--'}</span>
+            {/* ORA SPOSTATA IN ALTO */}
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              position: 'relative',
+              top: -12
+            }}>
+              <span style={{ fontSize: 22, color: '#666', fontWeight: '700' }}>{match.match_time || '--:--'}</span>
             </div>
           </div>
         );
