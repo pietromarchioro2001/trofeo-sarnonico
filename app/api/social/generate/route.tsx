@@ -386,7 +386,7 @@ export async function GET(req: NextRequest) {
       const matchCards = dayMatches.map((match, index) => {
         const homeTeam = teamsData?.find(t => t.id === match.home_team_id);
         const awayTeam = teamsData?.find(t => t.id === match.away_team_id);
-        const cardY = 1020 + (index * 160); // ✅ CARD PIÙ BASSE (da 520 a 420, spazio aumentato a 160)
+        const cardY = 980 + (index * 160); // ✅ CARD PIÙ BASSE (da 520 a 420, spazio aumentato a 160)
 
         return (
           <div key={match.id} style={{ 
@@ -463,7 +463,7 @@ export async function GET(req: NextRequest) {
             <div style={{ 
               position: 'absolute', 
               top: 810, 
-              left: 800,        // ✅ Aumenta questo valore per spostare più a destra
+              left: 600,        // ✅ Aumenta questo valore per spostare più a destra
               right: 0, 
               display: 'flex', 
               justifyContent: 'flex-start',  // ✅ Cambiato da 'center' a 'flex-start'
