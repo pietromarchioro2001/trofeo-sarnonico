@@ -382,11 +382,11 @@ export async function GET(req: NextRequest) {
       const dateObj = new Date(firstDate);
       const formattedDate = `${String(dateObj.getUTCDate()).padStart(2, '0')}/${String(dateObj.getUTCMonth() + 1).padStart(2, '0')}/${dateObj.getUTCFullYear()}`;
 
-      // Genera card partite
+      // Genera card partite - PIÙ STACCATE MA PIÙ BASSE
       const matchCards = dayMatches.map((match, index) => {
         const homeTeam = teamsData?.find(t => t.id === match.home_team_id);
         const awayTeam = teamsData?.find(t => t.id === match.away_team_id);
-        const cardY = 980 + (index * 160); // ✅ CARD PIÙ BASSE (da 520 a 420, spazio aumentato a 160)
+        const cardY = 980 + (index * 180); // ✅ PIÙ STACCATE (da 160 a 180)
 
         return (
           <div key={match.id} style={{ 
@@ -398,7 +398,7 @@ export async function GET(req: NextRequest) {
             flexDirection: 'column', 
             background: 'rgba(255,255,255,0.98)', 
             borderRadius: 16, 
-            padding: '20px 25px', 
+            padding: '12px 20px',  // ✅ RIDOTTO padding (era 20px 25px)
             boxShadow: '0 4px 12px rgba(0,0,0,0.15)' 
           }}>
             
@@ -406,25 +406,32 @@ export async function GET(req: NextRequest) {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
               
               {/* Squadra Casa - Logo + Nome */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 15, flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
                 {homeTeam?.logo_url ? (
-                  <img src={homeTeam.logo_url} width="120" height="120" style={{ objectFit: 'contain', flexShrink: 0 }} />
+                  <img src={homeTeam.logo_url} width="50" height="50" style={{ objectFit: 'contain', flexShrink: 0 }} />
                 ) : (
                   <div style={{ width: 50, height: 50, background: '#ddd', borderRadius: '50%', flexShrink: 0 }} />
                 )}
-                <span style={{ fontWeight: '800', fontSize: 42, color: '#000', textTransform: 'uppercase' }}>{homeTeam?.name || 'CASA'}</span>
+                <span style={{ fontWeight: '800', fontSize: 36, color: '#000', textTransform: 'uppercase' }}>{homeTeam?.name || 'CASA'}</span>
               </div>
               
-              {/* VS */}
+              {/* VS - CORSIVO E STILE DIVERSO */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 80 }}>
-                <span style={{ fontWeight: '900', fontSize: 38, color: '#800020' }}>VS</span>
+                <span style={{ 
+                  fontWeight: '900', 
+                  fontSize: 42, 
+                  color: '#800020',
+                  fontStyle: 'italic',        // ✅ CORSIVO
+                  fontFamily: 'serif',        // ✅ FONT DIVERSO
+                  textShadow: '2px 2px 4px rgba(128,0,36,0.3)'  // ✅ OMBRA PER RISALTARE
+                }}>VS</span>
               </div>
               
               {/* Squadra Ospite - Nome + Logo */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 15, flex: 1, minWidth: 0, justifyContent: 'flex-end' }}>
-                <span style={{ fontWeight: '800', fontSize: 42, color: '#000', textTransform: 'uppercase', textAlign: 'right' }}>{awayTeam?.name || 'OSPITE'}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0, justifyContent: 'flex-end' }}>
+                <span style={{ fontWeight: '800', fontSize: 36, color: '#000', textTransform: 'uppercase', textAlign: 'right' }}>{awayTeam?.name || 'OSPITE'}</span>
                 {awayTeam?.logo_url ? (
-                  <img src={awayTeam.logo_url} width="120" height="120" style={{ objectFit: 'contain', flexShrink: 0 }} />
+                  <img src={awayTeam.logo_url} width="50" height="50" style={{ objectFit: 'contain', flexShrink: 0 }} />
                 ) : (
                   <div style={{ width: 50, height: 50, background: '#ddd', borderRadius: '50%', flexShrink: 0 }} />
                 )}
@@ -432,8 +439,8 @@ export async function GET(req: NextRequest) {
             </div>
             
             {/* ORA SOTTO */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 6 }}>
-              <span style={{ fontSize: 26, color: '#666', fontWeight: '700' }}>{match.match_time || '--:--'}</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 4 }}>
+              <span style={{ fontSize: 22, color: '#666', fontWeight: '700' }}>{match.match_time || '--:--'}</span>
             </div>
           </div>
         );
@@ -459,20 +466,25 @@ export async function GET(req: NextRequest) {
               />
             </div>
 
-            {/* Data - SPOSTATA A DESTRA */}
+            {/* Data - PIÙ GROSSA/BOLD */}
             <div style={{ 
               position: 'absolute', 
               top: 810, 
-              left: 600,        // ✅ Aumenta questo valore per spostare più a destra
+              left: 600,
               right: 0, 
               display: 'flex', 
-              justifyContent: 'flex-start',  // ✅ Cambiato da 'center' a 'flex-start'
+              justifyContent: 'flex-start',
               zIndex: 10 
             }}>
-              <span style={{ color: '#FFFFFF', fontSize: 48, fontWeight: '900' }}>{formattedDate}</span>
+              <span style={{ 
+                color: '#FFFFFF', 
+                fontSize: 56,           // ✅ AUMENTATO (era 48)
+                fontWeight: '900',      // ✅ EXTRA BOLD
+                textShadow: '3px 3px 6px rgba(0,0,0,0.4)'  // ✅ OMBRA PER RISALTARE
+              }}>{formattedDate}</span>
             </div>
 
-            {/* Card Partite - POSIZIONATE PIÙ IN BASSO */}
+            {/* Card Partite */}
             {matchCards}
           </div>
         ),
