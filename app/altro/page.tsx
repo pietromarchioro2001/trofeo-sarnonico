@@ -114,7 +114,7 @@ export default function AltroPage() {
     whatsapp: '+39 333 1234567'
   });
 
-  const [isGenerating, setIsGenerating] = useState<'coming-soon' | 'classifica' | null>(null);
+  const [isGenerating, setIsGenerating] = useState<'coming-soon' | 'classifica' | 'partite-giornata' | null>(null);
 
   useEffect(() => {
     const fetchAltroData = async () => {
