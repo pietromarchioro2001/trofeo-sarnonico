@@ -386,7 +386,7 @@ export async function GET(req: NextRequest) {
       const matchCards = dayMatches.map((match, index) => {
         const homeTeam = teamsData?.find(t => t.id === match.home_team_id);
         const awayTeam = teamsData?.find(t => t.id === match.away_team_id);
-        const cardY = 520 + (index * 160); // ✅ CARD PIÙ BASSE (da 520 a 420, spazio aumentato a 160)
+        const cardY = 820 + (index * 160); // ✅ CARD PIÙ BASSE (da 520 a 420, spazio aumentato a 160)
 
         return (
           <div key={match.id} style={{ 
@@ -450,11 +450,11 @@ export async function GET(req: NextRequest) {
             />
             
             {/* Logo Torneo */}
-            <div style={{ position: 'absolute', top: 50, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 10 }}>
+            <div style={{ position: 'absolute', top: 60, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 10 }}>
               <img 
                 src="https://trofeo-sarnonico.vercel.app/logo.png" 
-                width="180" 
-                height="180" 
+                width="200" 
+                height="200" 
                 style={{ objectFit: 'contain' }} 
               />
             </div>
@@ -462,9 +462,9 @@ export async function GET(req: NextRequest) {
             {/* Data - SPOSTATA A DESTRA */}
             <div style={{ 
               position: 'absolute', 
-              top: 320, 
-              left: 0,        // ✅ Aumenta questo valore per spostare più a destra
-              right: 200, 
+              top: 420, 
+              left: 50,        // ✅ Aumenta questo valore per spostare più a destra
+              right: 0, 
               display: 'flex', 
               justifyContent: 'flex-start',  // ✅ Cambiato da 'center' a 'flex-start'
               zIndex: 10 
