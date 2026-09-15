@@ -137,13 +137,13 @@ export async function GET(
       </div>
 
         {/* ✅ BOX MARCATORI - AGGIUNTO display: 'flex' e flexDirection: 'column' */}
-        <div style={{ position: 'absolute', top: 980, left: 60, right: 60, bottom: 100, display: 'flex', flexDirection: 'column', background: 'rgba(255,255,255,0.95)', borderRadius: 20, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+        <div style={{ position: 'absolute', top: 1020, left: 60, right: 60, bottom: 100, display: 'flex', flexDirection: 'column', background: 'rgba(255,255,255,0.95)', borderRadius: 20, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
 
           {/* Lista Marcatori Casa - AGGIUNTO display: 'flex', flexDirection: 'column' */}
           <div style={{ position: 'absolute', left: 60, right: '50%', top: 35, bottom: 40, paddingRight: 40, display: 'flex', flexDirection: 'column' }}>
             {homeScorers.length > 0 ? homeScorers.map((scorer: any, idx: number) => (
-              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16, fontSize: 26, color: '#333' }}>
-                <span style={{ color: '#800026', minWidth: 48, fontSize: 26, fontWeight: '800', }}>{scorer.minute}'</span>
+              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16, fontSize: 32, color: '#333' }}>
+                <span style={{ color: '#800026', minWidth: 48, fontSize: 28, fontWeight: '800', }}>{scorer.minute}'</span>
                 <span style={{ fontWeight: '600' }}>
                   {scorer.player ? `${scorer.player.first_name?.[0] || ''}. ${scorer.player.last_name || ''}` : 'Sconosciuto'}
                 </span>
@@ -156,8 +156,8 @@ export async function GET(
           {/* Lista Marcatori Ospite - AGGIUNTO display: 'flex', flexDirection: 'column' */}
           <div style={{ position: 'absolute', left: '50%', right: 60, top: 35, bottom: 40, paddingLeft: 40, display: 'flex', flexDirection: 'column' }}>
             {awayScorers.length > 0 ? awayScorers.map((scorer: any, idx: number) => (
-              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16, fontSize: 26, color: '#333' }}>
-                <span style={{ color: '#800026', minWidth: 48, fontSize: 26, fontWeight: '800', }}>{scorer.minute}'</span>
+              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16, fontSize: 32, color: '#333' }}>
+                <span style={{ color: '#800026', minWidth: 48, fontSize: 28, fontWeight: '800', }}>{scorer.minute}'</span>
                 <span style={{ fontWeight: '600' }}>
                   {scorer.player ? `${scorer.player.first_name?.[0] || ''}. ${scorer.player.last_name || ''}` : 'Sconosciuto'}
                 </span>
@@ -173,31 +173,31 @@ export async function GET(
     // ✅ CONTENUTO DINAMICO PER PRE_MATCH
     const dynamicContentPreMatch = (
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
-        <div style={{ position: 'absolute', top: 65, left: 8, right: 0, display: 'flex', justifyContent: 'center' }}>
+        <div style={{ position: 'absolute', top: 70, left: 8, right: 0, display: 'flex', justifyContent: 'center' }}>
           <img src="https://trofeo-sarnonico.vercel.app/logo.png" width="200" height="200" style={{ objectFit: 'contain' }} />
         </div>
-        <div style={{ position: 'absolute', top: 720, left: 100, display: 'flex' }}>
+        <div style={{ position: 'absolute', top: 780, left: 110, display: 'flex' }}>
           {homeLogo ? (
             <img src={homeLogo} width="280" height="280" style={{ objectFit: 'contain' }} />
           ) : (
             <div style={{ display: 'flex', width: 220, height: 220 }}></div>
           )}
         </div>
-        <div style={{ position: 'absolute', top: 720, right: 100, display: 'flex' }}>
+        <div style={{ position: 'absolute', top: 780, right: 110, display: 'flex' }}>
           {awayLogo ? (
             <img src={awayLogo} width="280" height="280" style={{ objectFit: 'contain' }} />
           ) : (
             <div style={{ display: 'flex', width: 220, height: 220 }}></div>
           )}
         </div>
-        <div style={{ position: 'absolute', top: 1050, left: 0, right: 30, display: 'flex', justifyContent: 'flex-start', paddingLeft: 130 }}>
+        <div style={{ position: 'absolute', top: 1080, left: 0, right: 40, display: 'flex', justifyContent: 'flex-start', paddingLeft: 130 }}>
           <div style={{ display: 'flex', width: 240, justifyContent: 'center' }}>
-            <div style={{ display: 'flex', fontSize: 40, fontWeight: '900', color: '#800020', textAlign: 'center', letterSpacing: 1 }}>{homeName}</div>
+            <div style={{ display: 'flex', fontSize: 42, fontWeight: '900', color: '#800020', textAlign: 'center', letterSpacing: 1 }}>{homeName}</div>
           </div>
         </div>
-        <div style={{ position: 'absolute', top: 1050, left: 30, right: 0, display: 'flex', justifyContent: 'flex-end', paddingRight: 130 }}>
+        <div style={{ position: 'absolute', top: 1080, left: 40, right: 0, display: 'flex', justifyContent: 'flex-end', paddingRight: 130 }}>
           <div style={{ display: 'flex', width: 240, justifyContent: 'center' }}>
-            <div style={{ display: 'flex', fontSize: 40, fontWeight: '900', color: '#800020', textAlign: 'center', letterSpacing: 1 }}>{awayName}</div>
+            <div style={{ display: 'flex', fontSize: 42, fontWeight: '900', color: '#800020', textAlign: 'center', letterSpacing: 1 }}>{awayName}</div>
           </div>
         </div>
         <div style={{ position: 'absolute', top: 1180, left: 170, display: 'flex' }}>
