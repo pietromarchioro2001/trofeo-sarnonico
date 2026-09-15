@@ -382,7 +382,7 @@ export async function GET(req: NextRequest) {
       const matchCards = dayMatches.map((match: any, index: number) => {
         const homeTeam = teamsData?.find((t: any) => t.id === match.home_team_id);
         const awayTeam = teamsData?.find((t: any) => t.id === match.away_team_id);
-        const cardY = 980 + (index * 180);
+        const cardY = 980 + (index * 160);
 
         return (
           <div key={match.id} style={{ 
@@ -400,11 +400,11 @@ export async function GET(req: NextRequest) {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
                 {homeTeam?.logo_url ? (
-                  <img src={homeTeam.logo_url} width="50" height="50" style={{ objectFit: 'contain', flexShrink: 0 }} />
+                  <img src={homeTeam.logo_url} width="120" height="120" style={{ objectFit: 'contain', flexShrink: 0 }} />
                 ) : (
                   <div style={{ width: 50, height: 50, background: '#ddd', borderRadius: '50%', flexShrink: 0 }} />
                 )}
-                <span style={{ fontWeight: '800', fontSize: 36, color: '#000', textTransform: 'uppercase' }}>{homeTeam?.name || 'CASA'}</span>
+                <span style={{ fontWeight: '800', fontSize: 38, color: '#000', textTransform: 'uppercase' }}>{homeTeam?.name || 'CASA'}</span>
               </div>
               
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 80 }}>
@@ -419,9 +419,9 @@ export async function GET(req: NextRequest) {
               </div>
               
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0, justifyContent: 'flex-end' }}>
-                <span style={{ fontWeight: '800', fontSize: 36, color: '#000', textTransform: 'uppercase', textAlign: 'right' }}>{awayTeam?.name || 'OSPITE'}</span>
+                <span style={{ fontWeight: '800', fontSize: 38, color: '#000', textTransform: 'uppercase', textAlign: 'right' }}>{awayTeam?.name || 'OSPITE'}</span>
                 {awayTeam?.logo_url ? (
-                  <img src={awayTeam.logo_url} width="50" height="50" style={{ objectFit: 'contain', flexShrink: 0 }} />
+                  <img src={awayTeam.logo_url} width="120" height="120" style={{ objectFit: 'contain', flexShrink: 0 }} />
                 ) : (
                   <div style={{ width: 50, height: 50, background: '#ddd', borderRadius: '50%', flexShrink: 0 }} />
                 )}
@@ -465,7 +465,7 @@ export async function GET(req: NextRequest) {
             }}>
               <span style={{ 
                 color: '#FFFFFF', 
-                fontSize: 56,
+                fontSize: 48,
                 fontWeight: '900',
                 textShadow: '2px 2px 0px rgba(0,0,0,0.7), -2px -2px 0px rgba(0,0,0,0.7), 2px -2px 0px rgba(0,0,0,0.7), -2px 2px 0px rgba(0,0,0,0.7), 4px 4px 8px rgba(0,0,0,0.5)'
               }}>{formattedDate}</span>
