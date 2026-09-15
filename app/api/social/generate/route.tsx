@@ -183,10 +183,10 @@ export async function GET(req: NextRequest) {
       const ROW_HEIGHT = 68;
       
       // LARGHEZZE COLONNE
-      const TEAM_SECTION_WIDTH = 350;    // ✅ Larghezza totale logo + nome squadra
-      const STAT_COLUMN_WIDTH = 50;      // ✅ Larghezza di OGNI colonna statistica
-      const LOGO_MARGIN_LEFT = 35;
-      const STATS_GAP = 5;               // ✅ Spazio tra le colonne statistiche
+      const TEAM_SECTION_WIDTH = 320;    // ✅ Larghezza totale logo + nome squadra
+      const STAT_COLUMN_WIDTH = 40;      // ✅ Larghezza di OGNI colonna statistica
+      const LOGO_MARGIN_LEFT = 60;
+      const STATS_GAP = 2;               // ✅ Spazio tra le colonne statistiche
 
       // Genera le righe della classifica
       const gironeARows = gironeA.slice(0, 6).map((team: any, index: number) => {
