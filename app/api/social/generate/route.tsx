@@ -183,9 +183,9 @@ export async function GET(req: NextRequest) {
       const ROW_HEIGHT = 68;
       
       // LARGHEZZE COLONNE
-      const TEAM_SECTION_WIDTH = 320;    // ✅ Larghezza totale logo + nome squadra
+      const TEAM_SECTION_WIDTH = 360;    // ✅ Larghezza totale logo + nome squadra
       const STAT_COLUMN_WIDTH = 40;      // ✅ Larghezza di OGNI colonna statistica
-      const LOGO_MARGIN_LEFT = 60;
+      const LOGO_MARGIN_LEFT = 70;
       const STATS_GAP = 2;               // ✅ Spazio tra le colonne statistiche
 
       // Genera le righe della classifica
