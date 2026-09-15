@@ -403,12 +403,12 @@ export async function GET(req: NextRequest) {
           }}>
             
             {/* RIGA PRINCIPALE */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 15 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 18 }}>
               
               {/* Squadra Casa - Logo + Nome */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 15, flex: 1, minWidth: 0 }}>
                 {homeTeam?.logo_url ? (
-                  <img src={homeTeam.logo_url} width="100" height="100" style={{ objectFit: 'contain', flexShrink: 0 }} />
+                  <img src={homeTeam.logo_url} width="120" height="120" style={{ objectFit: 'contain', flexShrink: 0 }} />
                 ) : (
                   <div style={{ width: 50, height: 50, background: '#ddd', borderRadius: '50%', flexShrink: 0 }} />
                 )}
@@ -424,7 +424,7 @@ export async function GET(req: NextRequest) {
               <div style={{ display: 'flex', alignItems: 'center', gap: 15, flex: 1, minWidth: 0, justifyContent: 'flex-end' }}>
                 <span style={{ fontWeight: '800', fontSize: 42, color: '#000', textTransform: 'uppercase', textAlign: 'right' }}>{awayTeam?.name || 'OSPITE'}</span>
                 {awayTeam?.logo_url ? (
-                  <img src={awayTeam.logo_url} width="100" height="100" style={{ objectFit: 'contain', flexShrink: 0 }} />
+                  <img src={awayTeam.logo_url} width="120" height="120" style={{ objectFit: 'contain', flexShrink: 0 }} />
                 ) : (
                   <div style={{ width: 50, height: 50, background: '#ddd', borderRadius: '50%', flexShrink: 0 }} />
                 )}
@@ -432,7 +432,7 @@ export async function GET(req: NextRequest) {
             </div>
             
             {/* ORA SOTTO */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 10 }}>
               <span style={{ fontSize: 26, color: '#666', fontWeight: '700' }}>{match.match_time || '--:--'}</span>
             </div>
           </div>
@@ -462,14 +462,14 @@ export async function GET(req: NextRequest) {
             {/* Data - SPOSTATA A DESTRA */}
             <div style={{ 
               position: 'absolute', 
-              top: 820, 
-              left: 200,        // ✅ Aumenta questo valore per spostare più a destra
+              top: 800, 
+              left: 400,        // ✅ Aumenta questo valore per spostare più a destra
               right: 0, 
               display: 'flex', 
               justifyContent: 'flex-start',  // ✅ Cambiato da 'center' a 'flex-start'
               zIndex: 10 
             }}>
-              <span style={{ color: '#800020', fontSize: 48, fontWeight: '900' }}>{formattedDate}</span>
+              <span style={{ color: '#FFFFFF', fontSize: 48, fontWeight: '900' }}>{formattedDate}</span>
             </div>
 
             {/* Card Partite - POSIZIONATE PIÙ IN BASSO */}
