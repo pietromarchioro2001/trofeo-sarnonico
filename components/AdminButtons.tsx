@@ -823,11 +823,12 @@ export const AdminTeamPhotoEditor: React.FC<AdminTeamPhotoEditorProps> = ({
 
 export interface PlayerData { 
   photo?: string; 
+  photoFile?: File; // ✅ Aggiunto per gestire l'upload reale del file
   firstName: string; 
   lastName: string; 
   number: string; 
   birthDate: string; 
-  id?: string; // Aggiungi questo per identificare il giocatore
+  id?: string; 
 }
 
 interface AdminPlayerEditorProps { 
@@ -855,9 +856,15 @@ export const AdminPlayerEditor: React.FC<AdminPlayerEditorProps> = ({ player, is
     onClose();
   };
   
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => { 
+    const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => { 
     const file = e.target.files?.[0]; 
-    if (file) setFormData(prev => ({ ...prev, photo: URL.createObjectURL(file) })); 
+    if (file) {
+      setFormData(prev => ({ 
+        ...prev, 
+        photo: URL.createObjectURL(file),
+        photoFile: file // ✅ Salviamo il file reale per l'upload
+      })); 
+    }
   };
   
   if (!isOpen) return null;
