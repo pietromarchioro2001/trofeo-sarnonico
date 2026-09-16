@@ -1109,6 +1109,32 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     }
   };
 
+    // ✅ FUNZIONE PER ELIMINARE FOTO DA SUPABASE
+  const handleDeleteMedia = async (fileName: string) => {
+    if (!confirm('Sei sicuro di voler eliminare questa foto? Questa azione è irreversibile.')) return;
+    
+    const folderName = getMatchFolderName();
+    const filePath = `match-media/${folderName}/${fileName}`;
+    const supabase = createClient();
+    
+    try {
+      const { error } = await supabase.storage
+        .from('tournament-files')
+        .remove([filePath]);
+        
+      if (error) {
+        console.error('Errore eliminazione:', error);
+        alert('Errore nell\'eliminazione della foto: ' + error.message);
+      } else {
+        // Rimuovi dallo stato locale per aggiornare immediatamente la UI senza ricaricare
+        setMediaFiles(prev => prev.filter(f => f.name !== fileName));
+      }
+    } catch (err) {
+      console.error('Errore generale eliminazione:', err);
+      alert('Errore nell\'eliminazione della foto');
+    }
+  };
+
   const handleShareMatch = async () => {
     if (!match) return;
     setIsSharing(true);
@@ -1737,26 +1763,46 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                         alt="Media" 
                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                       />
-                      <a 
-                        href={data.publicUrl} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                      </a>
+                      
+                      {/* ✅ OVERLAY CON AZIONI (appare in hover) */}
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                        
+                        {/* Pulsante Visualizza */}
+                        <a 
+                          href={data.publicUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="p-2 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/40 transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                          title="Visualizza a schermo intero"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        </a>
+                        
+                        {/* ✅ Pulsante Elimina (SOLO STAFF) */}
+                        {isStaffMode && (
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteMedia(file.name);
+                            }}
+                            className="p-2 bg-red-600/90 backdrop-blur-sm rounded-full text-white hover:bg-red-700 transition-colors"
+                            title="Elimina foto"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
               </div>
             )}
           </div>
-        </div>
-      )}
-    </div>
   );
 }
