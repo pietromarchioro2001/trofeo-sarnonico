@@ -3,8 +3,8 @@ import { MetadataRoute } from 'next'
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Trofeo Sarnonico',
-    short_name: 'Trofeo Sarnonico',
-    description: 'Gestione ufficiale del Torneo dei Paesi di calcio a 7',
+    short_name: 'TS',
+    description: 'App ufficile Trofeo Sarnonico',
     start_url: '/',
     display: 'standalone', // Nasconde la barra del browser, sembra un'app nativa
     background_color: '#F5F5F7', // Colore di sfondo mentre l'app si avvia
