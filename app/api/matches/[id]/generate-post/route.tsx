@@ -92,28 +92,77 @@ export async function GET(
         </div>
 
         {/* LOGO CASA */}
-        <div style={{ position: 'absolute', top: 585, left: 115, display: 'flex' }}>
-          {homeLogo ? (
-            <img src={homeLogo} width="300" height="300" style={{ objectFit: 'contain' }} />
-          ) : (
-            <div style={{ display: 'flex', width: 220, height: 220, background: 'rgba(128,0,36,0.1)', borderRadius: '50%' }} />
-          )}
+        <div
+          style={{
+            position: 'absolute',
+            top: 585,
+            left: '25%',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+          }}
+        >
+          <img src={homeLogo} width="300" height="300" style={{ objectFit: 'contain' }} />
         </div>
 
         {/* LOGO OSPITE */}
-        <div style={{ position: 'absolute', top: 585, right: 115, display: 'flex' }}>
-          {awayLogo ? (
-            <img src={awayLogo} width="300" height="300" style={{ objectFit: 'contain' }} />
-          ) : (
-            <div style={{ display: 'flex', width: 220, height: 220, background: 'rgba(128,0,36,0.1)', borderRadius: '50%' }} />
-          )}
+        <div
+          style={{
+            position: 'absolute',
+            top: 585,
+            left: '75%',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+          }}
+        >
+          <img src={awayLogo} width="300" height="300" style={{ objectFit: 'contain' }} />
         </div>
 
         {/* RISULTATO */}
-        <div style={{ position: 'absolute', top: 705, left: 0, right: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 95 }}>
-          <span style={{ fontSize: 92, fontWeight: '900', color: '#800020' }}>{match.home_score || 0}</span>
-          <span style={{ fontSize: 92, fontWeight: '900', color: '#800020' }}>{match.away_score || 0}</span>
-        </div>
+        <div
+        style={{
+          position: 'absolute',
+          top: 705,
+          left: 0,
+          right: 0,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: 40,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 104,
+            fontWeight: '900',
+            color: '#800020',
+            lineHeight: 1,
+          }}
+        >
+          {match.home_score || 0}
+        </span>
+      
+        <span
+          style={{
+            fontSize: 82,
+            fontWeight: '900',
+            color: '#800020',
+            lineHeight: 1,
+          }}
+        >
+          –
+        </span>
+      
+        <span
+          style={{
+            fontSize: 104,
+            fontWeight: '900',
+            color: '#800020',
+            lineHeight: 1,
+          }}
+        >
+          {match.away_score || 0}
+        </span>
+      </div>
 
         {/* DCR */}
         {(match.home_penalties !== null || match.away_penalties !== null) && (
@@ -126,44 +175,54 @@ export async function GET(
 
         {/* NOMI SQUADRE */}
         <div
-        style={{
-          position: 'absolute',
-          top: 900,
-          left: 85,
-          right: 85,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
-        <div style={{ width: 280, display: 'flex', justifyContent: 'center' }}>
-          <span
+          style={{
+            position: 'absolute',
+            top: 910,
+            left: 0,
+            right: 0,
+            display: 'flex',
+          }}
+        >
+          <div
             style={{
-              fontSize: 38,
-              fontWeight: '800',
-              color: '#800020',
-              textTransform: 'uppercase',
-              textAlign: 'center',
+              width: '50%',
+              display: 'flex',
+              justifyContent: 'center',
+              transform: 'translateX(-85px)',
             }}
           >
-            {homeName}
-          </span>
-        </div>
-      
-        <div style={{ width: 280, display: 'flex', justifyContent: 'center' }}>
-          <span
+            <span
+              style={{
+                fontSize: 38,
+                fontWeight: '800',
+                color: '#800020',
+                textTransform: 'uppercase',
+              }}
+            >
+              {homeName}
+            </span>
+          </div>
+        
+          <div
             style={{
-              fontSize: 38,
-              fontWeight: '800',
-              color: '#800020',
-              textTransform: 'uppercase',
-              textAlign: 'center',
+              width: '50%',
+              display: 'flex',
+              justifyContent: 'center',
+              transform: 'translateX(85px)',
             }}
           >
-            {awayName}
-          </span>
+            <span
+              style={{
+                fontSize: 38,
+                fontWeight: '800',
+                color: '#800020',
+                textTransform: 'uppercase',
+              }}
+            >
+              {awayName}
+            </span>
+          </div>
         </div>
-      </div>
 
         {/* ✅ BOX MARCATORI - AGGIUNTO display: 'flex' e flexDirection: 'column' */}
         <div style={{ position: 'absolute', top: 1020, left: 60, right: 60, bottom: 100, display: 'flex', flexDirection: 'column', background: 'transparent' }}>
@@ -193,13 +252,26 @@ export async function GET(
                 >
                   <span
                     style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
                       fontSize: 32,
                       fontWeight: '700',
-                      color: '#800026',
+                      color: '#111',
                     }}
                   >
-                    {scorer.name}
-                    {scorer.goals > 1 ? ` x${scorer.goals}` : ''}
+                    <span>{scorer.name}</span>
+                  
+                    {scorer.goals > 1 && (
+                      <span
+                        style={{
+                          color: '#800026',
+                          fontWeight: '900',
+                        }}
+                      >
+                        x{scorer.goals}
+                      </span>
+                    )}
                   </span>
           
                   <span
@@ -241,13 +313,26 @@ export async function GET(
             >
               <span
                 style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
                   fontSize: 32,
                   fontWeight: '700',
-                  color: '#800026',
+                  color: '#111',
                 }}
               >
-                {scorer.name}
-                {scorer.goals > 1 ? ` x${scorer.goals}` : ''}
+                <span>{scorer.name}</span>
+              
+                {scorer.goals > 1 && (
+                  <span
+                    style={{
+                      color: '#800026',
+                      fontWeight: '900',
+                    }}
+                  >
+                    x{scorer.goals}
+                  </span>
+                )}
               </span>
             
               <span
@@ -274,26 +359,26 @@ export async function GET(
         <div style={{ position: 'absolute', top: 65, left: 8, right: 0, display: 'flex', justifyContent: 'center' }}>
           <img src="https://trofeo-sarnonico.vercel.app/logo.png" width="200" height="200" style={{ objectFit: 'contain' }} />
         </div>
-        <div style={{ position: 'absolute', top: 780, left: 110, display: 'flex' }}>
+        <div style={{ position: 'absolute', top: 720, left: 110, display: 'flex' }}>
           {homeLogo ? (
             <img src={homeLogo} width="280" height="280" style={{ objectFit: 'contain' }} />
           ) : (
             <div style={{ display: 'flex', width: 220, height: 220 }}></div>
           )}
         </div>
-        <div style={{ position: 'absolute', top: 780, right: 110, display: 'flex' }}>
+        <div style={{ position: 'absolute', top: 720, right: 110, display: 'flex' }}>
           {awayLogo ? (
             <img src={awayLogo} width="280" height="280" style={{ objectFit: 'contain' }} />
           ) : (
             <div style={{ display: 'flex', width: 220, height: 220 }}></div>
           )}
         </div>
-        <div style={{ position: 'absolute', top: 1080, left: 0, right: 40, display: 'flex', justifyContent: 'flex-start', paddingLeft: 130 }}>
+        <div style={{ position: 'absolute', top: 1050, left: 0, right: 40, display: 'flex', justifyContent: 'flex-start', paddingLeft: 130 }}>
           <div style={{ display: 'flex', width: 240, justifyContent: 'center' }}>
             <div style={{ display: 'flex', fontSize: 42, fontWeight: '900', color: '#800020', textAlign: 'center', letterSpacing: 1 }}>{homeName}</div>
           </div>
         </div>
-        <div style={{ position: 'absolute', top: 1080, left: 40, right: 0, display: 'flex', justifyContent: 'flex-end', paddingRight: 130 }}>
+        <div style={{ position: 'absolute', top: 1050, left: 40, right: 0, display: 'flex', justifyContent: 'flex-end', paddingRight: 130 }}>
           <div style={{ display: 'flex', width: 240, justifyContent: 'center' }}>
             <div style={{ display: 'flex', fontSize: 42, fontWeight: '900', color: '#800020', textAlign: 'center', letterSpacing: 1 }}>{awayName}</div>
           </div>
