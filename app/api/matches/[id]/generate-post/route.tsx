@@ -96,7 +96,7 @@ export async function GET(
           style={{
             position: 'absolute',
             top: 585,
-            left: '15%',
+            left: '18%',
             transform: 'translateX(-50%)',
             display: 'flex',
           }}
@@ -109,7 +109,7 @@ export async function GET(
           style={{
             position: 'absolute',
             top: 585,
-            left: '85%',
+            left: '82%',
             transform: 'translateX(-50%)',
             display: 'flex',
           }}
@@ -434,7 +434,7 @@ export async function GET(
           <div
             style={{
               position: 'absolute',
-              left: '25%',
+              left: '28%',
               transform: 'translateX(-50%)',
               width: 340,
               display: 'flex',
