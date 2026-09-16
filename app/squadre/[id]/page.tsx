@@ -722,27 +722,39 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
       {/* ✅ LIGHTBOX PER FOTO SQUADRA E GIOCATORE */}
       {lightboxImage && (
         <div 
-          className="fixed inset-0 bg-black/95 z-[200] flex items-center justify-center p-4 backdrop-blur-sm"
+          className="fixed inset-0 bg-black/95 z-[200] flex items-center justify-center p-4"
           onClick={() => setLightboxImage(null)}
         >
+          {/* Pulsante chiusura */}
           <button 
-            onClick={() => setLightboxImage(null)}
-            className="absolute top-4 right-4 p-2 bg-white/20 rounded-full text-white hover:bg-white/30 transition-colors z-10"
+            onClick={(e) => { e.stopPropagation(); setLightboxImage(null); }}
+            className="absolute top-4 right-4 p-2 bg-white/20 rounded-full text-white hover:bg-white/30 transition-colors z-30"
           >
             <X size={24} />
           </button>
 
-          <div className="absolute top-4 left-4 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
+          {/* Etichetta */}
+          <div className="absolute top-4 left-4 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg z-30">
             <p className="text-white font-bold text-sm uppercase">
               {lightboxType === 'team' ? 'Foto Squadra' : 'Foto Giocatore'}
             </p>
           </div>
 
-          <div className="max-w-4xl max-h-[90vh] w-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+          {/* Immagine ingrandita - CONTENITORE CON DIMENSIONI ESPLICITE */}
+          <div 
+            className="relative w-full h-full max-w-5xl max-h-[85vh] flex items-center justify-center" 
+            onClick={(e) => e.stopPropagation()}
+          >
             <img 
               src={lightboxImage} 
               alt={lightboxType === 'team' ? teamData.name : selectedPlayer?.name || 'Giocatore'}
-              className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+              className="max-w-full max-h-full w-auto h-auto object-contain rounded-lg shadow-2xl"
+              style={{ 
+                maxWidth: '100%', 
+                maxHeight: '85vh',
+                width: 'auto',
+                height: 'auto'
+              }}
             />
           </div>
         </div>
