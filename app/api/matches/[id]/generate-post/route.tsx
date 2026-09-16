@@ -402,7 +402,7 @@ export async function GET(
           style={{
             position: 'absolute',
             top: 720,
-            left: '15%',
+            left: '20%',
             transform: 'translateX(-50%)',
             display: 'flex',
           }}
@@ -413,7 +413,7 @@ export async function GET(
           style={{
             position: 'absolute',
             top: 720,
-            left: '85%',
+            left: '80%',
             transform: 'translateX(-50%)',
             display: 'flex',
           }}
