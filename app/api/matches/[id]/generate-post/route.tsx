@@ -92,25 +92,25 @@ export async function GET(
         </div>
 
         {/* LOGO CASA */}
-        <div style={{ position: 'absolute', top: 560, left: 85, display: 'flex' }}>
+        <div style={{ position: 'absolute', top: 580, left: 95, display: 'flex' }}>
           {homeLogo ? (
-            <img src={homeLogo} width="280" height="280" style={{ objectFit: 'contain' }} />
+            <img src={homeLogo} width="300" height="300" style={{ objectFit: 'contain' }} />
           ) : (
             <div style={{ display: 'flex', width: 220, height: 220, background: 'rgba(128,0,36,0.1)', borderRadius: '50%' }} />
           )}
         </div>
 
         {/* LOGO OSPITE */}
-        <div style={{ position: 'absolute', top: 560, right: 85, display: 'flex' }}>
+        <div style={{ position: 'absolute', top: 580, right: 95, display: 'flex' }}>
           {awayLogo ? (
-            <img src={awayLogo} width="280" height="280" style={{ objectFit: 'contain' }} />
+            <img src={awayLogo} width="300" height="300" style={{ objectFit: 'contain' }} />
           ) : (
             <div style={{ display: 'flex', width: 220, height: 220, background: 'rgba(128,0,36,0.1)', borderRadius: '50%' }} />
           )}
         </div>
 
         {/* RISULTATO */}
-        <div style={{ position: 'absolute', top: 710, left: 0, right: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 55 }}>
+        <div style={{ position: 'absolute', top: 710, left: 0, right: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 75 }}>
           <span style={{ fontSize: 88, fontWeight: '900', color: '#800020' }}>{match.home_score || 0}</span>
           <span style={{ fontSize: 88, fontWeight: '900', color: '#800020' }}>{match.away_score || 0}</span>
         </div>
@@ -128,9 +128,9 @@ export async function GET(
         <div
         style={{
           position: 'absolute',
-          top: 880,
-          left: 60,
-          right: 60,
+          top: 900,
+          left: 65,
+          right: 65,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -139,7 +139,7 @@ export async function GET(
         <div style={{ width: 280, display: 'flex', justifyContent: 'center' }}>
           <span
             style={{
-              fontSize: 34,
+              fontSize: 38,
               fontWeight: '800',
               color: '#800020',
               textTransform: 'uppercase',
@@ -153,7 +153,7 @@ export async function GET(
         <div style={{ width: 280, display: 'flex', justifyContent: 'center' }}>
           <span
             style={{
-              fontSize: 34,
+              fontSize: 38,
               fontWeight: '800',
               color: '#800020',
               textTransform: 'uppercase',
