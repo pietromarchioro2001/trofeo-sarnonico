@@ -7,31 +7,34 @@ export default function PWAInstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
 
   useEffect(() => {
-    const handler = (e: Event) => {
+    const handler = (e: any) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      
-      // Mostra il popup solo se non è già stato installato
-      const hasInstalled = localStorage.getItem('pwa_installed');
-      if (!hasInstalled) {
+  
+      if (!localStorage.getItem("pwa_installed")) {
         setShowPrompt(true);
       }
     };
-
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
+  
+    const installed = () => {
+      localStorage.setItem("pwa_installed", "true");
+      setShowPrompt(false);
+    };
+  
+    window.addEventListener("beforeinstallprompt", handler);
+    window.addEventListener("appinstalled", installed);
+  
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      window.removeEventListener("appinstalled", installed);
+    };
   }, []);
 
   const handleInstall = async () => {
     if (!deferredPrompt) return;
-    
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    
-    if (outcome === 'accepted') {
-      localStorage.setItem('pwa_installed', 'true');
-    }
-    setShowPrompt(false);
+  
+    await deferredPrompt.prompt();
+    setDeferredPrompt(null);
   };
 
   if (!showPrompt) return null;
