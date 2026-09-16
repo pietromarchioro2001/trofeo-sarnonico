@@ -201,39 +201,48 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     }
   };
 
-      const handleTeamPhotoUpload = async (file: File) => {
+       const handleTeamPhotoUpload = async (file: File) => {
     if (!file || !teamData) return;
     setLoading(true);
     const supabase = createClient();
     try {
-      // 1. Carica la nuova foto con un nome unico (timestamp) per forzare l'aggiornamento della cache
+      // 1. Nome file univoco (il timestamp qui basta per evitare la cache)
       const fileExt = file.name.split('.').pop();
       const newFileName = `team_${params.id}_${Date.now()}.${fileExt}`;
       const newPath = `team-photos/${newFileName}`;
 
+      // 2. Upload
       const { error: uploadError } = await supabase.storage
         .from('tournament-files')
         .upload(newPath, file, { cacheControl: '3600', upsert: true });
       if (uploadError) throw uploadError;
 
+      // 3. Ottieni URL PULITO (senza ?t=...)
       const { data: { publicUrl } } = supabase.storage
         .from('tournament-files')
         .getPublicUrl(newPath);
 
-      // 2. Aggiorna il DB con il nuovo URL
+      // 4. Aggiorna il Database con l'URL pulito
       const { error: updateError } = await supabase
         .from('teams')
         .update({ team_photo_url: publicUrl })
         .eq('id', params.id);
       if (updateError) throw updateError;
 
-      // 3. Elimina la vecchia foto dallo storage per mantenere la cartella pulita
+      // 5. Elimina la vecchia foto dallo storage (se esiste)
       if (teamData.teamPhoto && teamData.teamPhoto.includes('supabase')) {
-        const urlParts = teamData.teamPhoto.split('/');
-        const oldFilePath = `${urlParts[urlParts.length - 2]}/${urlParts[urlParts.length - 1]}`;
-        await supabase.storage.from('tournament-files').remove([oldFilePath]);
+        try {
+          const oldUrl = new URL(teamData.teamPhoto);
+          const pathParts = oldUrl.pathname.split('/');
+          // Estrae 'team-photos/nome_vecchio_file.jpg'
+          const oldFilePath = `${pathParts[pathParts.length - 2]}/${pathParts[pathParts.length - 1]}`;
+          await supabase.storage.from('tournament-files').remove([oldFilePath]);
+        } catch (deleteErr) {
+          console.warn('Impossibile eliminare la vecchia foto, ma non è critico:', deleteErr);
+        }
       }
 
+      // 6. Aggiorna lo stato locale
       setTeamData((prev: any) => ({ ...prev, teamPhoto: publicUrl }));
       alert('✅ Foto squadra aggiornata con successo!');
     } catch (err) {
@@ -310,7 +319,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
   };
 
   // ✅ Modifica Giocatore (con upload nuova foto se selezionata)
-      const handleUpdatePlayer = async (updatedData: PlayerData) => {
+       const handleUpdatePlayer = async (updatedData: PlayerData) => {
     if (!editingPlayer) return;
     setLoading(true);
     const supabase = createClient();
@@ -319,7 +328,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
 
     let photoUrl = currentPlayer.photo;
 
-    // ✅ Se c'è un nuovo file, caricalo con nome univoco e ELIMINA quello vecchio
+    // Se c'è un nuovo file, caricalo e sostituisci il vecchio
     if (updatedData.photoFile) {
       try {
         const fileExt = updatedData.photoFile.name.split('.').pop();
@@ -332,56 +341,68 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
         
         if (uploadError) throw uploadError;
         
+        // Ottieni URL PULITO
         const { data: { publicUrl } } = supabase.storage
           .from('tournament-files')
           .getPublicUrl(newPath);
           
         photoUrl = publicUrl;
 
-        // Elimina la vecchia foto dallo storage per mantenere la cartella pulita
+        // Elimina la vecchia foto dallo storage
         if (currentPlayer.photo && currentPlayer.photo.includes('supabase')) {
-          const urlParts = currentPlayer.photo.split('/');
-          const oldFilePath = `${urlParts[urlParts.length - 2]}/${urlParts[urlParts.length - 1]}`;
-          await supabase.storage.from('tournament-files').remove([oldFilePath]);
+          try {
+            const oldUrl = new URL(currentPlayer.photo);
+            const pathParts = oldUrl.pathname.split('/');
+            const oldFilePath = `${pathParts[pathParts.length - 2]}/${pathParts[pathParts.length - 1]}`;
+            await supabase.storage.from('tournament-files').remove([oldFilePath]);
+          } catch (deleteErr) {
+            console.warn('Impossibile eliminare la vecchia foto giocatore:', deleteErr);
+          }
         }
-
-        // Aggiorna il DB con il nuovo URL
-        await supabase.from('players').update({ photo_url: photoUrl }).eq('id', currentPlayer.id);
       } catch (err) {
         console.error('Errore upload foto giocatore:', err);
         alert('Errore nel caricamento della foto del giocatore');
         setLoading(false);
         return;
       }
-    } else {
-      // Se non c'è nuova foto, aggiorniamo solo i dati testuali
-      await supabase.from('players').update({
+    }
+
+    try {
+      // Aggiorna i dati nel DB
+      const { error } = await supabase.from('players').update({
         first_name: updatedData.firstName.trim(),
         last_name: updatedData.lastName.trim(),
         jersey_number: updatedData.number === '-' ? null : updatedData.number,
         birth_date: updatedData.birthDate || null,
+        photo_url: photoUrl, // URL pulito
       }).eq('id', currentPlayer.id);
-    }
 
-    // Aggiorna lo stato locale
-    setTeamData((prev: any) => ({
-      ...prev,
-      players: prev.players.map((p: any) => 
-        p.id === currentPlayer.id ? { 
-          ...p, 
-          firstName: updatedData.firstName.trim(),
-          lastName: updatedData.lastName.trim(),
-          number: updatedData.number,
-          birthDate: updatedData.birthDate,
-          photo: photoUrl,
-          name: `${updatedData.firstName.trim().toUpperCase()} ${updatedData.lastName.trim().toUpperCase()}`
-        } : p
-      )
-    }));
-    alert('✅ Giocatore aggiornato con successo!');
-    setLoading(false);
-    setEditingPlayer(null);
-    setIsPlayerEditorOpen(false);
+      if (error) throw error;
+
+      // Aggiorna lo stato locale
+      setTeamData((prev: any) => ({
+        ...prev,
+        players: prev.players.map((p: any) => 
+          p.id === currentPlayer.id ? { 
+            ...p, 
+            firstName: updatedData.firstName.trim(),
+            lastName: updatedData.lastName.trim(),
+            number: updatedData.number,
+            birthDate: updatedData.birthDate,
+            photo: photoUrl,
+            name: `${updatedData.firstName.trim().toUpperCase()} ${updatedData.lastName.trim().toUpperCase()}`
+          } : p
+        )
+      }));
+      alert('✅ Giocatore aggiornato con successo!');
+    } catch (err) {
+      console.error('Errore aggiornamento giocatore:', err);
+      alert('Errore nell\'aggiornamento del giocatore');
+    } finally {
+      setLoading(false);
+      setEditingPlayer(null);
+      setIsPlayerEditorOpen(false);
+    }
   };
 
   const handleDeletePlayer = async () => {
