@@ -719,7 +719,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
         </div>
       )}
 
-      {/* ✅ LIGHTBOX PER FOTO SQUADRA E GIOCATORE */}
+            {/* ✅ LIGHTBOX PER FOTO SQUADRA E GIOCATORE */}
       {lightboxImage && (
         <div 
           className="fixed inset-0 bg-black/95 z-[200] flex items-center justify-center p-4"
@@ -746,12 +746,11 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
             onClick={(e) => e.stopPropagation()}
           >
             <img 
-              src={lightboxImage} 
+              src={encodeURI(lightboxImage)} 
               alt={lightboxType === 'team' ? teamData.name : selectedPlayer?.name || 'Giocatore'}
               className="max-w-full max-h-full w-auto h-auto object-contain rounded-lg shadow-2xl"
               onError={(e) => {
                 console.error('❌ Errore caricamento immagine:', lightboxImage);
-                // Nascondi l'immagine rotta e mostra un messaggio
                 e.currentTarget.style.display = 'none';
                 const errorDiv = document.createElement('div');
                 errorDiv.className = 'text-white text-center p-8';
