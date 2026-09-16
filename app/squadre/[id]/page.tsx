@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, X, AlertTriangle } from 'lucide-react'; // ✅ Aggiunto AlertTriangle
+import { ArrowLeft, X, AlertTriangle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { createClient } from '@/lib/supabase/client';
@@ -65,7 +65,6 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
       const teamId = params.id;
 
       try {
-        // 1. Dati squadra
         const { data: team, error: teamError } = await supabase
           .from('teams')
           .select('id, name, girone, logo_url, team_photo_url')
@@ -74,7 +73,6 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
 
         if (teamError) throw teamError;
 
-        // 2. Dati giocatori (✅ Aggiunto is_suspended alla select)
         const { data: players, error: playersError } = await supabase
           .from('players')
           .select('id, first_name, last_name, jersey_number, birth_date, photo_url, goals, yellow_cards, red_cards, mvp_wins, is_suspended')
@@ -83,7 +81,6 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
 
         if (playersError) throw playersError;
 
-        // 3. Statistiche partite
         const { data: matches, error: matchesError } = await supabase
           .from('matches')
           .select('home_team_id, away_team_id, home_score, away_score')
@@ -114,7 +111,6 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
           stats.dr = stats.gf - stats.gs;
         }
 
-        // 4. Controllo blocco torneo
         const { count: finalPhaseCount } = await supabase
           .from('matches')
           .select('*', { count: 'exact', head: true })
@@ -122,7 +118,6 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
 
         const isTournamentLocked = (finalPhaseCount || 0) > 0;
 
-        // 5. Mappa giocatori (✅ Aggiunto isSuspended al mapping)
         const mappedPlayers = (players || []).map((p: any) => ({
           id: p.id,
           number: p.jersey_number || '-',
@@ -135,10 +130,9 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
           yellow: p.yellow_cards || 0,
           red: p.red_cards || 0,
           mvp: p.mvp_wins || 0,
-          isSuspended: p.is_suspended || false, // ✅ Nuovo campo
+          isSuspended: p.is_suspended || false,
         }));
 
-        // 6. Salva dati
         setTeamData({
           id: team.id,
           name: team.name,
@@ -162,22 +156,18 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     }
   }, [params.id]);
 
-  // Aggiorna dati testo (Nome, Girone)
   const handleTeamUpdate = async (field: 'name' | 'group', value: string) => {
     const supabase = createClient();
     const updateData: any = {};
-    
     if (field === 'name') updateData.name = value;
     if (field === 'group') updateData.girone = value.replace('GIRONE ', '');
 
     const { error } = await supabase.from('teams').update(updateData).eq('id', params.id);
-
     if (error) {
       console.error('Errore aggiornamento squadra:', error);
       alert('Errore nel salvataggio');
       return;
     }
-
     setTeamData((prev: any) => ({ ...prev, [field]: value }));
   };
 
@@ -203,48 +193,34 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     }
   };
 
-       const handleTeamPhotoUpload = async (file: File) => {
+  const handleTeamPhotoUpload = async (file: File) => {
     if (!file || !teamData) return;
     setLoading(true);
     const supabase = createClient();
     try {
-      // 1. Nome file univoco (il timestamp qui basta per evitare la cache)
       const fileExt = file.name.split('.').pop();
       const newFileName = `team_${params.id}_${Date.now()}.${fileExt}`;
       const newPath = `team-photos/${newFileName}`;
 
-      // 2. Upload
-      const { error: uploadError } = await supabase.storage
-        .from('tournament-files')
-        .upload(newPath, file, { cacheControl: '3600', upsert: true });
+      const { error: uploadError } = await supabase.storage.from('tournament-files').upload(newPath, file, { cacheControl: '3600', upsert: true });
       if (uploadError) throw uploadError;
 
-      // 3. Ottieni URL PULITO (senza ?t=...)
-      const { data: { publicUrl } } = supabase.storage
-        .from('tournament-files')
-        .getPublicUrl(newPath);
+      const { data: { publicUrl } } = supabase.storage.from('tournament-files').getPublicUrl(newPath);
 
-      // 4. Aggiorna il Database con l'URL pulito
-      const { error: updateError } = await supabase
-        .from('teams')
-        .update({ team_photo_url: publicUrl })
-        .eq('id', params.id);
+      const { error: updateError } = await supabase.from('teams').update({ team_photo_url: publicUrl }).eq('id', params.id);
       if (updateError) throw updateError;
 
-      // 5. Elimina la vecchia foto dallo storage (se esiste)
       if (teamData.teamPhoto && teamData.teamPhoto.includes('supabase')) {
         try {
           const oldUrl = new URL(teamData.teamPhoto);
           const pathParts = oldUrl.pathname.split('/');
-          // Estrae 'team-photos/nome_vecchio_file.jpg'
           const oldFilePath = `${pathParts[pathParts.length - 2]}/${pathParts[pathParts.length - 1]}`;
           await supabase.storage.from('tournament-files').remove([oldFilePath]);
         } catch (deleteErr) {
-          console.warn('Impossibile eliminare la vecchia foto, ma non è critico:', deleteErr);
+          console.warn('Impossibile eliminare la vecchia foto:', deleteErr);
         }
       }
 
-      // 6. Aggiorna lo stato locale
       setTeamData((prev: any) => ({ ...prev, teamPhoto: publicUrl }));
       alert('✅ Foto squadra aggiornata con successo!');
     } catch (err) {
@@ -255,12 +231,9 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     }
   };
 
-    // ✅ Aggiungi Giocatore (con upload foto)
-      const handleAddPlayer = async (newPlayer: PlayerData) => {
+  const handleAddPlayer = async (newPlayer: PlayerData) => {
     setLoading(true);
     const supabase = createClient();
-    
-    // 1. Inseriamo prima il giocatore nel DB (senza foto) per ottenere il suo ID
     const playerData = {
       team_id: params.id,
       first_name: newPlayer.firstName.trim(),
@@ -275,30 +248,19 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
       if (error) throw error;
 
       let finalPhotoUrl = null;
-
-      // 2. Se è stata selezionata una foto, la carichiamo con un nome univoco
       if (newPlayer.photoFile) {
         const fileExt = newPlayer.photoFile.name.split('.').pop();
         const newFileName = `player_${data.id}_${Date.now()}.${fileExt}`;
         const newPath = `player-photos/${newFileName}`;
         
-        const { error: uploadError } = await supabase.storage
-          .from('tournament-files')
-          .upload(newPath, newPlayer.photoFile, { cacheControl: '3600', upsert: true });
-
+        const { error: uploadError } = await supabase.storage.from('tournament-files').upload(newPath, newPlayer.photoFile, { cacheControl: '3600', upsert: true });
         if (!uploadError) {
-          const { data: { publicUrl } } = supabase.storage
-            .from('tournament-files')
-            .getPublicUrl(newPath);
-            
+          const { data: { publicUrl } } = supabase.storage.from('tournament-files').getPublicUrl(newPath);
           finalPhotoUrl = publicUrl;
-
-          // 3. Aggiorniamo il record del giocatore con l'URL della nuova foto
           await supabase.from('players').update({ photo_url: finalPhotoUrl }).eq('id', data.id);
         }
       }
 
-      // 4. Aggiorniamo lo stato locale
       const mappedPlayer = {
         id: data.id,
         number: data.jersey_number || '-',
@@ -320,8 +282,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     }
   };
 
-  // ✅ Modifica Giocatore (con upload nuova foto se selezionata)
-       const handleUpdatePlayer = async (updatedData: PlayerData) => {
+  const handleUpdatePlayer = async (updatedData: PlayerData) => {
     if (!editingPlayer) return;
     setLoading(true);
     const supabase = createClient();
@@ -330,27 +291,18 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
 
     let photoUrl = currentPlayer.photo;
 
-    // Se c'è un nuovo file, caricalo e sostituisci il vecchio
     if (updatedData.photoFile) {
       try {
         const fileExt = updatedData.photoFile.name.split('.').pop();
         const newFileName = `player_${currentPlayer.id}_${Date.now()}.${fileExt}`;
         const newPath = `player-photos/${newFileName}`;
         
-        const { error: uploadError } = await supabase.storage
-          .from('tournament-files')
-          .upload(newPath, updatedData.photoFile, { cacheControl: '3600', upsert: true });
-        
+        const { error: uploadError } = await supabase.storage.from('tournament-files').upload(newPath, updatedData.photoFile, { cacheControl: '3600', upsert: true });
         if (uploadError) throw uploadError;
         
-        // Ottieni URL PULITO
-        const { data: { publicUrl } } = supabase.storage
-          .from('tournament-files')
-          .getPublicUrl(newPath);
-          
+        const { data: { publicUrl } } = supabase.storage.from('tournament-files').getPublicUrl(newPath);
         photoUrl = publicUrl;
 
-        // Elimina la vecchia foto dallo storage
         if (currentPlayer.photo && currentPlayer.photo.includes('supabase')) {
           try {
             const oldUrl = new URL(currentPlayer.photo);
@@ -370,18 +322,16 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     }
 
     try {
-      // Aggiorna i dati nel DB
       const { error } = await supabase.from('players').update({
         first_name: updatedData.firstName.trim(),
         last_name: updatedData.lastName.trim(),
         jersey_number: updatedData.number === '-' ? null : updatedData.number,
         birth_date: updatedData.birthDate || null,
-        photo_url: photoUrl, // URL pulito
+        photo_url: photoUrl,
       }).eq('id', currentPlayer.id);
 
       if (error) throw error;
 
-      // Aggiorna lo stato locale
       setTeamData((prev: any) => ({
         ...prev,
         players: prev.players.map((p: any) => 
@@ -471,6 +421,13 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
 
   return (
     <div className="min-h-screen bg-[#F5F5F7]">
+      {/* ✅ BADGE DI DEBUG: Se lo vedi, sei loggato come Staff e vedrai i controlli di upload, non il lightbox */}
+      {isStaffMode && (
+        <div className="fixed top-20 right-4 bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg z-[300] animate-pulse">
+          STAFF MODE ATTIVO
+        </div>
+      )}
+
       {/* HEADER */}
       <div className="relative h-40 sm:h-48 w-full overflow-hidden">
         <Image src="/header-team.jpg" alt="Campo" fill className="object-cover" priority />
@@ -512,16 +469,14 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
             teamPhoto={teamData.teamPhoto} 
             onPhotoUpload={handleTeamPhotoUpload} 
           />
-                ) : (
-                              <div 
+        ) : (
+          <div 
             className="rounded-xl overflow-hidden shadow-md bg-gray-300 relative h-40 cursor-pointer group z-10"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              // ✅ ALERT DEFINITIVO: se questo non appare, il codice non è aggiornato nel browser
-              alert('CLICK FOTO SQUADRA REGISTRATO!\nURL: ' + (teamData.teamPhoto || 'VUOTO'));
-              
-              if (teamData.teamPhoto && teamData.teamPhoto.trim() !== '') {
+              console.log('📸 CLICK FOTO SQUADRA (WRAPPER)', teamData.teamPhoto);
+              if (teamData.teamPhoto) {
                 setLightboxImage(teamData.teamPhoto);
                 setLightboxType('team');
               }
@@ -529,15 +484,29 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
           >
             {teamData.teamPhoto ? (
               <>
-                <Image src={teamData.teamPhoto} alt="Foto Squadra" fill className="object-cover transition-transform duration-300 group-hover:scale-105 pointer-events-none" />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center pointer-events-none">
+                <Image 
+                  src={teamData.teamPhoto} 
+                  alt="Foto Squadra" 
+                  fill 
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('📸 CLICK FOTO SQUADRA (IMAGE)', teamData.teamPhoto);
+                    if (teamData.teamPhoto) {
+                      setLightboxImage(teamData.teamPhoto);
+                      setLightboxType('team');
+                    }
+                  }}
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
                   <svg className="w-10 h-10 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
                   </svg>
                 </div>
               </>
             ) : (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="absolute inset-0 flex items-center justify-center">
                 <span className="text-gray-500 text-sm font-medium">FOTO SQUADRA</span>
               </div>
             )}
@@ -635,38 +604,47 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
             ) : (
               teamData.players.map((player: any) => (
                 <div key={player.id} onClick={() => handlePlayerClick(player)} className="flex items-center px-3 py-2.5 cursor-pointer hover:bg-gray-50 transition-colors">
-                   <div className="w-8 flex justify-center flex-shrink-0 relative z-10">
+                  <div className="w-8 flex justify-center flex-shrink-0 relative z-10">
                     <div 
-                      className="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden cursor-pointer hover:ring-2 hover:ring-[#581C24] transition-all"
+                      className="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden cursor-pointer hover:ring-2 hover:ring-[#581C24] transition-all relative"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        // ✅ ALERT DEFINITIVO
-                        alert('CLICK FOTO GIOCATORE REGISTRATO!\nGiocatore: ' + player.name + '\nURL: ' + (player.photo || 'VUOTO'));
-                        
-                        if (player.photo && player.photo.trim() !== '') {
+                        console.log('📸 CLICK FOTO GIOCATORE (WRAPPER)', player.name, player.photo);
+                        if (player.photo) {
                           setLightboxImage(player.photo);
                           setLightboxType('player');
                         }
                       }}
                     >
                       {player.photo ? (
-                        <Image src={player.photo} alt={player.name} fill className="object-cover rounded-full pointer-events-none" />
-                      ) : <span className="text-[6px] text-gray-400 pointer-events-none">FOTO</span>}
+                        <Image 
+                          src={player.photo} 
+                          alt={player.name} 
+                          fill 
+                          className="object-cover rounded-full"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log('📸 CLICK FOTO GIOCATORE (IMAGE)', player.name, player.photo);
+                            if (player.photo) {
+                              setLightboxImage(player.photo);
+                              setLightboxType('player');
+                            }
+                          }}
+                        />
+                      ) : <span className="text-[6px] text-gray-400">FOTO</span>}
                     </div>
                   </div>
                   <div className="w-6 text-center flex-shrink-0">
                     <span className="text-xs font-bold text-gray-500">{player.number}</span>
                   </div>
                   
-                  {/* ✅ SEZIONE NOME CON TRIANGOLO DI AVVISO (Layout inalterato grazie a flex e flex-shrink-0) */}
                   <div className="flex-1 pl-2 min-w-0">
                     <div className="flex items-center gap-1.5">
                       {player.isSuspended && (
                         <div title="Giocatore squalificato per la prossima partita">
-                          <AlertTriangle 
-                            className="w-4 h-4 text-red-600 flex-shrink-0" 
-                          />
+                          <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0" />
                         </div>
                       )}
                       <span className="font-bold text-[11px] text-[#581C24] uppercase truncate block">
@@ -700,35 +678,38 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden relative" onClick={(e) => e.stopPropagation()}>
             <button onClick={() => setSelectedPlayer(null)} className="absolute top-3 right-3 p-1.5 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors z-10"><X size={18} className="text-gray-600" /></button>
             <div className="bg-gradient-to-b from-[#581C24] to-[#581C24]/80 p-6 pt-8">
-                            <div className="flex items-center gap-4">
-                  <div 
-                    className="w-20 h-20 bg-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden cursor-pointer group relative z-10"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      console.log('--- CLICK FOTO GIOCATORE (POPUP) ---');
-                      console.log('Valore selectedPlayer.photo:', selectedPlayer.photo);
-                      
-                      if (selectedPlayer.photo && selectedPlayer.photo.trim() !== '') {
-                        console.log('✅ Apro lightbox con:', selectedPlayer.photo);
-                        setLightboxImage(selectedPlayer.photo);
-                        setLightboxType('player');
-                      } else {
-                        console.log('❌ La foto giocatore è vuota, null o stringa vuota');
-                      }
-                    }}
-                  >
-                    {selectedPlayer.photo ? (
-                      <>
-                        <Image src={selectedPlayer.photo} alt={selectedPlayer.firstName} width={80} height={80} className="object-cover transition-transform duration-300 group-hover:scale-110 pointer-events-none" />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center pointer-events-none">
-                          <svg className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                          </svg>
-                        </div>
-                      </>
-                    ) : <span className="text-[10px] text-gray-400 pointer-events-none">FOTO</span>}
-                  </div>
+              <div className="flex items-center gap-4">
+                <div 
+                  className="w-20 h-20 bg-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden cursor-pointer group relative z-10"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('📸 CLICK FOTO GIOCATORE (POPUP)', selectedPlayer.photo);
+                    if (selectedPlayer.photo) {
+                      setLightboxImage(selectedPlayer.photo);
+                      setLightboxType('player');
+                    }
+                  }}
+                >
+                  {selectedPlayer.photo ? (
+                    <Image 
+                      src={selectedPlayer.photo} 
+                      alt={selectedPlayer.firstName} 
+                      width={80} 
+                      height={80} 
+                      className="object-cover transition-transform duration-300 group-hover:scale-110"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('📸 CLICK FOTO GIOCATORE (POPUP IMAGE)', selectedPlayer.photo);
+                        if (selectedPlayer.photo) {
+                          setLightboxImage(selectedPlayer.photo);
+                          setLightboxType('player');
+                        }
+                      }}
+                    />
+                  ) : <span className="text-[10px] text-gray-400">FOTO</span>}
+                </div>
                 <div className="flex-1">
                   <p className="text-white/80 text-xs uppercase tracking-wider mb-0.5">Nome</p>
                   <h3 className="text-2xl font-black text-white uppercase leading-tight">{selectedPlayer.firstName}</h3>
@@ -768,13 +749,13 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
           </div>
         </div>
       )}
+
       {/* ✅ LIGHTBOX PER FOTO SQUADRA E GIOCATORE */}
       {lightboxImage && (
         <div 
           className="fixed inset-0 bg-black/95 z-[200] flex items-center justify-center p-4 backdrop-blur-sm"
           onClick={() => setLightboxImage(null)}
         >
-          {/* Pulsante chiusura */}
           <button 
             onClick={() => setLightboxImage(null)}
             className="absolute top-4 right-4 p-2 bg-white/20 rounded-full text-white hover:bg-white/30 transition-colors z-10"
@@ -782,14 +763,12 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
             <X size={24} />
           </button>
 
-          {/* Etichetta */}
           <div className="absolute top-4 left-4 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
             <p className="text-white font-bold text-sm uppercase">
               {lightboxType === 'team' ? 'Foto Squadra' : 'Foto Giocatore'}
             </p>
           </div>
 
-          {/* Immagine ingrandita */}
           <div className="max-w-4xl max-h-[90vh] w-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
             <img 
               src={lightboxImage} 
