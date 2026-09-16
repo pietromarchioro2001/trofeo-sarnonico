@@ -96,7 +96,7 @@ export async function GET(
           style={{
             position: 'absolute',
             top: 585,
-            left: '18%',
+            left: '17%',
             transform: 'translateX(-50%)',
             display: 'flex',
           }}
@@ -109,7 +109,7 @@ export async function GET(
           style={{
             position: 'absolute',
             top: 585,
-            left: '82%',
+            left: '83%',
             transform: 'translateX(-50%)',
             display: 'flex',
           }}
@@ -302,7 +302,19 @@ export async function GET(
                       }}
                     >
                       {Array.from({ length: scorer.goals }).map((_, i) => (
-                        <span key={i}>●</span>
+                        <svg
+                          key={i}
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          style={{ display: 'flex' }}
+                        >
+                          <circle cx="12" cy="12" r="11" fill="#800026" />
+                          <path
+                            d="M12 4.2l3 2.2-1.1 3.5H10.1L9 6.4l3-2.2zm-6 4.4l3-.7 1.2 3.4-2.2 2.5-3-.8 1-4.4zm12 0l1 4.4-3 .8-2.2-2.5 1.2-3.4 3 .7zM8.4 14.2h7.2l1.2 3.6L12 20l-4.8-2.2 1.2-3.6z"
+                            fill="#fff"
+                          />
+                        </svg>
                       ))}
                     </span>
                   )}
@@ -368,7 +380,19 @@ export async function GET(
                     }}
                   >
                     {Array.from({ length: scorer.goals }).map((_, i) => (
-                      <span key={i}>●</span>
+                      <svg
+                        key={i}
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        style={{ display: 'flex' }}
+                      >
+                        <circle cx="12" cy="12" r="11" fill="#800026" />
+                        <path
+                          d="M12 4.2l3 2.2-1.1 3.5H10.1L9 6.4l3-2.2zm-6 4.4l3-.7 1.2 3.4-2.2 2.5-3-.8 1-4.4zm12 0l1 4.4-3 .8-2.2-2.5 1.2-3.4 3 .7zM8.4 14.2h7.2l1.2 3.6L12 20l-4.8-2.2 1.2-3.6z"
+                          fill="#fff"
+                        />
+                      </svg>
                     ))}
                   </span>
                 )}
@@ -434,7 +458,7 @@ export async function GET(
           <div
             style={{
               position: 'absolute',
-              left: '28%',
+              left: '32%',
               transform: 'translateX(-50%)',
               width: 340,
               display: 'flex',
