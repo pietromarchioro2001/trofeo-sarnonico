@@ -96,7 +96,7 @@ export async function GET(
           style={{
             position: 'absolute',
             top: 585,
-            left: '25%',
+            left: '20%',
             transform: 'translateX(-50%)',
             display: 'flex',
           }}
@@ -109,7 +109,7 @@ export async function GET(
           style={{
             position: 'absolute',
             top: 585,
-            left: '75%',
+            left: '80%',
             transform: 'translateX(-50%)',
             display: 'flex',
           }}
@@ -127,7 +127,7 @@ export async function GET(
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          gap: 40,
+          gap: 50,
         }}
       >
         <span
@@ -193,7 +193,7 @@ export async function GET(
           >
             <span
               style={{
-                fontSize: 38,
+                fontSize: 42,
                 fontWeight: '800',
                 color: '#800020',
                 textTransform: 'uppercase',
@@ -213,7 +213,7 @@ export async function GET(
           >
             <span
               style={{
-                fontSize: 38,
+                fontSize: 42,
                 fontWeight: '800',
                 color: '#800020',
                 textTransform: 'uppercase',
@@ -359,26 +359,26 @@ export async function GET(
         <div style={{ position: 'absolute', top: 65, left: 8, right: 0, display: 'flex', justifyContent: 'center' }}>
           <img src="https://trofeo-sarnonico.vercel.app/logo.png" width="200" height="200" style={{ objectFit: 'contain' }} />
         </div>
-        <div style={{ position: 'absolute', top: 720, left: 110, display: 'flex' }}>
+        <div style={{ position: 'absolute', top: 720, left: 115, display: 'flex' }}>
           {homeLogo ? (
             <img src={homeLogo} width="280" height="280" style={{ objectFit: 'contain' }} />
           ) : (
             <div style={{ display: 'flex', width: 220, height: 220 }}></div>
           )}
         </div>
-        <div style={{ position: 'absolute', top: 720, right: 110, display: 'flex' }}>
+        <div style={{ position: 'absolute', top: 720, right: 115, display: 'flex' }}>
           {awayLogo ? (
             <img src={awayLogo} width="280" height="280" style={{ objectFit: 'contain' }} />
           ) : (
             <div style={{ display: 'flex', width: 220, height: 220 }}></div>
           )}
         </div>
-        <div style={{ position: 'absolute', top: 1050, left: 0, right: 40, display: 'flex', justifyContent: 'flex-start', paddingLeft: 130 }}>
+        <div style={{ position: 'absolute', top: 1050, left: 0, right: 45, display: 'flex', justifyContent: 'flex-start', paddingLeft: 130 }}>
           <div style={{ display: 'flex', width: 240, justifyContent: 'center' }}>
             <div style={{ display: 'flex', fontSize: 42, fontWeight: '900', color: '#800020', textAlign: 'center', letterSpacing: 1 }}>{homeName}</div>
           </div>
         </div>
-        <div style={{ position: 'absolute', top: 1050, left: 40, right: 0, display: 'flex', justifyContent: 'flex-end', paddingRight: 130 }}>
+        <div style={{ position: 'absolute', top: 1050, left: 45, right: 0, display: 'flex', justifyContent: 'flex-end', paddingRight: 130 }}>
           <div style={{ display: 'flex', width: 240, justifyContent: 'center' }}>
             <div style={{ display: 'flex', fontSize: 42, fontWeight: '900', color: '#800020', textAlign: 'center', letterSpacing: 1 }}>{awayName}</div>
           </div>
