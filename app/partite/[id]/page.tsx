@@ -518,6 +518,8 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   const [isSharing, setIsSharing] = useState(false);
   const [mediaFiles, setMediaFiles] = useState<any[]>([]);
   const [loadingMedia, setLoadingMedia] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
 
     // ✅ Carica i media quando si apre la galleria o dopo un nuovo upload
   useEffect(() => {
@@ -1109,30 +1111,50 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     }
   };
 
-    // ✅ FUNZIONE PER ELIMINARE FOTO DA SUPABASE
-  const handleDeleteMedia = async (fileName: string) => {
-    if (!confirm('Sei sicuro di voler eliminare questa foto? Questa azione è irreversibile.')) return;
+      // ✅ Toggle selezione di una foto
+  const toggleFileSelection = (fileName: string) => {
+    setSelectedFiles(prev => 
+      prev.includes(fileName) 
+        ? prev.filter(f => f !== fileName)
+        : [...prev, fileName]
+    );
+  };
+
+  // ✅ Elimina in batch le foto selezionate da Supabase
+  const handleDeleteSelected = async () => {
+    if (selectedFiles.length === 0) return;
+    if (!confirm(`Sei sicuro di voler eliminare ${selectedFiles.length} foto? Questa azione è irreversibile.`)) return;
     
     const folderName = getMatchFolderName();
-    const filePath = `match-media/${folderName}/${fileName}`;
+    const filePaths = selectedFiles.map(f => `match-media/${folderName}/${f}`);
     const supabase = createClient();
     
     try {
       const { error } = await supabase.storage
         .from('tournament-files')
-        .remove([filePath]);
-        
+        .remove(filePaths);
+      
       if (error) {
         console.error('Errore eliminazione:', error);
-        alert('Errore nell\'eliminazione della foto: ' + error.message);
+        alert('Errore nell\'eliminazione delle foto: ' + error.message);
       } else {
-        // Rimuovi dallo stato locale per aggiornare immediatamente la UI senza ricaricare
-        setMediaFiles(prev => prev.filter(f => f.name !== fileName));
+        // Rimuovi dallo stato locale
+        setMediaFiles(prev => prev.filter(f => !selectedFiles.includes(f.name)));
+        const deletedCount = selectedFiles.length;
+        setSelectedFiles([]);
+        setSelectionMode(false);
+        alert(`✅ ${deletedCount} foto eliminate con successo`);
       }
     } catch (err) {
       console.error('Errore generale eliminazione:', err);
-      alert('Errore nell\'eliminazione della foto');
+      alert('Errore nell\'eliminazione delle foto');
     }
+  };
+
+  // ✅ Esci dalla modalità selezione
+  const exitSelectionMode = () => {
+    setSelectionMode(false);
+    setSelectedFiles([]);
   };
 
   const handleShareMatch = async () => {
@@ -1694,7 +1716,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
 
             {/* POPUP GALLERIA MEDIA FULLSCREEN */}
       {showMediaGallery && (
-        <div className="fixed inset-0 bg-black/95 z-[100] flex flex-col" onClick={() => setShowMediaGallery(false)}>
+        <div className="fixed inset-0 bg-black/95 z-[100] flex flex-col" onClick={() => { setShowMediaGallery(false); exitSelectionMode(); }}>
           {/* Header */}
           <div className="flex items-center justify-between p-4 bg-[#581C24] sticky top-0 z-10">
             <h2 className="text-white font-black text-lg uppercase tracking-wider">Foto Partita</h2>
@@ -1711,24 +1733,59 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                     </div>
                   )}
                   
-                  <label 
-                    onClick={(e) => e.stopPropagation()}
-                    className="flex items-center gap-2 px-4 py-2 bg-white text-[#581C24] rounded-lg font-bold text-xs uppercase hover:bg-gray-100 transition-colors cursor-pointer relative"
-                  >
-                    <Plus size={16} />
-                    Aggiungi
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handleFileSelectAndUpload}
-                      className="hidden"
-                    />
-                  </label>
+                  {/* ✅ Modalità selezione: mostra ANNULLA e ELIMINA */}
+                  {selectionMode ? (
+                    <>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); exitSelectionMode(); }}
+                        className="flex items-center gap-2 px-4 py-2 bg-white/20 text-white rounded-lg font-bold text-xs uppercase hover:bg-white/30 transition-colors"
+                      >
+                        <X size={16} />
+                        Annulla
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDeleteSelected(); }}
+                        disabled={selectedFiles.length === 0}
+                        className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg font-bold text-xs uppercase hover:bg-red-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Elimina ({selectedFiles.length})
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      {/* Modalità normale: mostra AGGIUNGI e SELEZIONA */}
+                      <label 
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-2 px-4 py-2 bg-white text-[#581C24] rounded-lg font-bold text-xs uppercase hover:bg-gray-100 transition-colors cursor-pointer relative"
+                      >
+                        <Plus size={16} />
+                        Aggiungi
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleFileSelectAndUpload}
+                          className="hidden"
+                        />
+                      </label>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setSelectionMode(true); }}
+                        className="flex items-center gap-2 px-4 py-2 bg-white/20 text-white rounded-lg font-bold text-xs uppercase hover:bg-white/30 transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Seleziona
+                      </button>
+                    </>
+                  )}
                 </>
               )}
               <button 
-                onClick={() => setShowMediaGallery(false)}
+                onClick={() => { setShowMediaGallery(false); exitSelectionMode(); }}
                 className="p-2 bg-white/20 rounded-full text-white hover:bg-white/30 transition-colors"
               >
                 <X size={24} />
@@ -1756,48 +1813,61 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                     .from('tournament-files')
                     .getPublicUrl(`match-media/${folderName}/${file.name}`);
                   
+                  const isSelected = selectedFiles.includes(file.name);
+                  
                   return (
-                    <div key={file.name} className="relative aspect-square rounded-lg overflow-hidden bg-gray-800 group cursor-pointer">
+                    <div 
+                      key={file.name} 
+                      className={`relative aspect-square rounded-lg overflow-hidden bg-gray-800 group cursor-pointer transition-all ${
+                        selectionMode 
+                          ? (isSelected ? 'ring-4 ring-[#581C24] scale-95' : 'opacity-70 hover:opacity-100')
+                          : ''
+                      }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (selectionMode) {
+                          // In modalità selezione: toggle della selezione
+                          toggleFileSelection(file.name);
+                        } else {
+                          // In modalità normale: apri l'immagine
+                          window.open(data.publicUrl, '_blank');
+                        }
+                      }}
+                    >
                       <img 
                         src={data.publicUrl} 
                         alt="Media" 
                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                       />
                       
-                      {/* ✅ OVERLAY CON AZIONI (appare in hover) */}
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                        
-                        {/* Pulsante Visualizza */}
-                        <a 
-                          href={data.publicUrl} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="p-2 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/40 transition-colors"
-                          onClick={(e) => e.stopPropagation()}
-                          title="Visualizza a schermo intero"
+                      {/* ✅ CHECKBOX (visibile solo in modalità selezione) */}
+                      {selectionMode && (
+                        <div 
+                          className={`absolute top-2 left-2 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all ${
+                            isSelected 
+                              ? 'bg-[#581C24] border-white' 
+                              : 'bg-black/40 border-white/70'
+                          }`}
                         >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                        </a>
-                        
-                        {/* ✅ Pulsante Elimina (SOLO STAFF) */}
-                        {isStaffMode && (
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteMedia(file.name);
-                            }}
-                            className="p-2 bg-red-600/90 backdrop-blur-sm rounded-full text-white hover:bg-red-700 transition-colors"
-                            title="Elimina foto"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          {isSelected && (
+                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                             </svg>
-                          </button>
-                        )}
-                      </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* ✅ OVERLAY CON OCCHIO (visibile solo in modalità normale al hover) */}
+                      {!selectionMode && (
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <div className="p-2 bg-white/20 backdrop-blur-sm rounded-full text-white">
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
