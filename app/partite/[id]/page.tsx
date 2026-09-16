@@ -1762,7 +1762,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                         className="flex items-center gap-2 px-4 py-2 bg-white text-[#581C24] rounded-lg font-bold text-xs uppercase hover:bg-gray-100 transition-colors cursor-pointer relative"
                       >
                         <Plus size={16} />
-                        Aggiungi
                         <input
                           type="file"
                           accept="image/*"
@@ -1778,7 +1777,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        Seleziona
                       </button>
                     </>
                   )}
