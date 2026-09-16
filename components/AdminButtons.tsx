@@ -1249,11 +1249,14 @@ export const AdminDeleteMatchButton: React.FC<AdminDeleteMatchButtonProps> = ({ 
     const supabase = createClient();
 
     try {
-      // Elimina i post collegati dalla Storage
       const filesToDelete = [
-        `match-posts/${params.id}_PRE_MATCH_matchday.png`,
-        `match-posts/${params.id}_POST_MATCH_matchday.png`,
+        `match-posts/${match.id}_PRE_MATCH_matchday.png`,
+        `match-posts/${match.id}_POST_MATCH_matchday.png`,
       ];
+      
+      await supabase.storage
+        .from("tournament-files")
+        .remove(filesToDelete);
       
       const { error: storageError } = await supabase.storage
         .from('tournament-files')
