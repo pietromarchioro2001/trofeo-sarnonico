@@ -99,8 +99,6 @@ const PenaltyShootoutPopup: React.FC<PenaltyShootoutPopupProps> = ({
   const [lightState, setLightState] = useState<'none' | 'green' | 'red'>('none');
   const [isProcessing, setIsProcessing] = useState(false);
   const [shootoutId, setShootoutId] = useState<string | null>(null);
-  
-  // ✅ Nuovi stati per tracciare i tiri
   const [isInitialized, setIsInitialized] = useState(false);
   const prevKicksLengthRef = useRef(0);
 
@@ -488,8 +486,45 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       .getPublicUrl(`match-posts/${match.id}_${type}_matchday.png`);
     return data.publicUrl;
   };
+  
+    const fetchMediaFiles = async () => {
+    if (!match) return;
+    setLoadingMedia(true);
+    const supabase = createClient();
+    const folderName = getMatchFolderName();
+    const basePath = `match-media/${folderName}`;
+    
+    try {
+      const { data, error } = await supabase.storage
+        .from('tournament-files')
+        .list(basePath, {
+          limit: 100,
+          offset: 0,
+          sortBy: { column: 'name', order: 'desc' }, // Ordina per nome (che contiene il timestamp) per avere le più recenti prima
+        });
+
+      if (error) {
+        console.error('Errore nel recupero media:', error);
+      } else {
+        setMediaFiles(data || []);
+      }
+    } catch (err) {
+      console.error('Errore generale recupero media:', err);
+    } finally {
+      setLoadingMedia(false);
+    }
+  };
   const [uploading, setUploading] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
+  const [mediaFiles, setMediaFiles] = useState<any[]>([]);
+  const [loadingMedia, setLoadingMedia] = useState(false);
+
+    // ✅ Carica i media quando si apre la galleria o dopo un nuovo upload
+  useEffect(() => {
+    if (showMediaGallery) {
+      fetchMediaFiles();
+    }
+  }, [showMediaGallery, match, mediaRefreshKey]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -1631,11 +1666,11 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         />
       )}
 
-      {/* POPUP GALLERIA MEDIA FULLSCREEN */}
+            {/* POPUP GALLERIA MEDIA FULLSCREEN */}
       {showMediaGallery && (
         <div className="fixed inset-0 bg-black/95 z-[100] flex flex-col" onClick={() => setShowMediaGallery(false)}>
           {/* Header */}
-          <div className="flex items-center justify-between p-4 bg-[#581C24]">
+          <div className="flex items-center justify-between p-4 bg-[#581C24] sticky top-0 z-10">
             <h2 className="text-white font-black text-lg uppercase tracking-wider">Foto Partita</h2>
             <div className="flex items-center gap-3">
               {isStaffMode && (
@@ -1652,7 +1687,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                   
                   <label 
                     onClick={(e) => e.stopPropagation()}
-                    className="flex items-center gap-2 px-4 py-2 bg-white text-[#581C24] rounded-lg font-bold text-xs uppercase hover:bg-gray-100 transition-colors cursor-pointer"
+                    className="flex items-center gap-2 px-4 py-2 bg-white text-[#581C24] rounded-lg font-bold text-xs uppercase hover:bg-gray-100 transition-colors cursor-pointer relative"
                   >
                     <Plus size={16} />
                     Aggiungi
@@ -1675,18 +1710,50 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
             </div>
           </div>
           
-          {/* Contenuto - TEMPORANEAMENTE DISABILITATO */}
+          {/* Contenuto Galleria */}
           <div className="flex-1 overflow-y-auto p-4" onClick={(e) => e.stopPropagation()}>
-            {/* 
-              TODO: Reimplementare galleria media senza MatchdayPost
-              Per ora mostra un messaggio temporaneo
-            */}
-            <div className="flex items-center justify-center h-full">
-              <p className="text-white text-center">
-                Galleria media in aggiornamento...<br />
-                <span className="text-sm text-white/70">Torneremo presto!</span>
-              </p>
-            </div>
+            {loadingMedia ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : mediaFiles.length === 0 ? (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-white/70 text-center">
+                  Nessuna foto caricata per questa partita.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {mediaFiles.map((file: any) => {
+                  const folderName = getMatchFolderName();
+                  const { data } = createClient().storage
+                    .from('tournament-files')
+                    .getPublicUrl(`match-media/${folderName}/${file.name}`);
+                  
+                  return (
+                    <div key={file.name} className="relative aspect-square rounded-lg overflow-hidden bg-gray-800 group cursor-pointer">
+                      <img 
+                        src={data.publicUrl} 
+                        alt="Media" 
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                      />
+                      <a 
+                        href={data.publicUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      </a>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}
