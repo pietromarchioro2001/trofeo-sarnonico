@@ -420,6 +420,7 @@ export async function GET(
         >
           <img src={awayLogo} width="300" height="300" style={{ objectFit: 'contain' }} />
         </div>
+        {/* NOMI SQUADRE */}
         <div
           style={{
             position: 'absolute',
@@ -429,16 +430,20 @@ export async function GET(
             display: 'flex',
           }}
         >
+          {/* Casa */}
           <div
             style={{
-              width: '50%',
+              position: 'absolute',
+              left: '22%',
+              transform: 'translateX(-50%)',
+              width: 340,
               display: 'flex',
               justifyContent: 'center',
             }}
           >
             <span
               style={{
-                width: 340,
+                width: '100%',
                 fontSize: 42,
                 fontWeight: '900',
                 color: '#800020',
@@ -450,16 +455,20 @@ export async function GET(
             </span>
           </div>
         
+          {/* Ospite */}
           <div
             style={{
-              width: '50%',
+              position: 'absolute',
+              left: '78%',
+              transform: 'translateX(-50%)',
+              width: 340,
               display: 'flex',
               justifyContent: 'center',
             }}
           >
             <span
               style={{
-                width: 340,
+                width: '100%',
                 fontSize: 42,
                 fontWeight: '900',
                 color: '#800020',
