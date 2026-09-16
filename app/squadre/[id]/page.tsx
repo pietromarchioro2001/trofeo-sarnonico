@@ -513,26 +513,34 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
             onPhotoUpload={handleTeamPhotoUpload} 
           />
                 ) : (
-          <div 
-            className="rounded-xl overflow-hidden shadow-md bg-gray-300 relative h-40 cursor-pointer group"
-            onClick={() => {
-              if (teamData.teamPhoto) {
+                    <div 
+            className="rounded-xl overflow-hidden shadow-md bg-gray-300 relative h-40 cursor-pointer group z-10"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('--- CLICK FOTO SQUADRA ---');
+              console.log('Valore teamData.teamPhoto:', teamData.teamPhoto);
+              
+              if (teamData.teamPhoto && teamData.teamPhoto.trim() !== '') {
+                console.log('✅ Apro lightbox con:', teamData.teamPhoto);
                 setLightboxImage(teamData.teamPhoto);
                 setLightboxType('team');
+              } else {
+                console.log('❌ La foto squadra è vuota, null o stringa vuota');
               }
             }}
           >
             {teamData.teamPhoto ? (
               <>
-                <Image src={teamData.teamPhoto} alt="Foto Squadra" fill className="object-cover transition-transform duration-300 group-hover:scale-105" />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                <Image src={teamData.teamPhoto} alt="Foto Squadra" fill className="object-cover transition-transform duration-300 group-hover:scale-105 pointer-events-none" />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center pointer-events-none">
                   <svg className="w-10 h-10 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
                   </svg>
                 </div>
               </>
             ) : (
-              <div className="absolute inset-0 flex items-center justify-center">
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <span className="text-gray-500 text-sm font-medium">FOTO SQUADRA</span>
               </div>
             )}
@@ -630,20 +638,27 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
             ) : (
               teamData.players.map((player: any) => (
                 <div key={player.id} onClick={() => handlePlayerClick(player)} className="flex items-center px-3 py-2.5 cursor-pointer hover:bg-gray-50 transition-colors">
-                                    <div className="w-8 flex justify-center flex-shrink-0 relative">
+                   <div className="w-8 flex justify-center flex-shrink-0 relative z-10">
                     <div 
                       className="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden cursor-pointer hover:ring-2 hover:ring-[#581C24] transition-all"
                       onClick={(e) => {
-                        e.stopPropagation(); // ✅ Evita di aprire il popup di modifica/dettagli
-                        if (player.photo) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('--- CLICK FOTO GIOCATORE (LISTA) ---');
+                        console.log('Giocatore:', player.name, '| Valore player.photo:', player.photo);
+                        
+                        if (player.photo && player.photo.trim() !== '') {
+                          console.log('✅ Apro lightbox con:', player.photo);
                           setLightboxImage(player.photo);
                           setLightboxType('player');
+                        } else {
+                          console.log('❌ La foto giocatore è vuota, null o stringa vuota');
                         }
                       }}
                     >
                       {player.photo ? (
-                        <Image src={player.photo} alt={player.name} fill className="object-cover rounded-full" />
-                      ) : <span className="text-[6px] text-gray-400">FOTO</span>}
+                        <Image src={player.photo} alt={player.name} fill className="object-cover rounded-full pointer-events-none" />
+                      ) : <span className="text-[6px] text-gray-400 pointer-events-none">FOTO</span>}
                     </div>
                   </div>
                   <div className="w-6 text-center flex-shrink-0">
@@ -692,26 +707,34 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
             <button onClick={() => setSelectedPlayer(null)} className="absolute top-3 right-3 p-1.5 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors z-10"><X size={18} className="text-gray-600" /></button>
             <div className="bg-gradient-to-b from-[#581C24] to-[#581C24]/80 p-6 pt-8">
                             <div className="flex items-center gap-4">
-                            <div className="w-20 h-20 bg-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden cursor-pointer group relative" // ✅ Aggiunto 'relative' qui
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (selectedPlayer.photo) {
-                                  setLightboxImage(selectedPlayer.photo);
-                                  setLightboxType('player');
-                                }
-                              }}
-                            >
-                  {selectedPlayer.photo ? (
-                    <>
-                      <Image src={selectedPlayer.photo} alt={selectedPlayer.firstName} width={80} height={80} className="object-cover transition-transform duration-300 group-hover:scale-110" />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                        <svg className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                        </svg>
-                      </div>
-                    </>
-                  ) : <span className="text-[10px] text-gray-400">FOTO</span>}
-                </div>
+                  <div 
+                    className="w-20 h-20 bg-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden cursor-pointer group relative z-10"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('--- CLICK FOTO GIOCATORE (POPUP) ---');
+                      console.log('Valore selectedPlayer.photo:', selectedPlayer.photo);
+                      
+                      if (selectedPlayer.photo && selectedPlayer.photo.trim() !== '') {
+                        console.log('✅ Apro lightbox con:', selectedPlayer.photo);
+                        setLightboxImage(selectedPlayer.photo);
+                        setLightboxType('player');
+                      } else {
+                        console.log('❌ La foto giocatore è vuota, null o stringa vuota');
+                      }
+                    }}
+                  >
+                    {selectedPlayer.photo ? (
+                      <>
+                        <Image src={selectedPlayer.photo} alt={selectedPlayer.firstName} width={80} height={80} className="object-cover transition-transform duration-300 group-hover:scale-110 pointer-events-none" />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center pointer-events-none">
+                          <svg className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                          </svg>
+                        </div>
+                      </>
+                    ) : <span className="text-[10px] text-gray-400 pointer-events-none">FOTO</span>}
+                  </div>
                 <div className="flex-1">
                   <p className="text-white/80 text-xs uppercase tracking-wider mb-0.5">Nome</p>
                   <h3 className="text-2xl font-black text-white uppercase leading-tight">{selectedPlayer.firstName}</h3>
