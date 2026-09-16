@@ -95,7 +95,7 @@ export async function GET(
         <div
           style={{
             position: 'absolute',
-            top: 585,
+            top: 588,
             left: '17%',
             transform: 'translateX(-50%)',
             display: 'flex',
@@ -108,7 +108,7 @@ export async function GET(
         <div
           style={{
             position: 'absolute',
-            top: 585,
+            top: 588,
             left: '83%',
             transform: 'translateX(-50%)',
             display: 'flex',
@@ -195,8 +195,8 @@ export async function GET(
 
         {/* DCR */}
         {(match.home_penalties !== null || match.away_penalties !== null) && (
-          <div style={{ position: 'absolute', top: 800, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
-            <span style={{ fontSize: 32, fontWeight: '700', color: '#9333ea' }}>
+          <div style={{ position: 'absolute', top: 815, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
+            <span style={{ fontSize: 36, fontWeight: '700', color: '#800020' }}>
               dcr ({match.home_penalties}-{match.away_penalties})
             </span>
           </div>
