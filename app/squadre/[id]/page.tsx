@@ -630,8 +630,17 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
             ) : (
               teamData.players.map((player: any) => (
                 <div key={player.id} onClick={() => handlePlayerClick(player)} className="flex items-center px-3 py-2.5 cursor-pointer hover:bg-gray-50 transition-colors">
-                  <div className="w-8 flex justify-center flex-shrink-0 relative">
-                    <div className="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
+                                    <div className="w-8 flex justify-center flex-shrink-0 relative">
+                    <div 
+                      className="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden cursor-pointer hover:ring-2 hover:ring-[#581C24] transition-all"
+                      onClick={(e) => {
+                        e.stopPropagation(); // ✅ Evita di aprire il popup di modifica/dettagli
+                        if (player.photo) {
+                          setLightboxImage(player.photo);
+                          setLightboxType('player');
+                        }
+                      }}
+                    >
                       {player.photo ? (
                         <Image src={player.photo} alt={player.name} fill className="object-cover rounded-full" />
                       ) : <span className="text-[6px] text-gray-400">FOTO</span>}
@@ -683,15 +692,15 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
             <button onClick={() => setSelectedPlayer(null)} className="absolute top-3 right-3 p-1.5 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors z-10"><X size={18} className="text-gray-600" /></button>
             <div className="bg-gradient-to-b from-[#581C24] to-[#581C24]/80 p-6 pt-8">
                             <div className="flex items-center gap-4">
-                <div 
-                  className="w-20 h-20 bg-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden cursor-pointer group"
-                  onClick={() => {
-                    if (selectedPlayer.photo) {
-                      setLightboxImage(selectedPlayer.photo);
-                      setLightboxType('player');
-                    }
-                  }}
-                >
+                            <div className="w-20 h-20 bg-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden cursor-pointer group relative" // ✅ Aggiunto 'relative' qui
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (selectedPlayer.photo) {
+                                  setLightboxImage(selectedPlayer.photo);
+                                  setLightboxType('player');
+                                }
+                              }}
+                            >
                   {selectedPlayer.photo ? (
                     <>
                       <Image src={selectedPlayer.photo} alt={selectedPlayer.firstName} width={80} height={80} className="object-cover transition-transform duration-300 group-hover:scale-110" />
