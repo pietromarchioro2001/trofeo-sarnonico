@@ -398,28 +398,77 @@ export async function GET(
         <div style={{ position: 'absolute', top: 65, left: 8, right: 0, display: 'flex', justifyContent: 'center' }}>
           <img src="https://trofeo-sarnonico.vercel.app/logo.png" width="200" height="200" style={{ objectFit: 'contain' }} />
         </div>
-        <div style={{ position: 'absolute', top: 720, left: 135, display: 'flex' }}>
-          {homeLogo ? (
-            <img src={homeLogo} width="280" height="280" style={{ objectFit: 'contain' }} />
-          ) : (
-            <div style={{ display: 'flex', width: 220, height: 220 }}></div>
-          )}
+        <div
+          style={{
+            position: 'absolute',
+            top: 720,
+            left: '25%',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+          }}
+        >
+          <img src={homeLogo} width="300" height="300" style={{ objectFit: 'contain' }} />
         </div>
-        <div style={{ position: 'absolute', top: 720, right: 135, display: 'flex' }}>
-          {awayLogo ? (
-            <img src={awayLogo} width="280" height="280" style={{ objectFit: 'contain' }} />
-          ) : (
-            <div style={{ display: 'flex', width: 220, height: 220 }}></div>
-          )}
+        <div
+          style={{
+            position: 'absolute',
+            top: 720,
+            left: '75%',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+          }}
+        >
+          <img src={awayLogo} width="300" height="300" style={{ objectFit: 'contain' }} />
         </div>
-        <div style={{ position: 'absolute', top: 1050, left: 0, right: 50, display: 'flex', justifyContent: 'flex-start', paddingLeft: 130 }}>
-          <div style={{ display: 'flex', width: 240, justifyContent: 'center' }}>
-            <div style={{ display: 'flex', fontSize: 42, fontWeight: '900', color: '#800020', textAlign: 'center', letterSpacing: 1 }}>{homeName}</div>
+        <div
+          style={{
+            position: 'absolute',
+            top: 1055,
+            left: 0,
+            right: 0,
+            display: 'flex',
+          }}
+        >
+          <div
+            style={{
+              width: '50%',
+              display: 'flex',
+              justifyContent: 'center',
+            }}
+          >
+            <span
+              style={{
+                width: 340,
+                fontSize: 42,
+                fontWeight: '900',
+                color: '#800020',
+                textAlign: 'center',
+                textTransform: 'uppercase',
+              }}
+            >
+              {homeName}
+            </span>
           </div>
-        </div>
-        <div style={{ position: 'absolute', top: 1050, left: 50, right: 0, display: 'flex', justifyContent: 'flex-end', paddingRight: 130 }}>
-          <div style={{ display: 'flex', width: 240, justifyContent: 'center' }}>
-            <div style={{ display: 'flex', fontSize: 42, fontWeight: '900', color: '#800020', textAlign: 'center', letterSpacing: 1 }}>{awayName}</div>
+        
+          <div
+            style={{
+              width: '50%',
+              display: 'flex',
+              justifyContent: 'center',
+            }}
+          >
+            <span
+              style={{
+                width: 340,
+                fontSize: 42,
+                fontWeight: '900',
+                color: '#800020',
+                textAlign: 'center',
+                textTransform: 'uppercase',
+              }}
+            >
+              {awayName}
+            </span>
           </div>
         </div>
         <div style={{ position: 'absolute', top: 1180, left: 170, display: 'flex' }}>
