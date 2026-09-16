@@ -719,7 +719,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
         </div>
       )}
 
-      {/* ✅ LIGHTBOX PER FOTO SQUADRA E GIOCATORE */}
+            {/* ✅ LIGHTBOX PER FOTO SQUADRA E GIOCATORE */}
       {lightboxImage && (
         <div 
           className="fixed inset-0 bg-black/95 z-[200] flex items-center justify-center p-4"
@@ -754,6 +754,10 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
                 maxHeight: '85vh',
                 width: 'auto',
                 height: 'auto'
+              }}
+              onError={(e) => {
+                console.error(' Errore caricamento immagine:', lightboxImage);
+                e.currentTarget.style.display = 'none';
               }}
             />
           </div>
