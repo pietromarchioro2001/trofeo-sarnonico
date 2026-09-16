@@ -92,7 +92,7 @@ export async function GET(
         </div>
 
         {/* LOGO CASA */}
-        <div style={{ position: 'absolute', top: 580, left: 95, display: 'flex' }}>
+        <div style={{ position: 'absolute', top: 585, left: 115, display: 'flex' }}>
           {homeLogo ? (
             <img src={homeLogo} width="300" height="300" style={{ objectFit: 'contain' }} />
           ) : (
@@ -101,7 +101,7 @@ export async function GET(
         </div>
 
         {/* LOGO OSPITE */}
-        <div style={{ position: 'absolute', top: 580, right: 95, display: 'flex' }}>
+        <div style={{ position: 'absolute', top: 585, right: 115, display: 'flex' }}>
           {awayLogo ? (
             <img src={awayLogo} width="300" height="300" style={{ objectFit: 'contain' }} />
           ) : (
@@ -110,9 +110,9 @@ export async function GET(
         </div>
 
         {/* RISULTATO */}
-        <div style={{ position: 'absolute', top: 710, left: 0, right: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 75 }}>
-          <span style={{ fontSize: 88, fontWeight: '900', color: '#800020' }}>{match.home_score || 0}</span>
-          <span style={{ fontSize: 88, fontWeight: '900', color: '#800020' }}>{match.away_score || 0}</span>
+        <div style={{ position: 'absolute', top: 705, left: 0, right: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 95 }}>
+          <span style={{ fontSize: 92, fontWeight: '900', color: '#800020' }}>{match.home_score || 0}</span>
+          <span style={{ fontSize: 92, fontWeight: '900', color: '#800020' }}>{match.away_score || 0}</span>
         </div>
 
         {/* DCR */}
@@ -129,8 +129,8 @@ export async function GET(
         style={{
           position: 'absolute',
           top: 900,
-          left: 65,
-          right: 65,
+          left: 85,
+          right: 85,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
