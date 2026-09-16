@@ -96,7 +96,7 @@ export async function GET(
           style={{
             position: 'absolute',
             top: 585,
-            left: '20%',
+            left: '15%',
             transform: 'translateX(-50%)',
             display: 'flex',
           }}
@@ -109,7 +109,7 @@ export async function GET(
           style={{
             position: 'absolute',
             top: 585,
-            left: '80%',
+            left: '85%',
             transform: 'translateX(-50%)',
             display: 'flex',
           }}
@@ -119,50 +119,79 @@ export async function GET(
 
         {/* RISULTATO */}
         <div
-        style={{
-          position: 'absolute',
-          top: 705,
-          left: 0,
-          right: 0,
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          gap: 50,
-        }}
-      >
-        <span
           style={{
-            fontSize: 104,
-            fontWeight: '900',
-            color: '#800020',
-            lineHeight: 1,
+            position: 'absolute',
+            top: 705,
+            left: 0,
+            right: 0,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
           }}
         >
-          {match.home_score || 0}
-        </span>
-      
-        <span
-          style={{
-            fontSize: 82,
-            fontWeight: '900',
-            color: '#800020',
-            lineHeight: 1,
-          }}
-        >
-          –
-        </span>
-      
-        <span
-          style={{
-            fontSize: 104,
-            fontWeight: '900',
-            color: '#800020',
-            lineHeight: 1,
-          }}
-        >
-          {match.away_score || 0}
-        </span>
-      </div>
+          {/* Casa */}
+          <div
+            style={{
+              width: 140,
+              display: 'flex',
+              justifyContent: 'flex-end',
+              alignItems: 'center',
+            }}
+          >
+            <span
+              style={{
+                fontSize: 104,
+                fontWeight: '900',
+                color: '#800020',
+                lineHeight: 1,
+              }}
+            >
+              {match.home_score ?? 0}
+            </span>
+          </div>
+        
+          {/* Trattino fisso */}
+          <div
+            style={{
+              width: 70,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <span
+              style={{
+                fontSize: 82,
+                fontWeight: '900',
+                color: '#800020',
+                lineHeight: 1,
+              }}
+            >
+              –
+            </span>
+          </div>
+        
+          {/* Ospite */}
+          <div
+            style={{
+              width: 140,
+              display: 'flex',
+              justifyContent: 'flex-start',
+              alignItems: 'center',
+            }}
+          >
+            <span
+              style={{
+                fontSize: 104,
+                fontWeight: '900',
+                color: '#800020',
+                lineHeight: 1,
+              }}
+            >
+              {match.away_score ?? 0}
+            </span>
+          </div>
+        </div>
 
         {/* DCR */}
         {(match.home_penalties !== null || match.away_penalties !== null) && (
@@ -247,7 +276,7 @@ export async function GET(
                   style={{
                     display: 'flex',
                     flexDirection: 'column',
-                    marginBottom: 18,
+                    marginBottom: 12,
                   }}
                 >
                   <span
@@ -255,7 +284,7 @@ export async function GET(
                       display: 'flex',
                       alignItems: 'center',
                       gap: 6,
-                      fontSize: 32,
+                      fontSize: 28,
                       fontWeight: '700',
                       color: '#111',
                     }}
@@ -263,20 +292,25 @@ export async function GET(
                     <span>{scorer.name}</span>
                   
                     {scorer.goals > 1 && (
-                      <span
-                        style={{
-                          color: '#800026',
-                          fontWeight: '900',
-                        }}
-                      >
-                        x{scorer.goals}
-                      </span>
-                    )}
+                    <span
+                      style={{
+                        display: 'flex',
+                        gap: 2,
+                        color: '#800026',
+                        fontSize: 16,
+                        fontWeight: '900',
+                      }}
+                    >
+                      {Array.from({ length: scorer.goals }).map((_, i) => (
+                        <span key={i}>●</span>
+                      ))}
+                    </span>
+                  )}
                   </span>
           
                   <span
                     style={{
-                      fontSize: 24,
+                      fontSize: 20,
                       fontWeight: '800',
                       color: '#800026',
                     }}
@@ -308,7 +342,7 @@ export async function GET(
               style={{
                 display: 'flex',
                 flexDirection: 'column',
-                marginBottom: 18,
+                marginBottom: 12,
               }}
             >
               <span
@@ -316,7 +350,7 @@ export async function GET(
                   display: 'flex',
                   alignItems: 'center',
                   gap: 6,
-                  fontSize: 32,
+                  fontSize: 28,
                   fontWeight: '700',
                   color: '#111',
                 }}
@@ -326,18 +360,23 @@ export async function GET(
                 {scorer.goals > 1 && (
                   <span
                     style={{
+                      display: 'flex',
+                      gap: 2,
                       color: '#800026',
+                      fontSize: 16,
                       fontWeight: '900',
                     }}
                   >
-                    x{scorer.goals}
+                    {Array.from({ length: scorer.goals }).map((_, i) => (
+                      <span key={i}>●</span>
+                    ))}
                   </span>
                 )}
               </span>
             
               <span
                 style={{
-                  fontSize: 24,
+                  fontSize: 20,
                   fontWeight: '800',
                   color: '#800026',
                 }}
@@ -359,26 +398,26 @@ export async function GET(
         <div style={{ position: 'absolute', top: 65, left: 8, right: 0, display: 'flex', justifyContent: 'center' }}>
           <img src="https://trofeo-sarnonico.vercel.app/logo.png" width="200" height="200" style={{ objectFit: 'contain' }} />
         </div>
-        <div style={{ position: 'absolute', top: 720, left: 115, display: 'flex' }}>
+        <div style={{ position: 'absolute', top: 720, left: 135, display: 'flex' }}>
           {homeLogo ? (
             <img src={homeLogo} width="280" height="280" style={{ objectFit: 'contain' }} />
           ) : (
             <div style={{ display: 'flex', width: 220, height: 220 }}></div>
           )}
         </div>
-        <div style={{ position: 'absolute', top: 720, right: 115, display: 'flex' }}>
+        <div style={{ position: 'absolute', top: 720, right: 135, display: 'flex' }}>
           {awayLogo ? (
             <img src={awayLogo} width="280" height="280" style={{ objectFit: 'contain' }} />
           ) : (
             <div style={{ display: 'flex', width: 220, height: 220 }}></div>
           )}
         </div>
-        <div style={{ position: 'absolute', top: 1050, left: 0, right: 45, display: 'flex', justifyContent: 'flex-start', paddingLeft: 130 }}>
+        <div style={{ position: 'absolute', top: 1050, left: 0, right: 50, display: 'flex', justifyContent: 'flex-start', paddingLeft: 130 }}>
           <div style={{ display: 'flex', width: 240, justifyContent: 'center' }}>
             <div style={{ display: 'flex', fontSize: 42, fontWeight: '900', color: '#800020', textAlign: 'center', letterSpacing: 1 }}>{homeName}</div>
           </div>
         </div>
-        <div style={{ position: 'absolute', top: 1050, left: 45, right: 0, display: 'flex', justifyContent: 'flex-end', paddingRight: 130 }}>
+        <div style={{ position: 'absolute', top: 1050, left: 50, right: 0, display: 'flex', justifyContent: 'flex-end', paddingRight: 130 }}>
           <div style={{ display: 'flex', width: 240, justifyContent: 'center' }}>
             <div style={{ display: 'flex', fontSize: 42, fontWeight: '900', color: '#800020', textAlign: 'center', letterSpacing: 1 }}>{awayName}</div>
           </div>
