@@ -1233,57 +1233,54 @@ interface AdminDeleteMatchButtonProps {
   onDeleteSuccess?: () => void;
 }
 
-export const AdminDeleteMatchButton: React.FC<AdminDeleteMatchButtonProps> = ({ matchId, onDeleteSuccess }) => {
+export const AdminDeleteMatchButton: React.FC<AdminDeleteMatchButtonProps> = ({
+  matchId,
+  onDeleteSuccess,
+}) => {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // Previene la navigazione al click sulla card
-    
+    e.stopPropagation();
+
     const isConfirmed = window.confirm(
-      '⚠️ Sei sicuro di voler eliminare questa partita?\n\nQuesta azione è irreversibile.'
+      "⚠️ Sei sicuro di voler eliminare questa partita?\n\nVerranno eliminati anche i post PRE MATCH e FULL TIME.\n\nQuesta azione è irreversibile."
     );
-    
+
     if (!isConfirmed) return;
 
     setIsDeleting(true);
     const supabase = createClient();
 
     try {
+      // Elimina i post collegati dalla Storage
       const filesToDelete = [
-        `match-posts/${match.id}_PRE_MATCH_matchday.png`,
-        `match-posts/${match.id}_POST_MATCH_matchday.png`,
+        `match-posts/${matchId}_PRE_MATCH_matchday.png`,
+        `match-posts/${matchId}_POST_MATCH_matchday.png`,
       ];
-      
-      await supabase.storage
+
+      const { error: storageError } = await supabase.storage
         .from("tournament-files")
         .remove(filesToDelete);
-      
-      const { error: storageError } = await supabase.storage
-        .from('tournament-files')
-        .remove(filesToDelete);
-      
+
       if (storageError) {
         console.warn("Errore eliminazione post:", storageError.message);
       }
-      
+
       // Elimina la partita dal database
       const { error: matchError } = await supabase
-        .from('matches')
+        .from("matches")
         .delete()
-        .eq('id', params.id);
-      
-      if (matchError) {
-        throw matchError;
-      }
+        .eq("id", matchId);
 
-      if (error) throw error;
+      if (matchError) throw matchError;
 
-      alert('✅ Partita eliminata con successo');
-      if (onDeleteSuccess) onDeleteSuccess(); // Notifica la pagina padre di aggiornarsi
-      
+      alert("✅ Partita eliminata con successo");
+
+      onDeleteSuccess?.();
+
     } catch (err) {
-      console.error('Errore eliminazione partita:', err);
-      alert('Errore nell\'eliminazione della partita');
+      console.error("Errore eliminazione partita:", err);
+      alert("❌ Errore nell'eliminazione della partita");
     } finally {
       setIsDeleting(false);
     }
@@ -1298,8 +1295,19 @@ export const AdminDeleteMatchButton: React.FC<AdminDeleteMatchButtonProps> = ({ 
     >
       {isDeleting ? (
         <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          />
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          />
         </svg>
       ) : (
         <Trash2 className="w-4 h-4" />
