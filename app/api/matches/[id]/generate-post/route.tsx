@@ -168,39 +168,63 @@ export async function GET(
         {/* ✅ BOX MARCATORI - AGGIUNTO display: 'flex' e flexDirection: 'column' */}
         <div style={{ position: 'absolute', top: 1020, left: 60, right: 60, bottom: 100, display: 'flex', flexDirection: 'column', background: 'transparent' }}>
 
-          {/* Lista Marcatori Casa - AGGIUNTO display: 'flex', flexDirection: 'column' */}
-          <div style={{ position: 'absolute', left: 60, right: '50%', top: 35, bottom: 40, paddingRight: 40, display: 'flex', flexDirection: 'column' }}>
-            <div
-            key={idx}
+          {/* Lista Marcatori Casa */}
+          <div
             style={{
+              position: 'absolute',
+              left: 60,
+              right: '50%',
+              top: 35,
+              bottom: 40,
+              paddingRight: 40,
               display: 'flex',
               flexDirection: 'column',
-              marginBottom: 18,
             }}
           >
-            <span
-              style={{
-                fontSize: 32,
-                fontWeight: '700',
-                color: '#333',
-              }}
-            >
-              {scorer.name}
-              {scorer.goals > 1 ? ` x${scorer.goals}` : ''}
-            </span>
+            {homeScorers.length > 0 ? (
+              homeScorers.map((scorer: any, idx: number) => (
+                <div
+                  key={idx}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    marginBottom: 18,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 32,
+                      fontWeight: '700',
+                      color: '#333',
+                    }}
+                  >
+                    {scorer.name}
+                    {scorer.goals > 1 ? ` x${scorer.goals}` : ''}
+                  </span>
           
-            <span
-              style={{
-                fontSize: 24,
-                fontWeight: '800',
-                color: '#800026',
-              }}
-            >
-              {scorer.minutes.map((m: number) => `${m}'`).join(', ')}
-            </span>
-          </div>
-            )) : (
-              <div style={{ display: 'flex', justifyContent: 'center', color: '#999', fontSize: 16, marginTop: 60 }}>Nessun marcatore</div>
+                  <span
+                    style={{
+                      fontSize: 24,
+                      fontWeight: '800',
+                      color: '#800026',
+                    }}
+                  >
+                    {scorer.minutes.map((m: number) => `${m}'`).join(', ')}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  color: '#999',
+                  fontSize: 16,
+                  marginTop: 60,
+                }}
+              >
+                Nessun marcatore
+              </div>
             )}
           </div>
 
