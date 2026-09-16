@@ -538,8 +538,6 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
             )}
           </div>
         )}
-          </div>
-        )}
       </div>
 
       {/* AREA CAPITANO / BLOCCO ROSA */}
@@ -744,8 +742,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
           </div>
         </div>
       )}
-    </div>
-            {/* ✅ LIGHTBOX PER FOTO SQUADRA E GIOCATORE */}
+      {/* ✅ LIGHTBOX PER FOTO SQUADRA E GIOCATORE */}
       {lightboxImage && (
         <div 
           className="fixed inset-0 bg-black/95 z-[200] flex items-center justify-center p-4 backdrop-blur-sm"
@@ -776,5 +773,6 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
           </div>
         </div>
       )}
+    </div>
   );
 }
