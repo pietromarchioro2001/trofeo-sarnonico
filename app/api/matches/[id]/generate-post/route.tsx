@@ -87,38 +87,38 @@ export async function GET(
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
         
         {/* LOGO TORNEO */}
-        <div style={{ position: 'absolute', top: 55, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
+        <div style={{ position: 'absolute', top: 50, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
           <img src="https://trofeo-sarnonico.vercel.app/logo.png" width="200" height="200" style={{ objectFit: 'contain' }} />
         </div>
 
         {/* LOGO CASA */}
-        <div style={{ position: 'absolute', top: 520, left: 80, display: 'flex' }}>
+        <div style={{ position: 'absolute', top: 560, left: 85, display: 'flex' }}>
           {homeLogo ? (
-            <img src={homeLogo} width="260" height="260" style={{ objectFit: 'contain' }} />
+            <img src={homeLogo} width="280" height="280" style={{ objectFit: 'contain' }} />
           ) : (
             <div style={{ display: 'flex', width: 220, height: 220, background: 'rgba(128,0,36,0.1)', borderRadius: '50%' }} />
           )}
         </div>
 
         {/* LOGO OSPITE */}
-        <div style={{ position: 'absolute', top: 520, right: 80, display: 'flex' }}>
+        <div style={{ position: 'absolute', top: 560, right: 85, display: 'flex' }}>
           {awayLogo ? (
-            <img src={awayLogo} width="260" height="260" style={{ objectFit: 'contain' }} />
+            <img src={awayLogo} width="280" height="280" style={{ objectFit: 'contain' }} />
           ) : (
             <div style={{ display: 'flex', width: 220, height: 220, background: 'rgba(128,0,36,0.1)', borderRadius: '50%' }} />
           )}
         </div>
 
         {/* RISULTATO */}
-        <div style={{ position: 'absolute', top: 720, left: 0, right: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 45 }}>
-          <span style={{ fontSize: 84, fontWeight: '900', color: '#800020' }}>{match.home_score || 0}</span>
-          <span style={{ fontSize: 84, fontWeight: '900', color: '#800020' }}>{match.away_score || 0}</span>
+        <div style={{ position: 'absolute', top: 710, left: 0, right: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 55 }}>
+          <span style={{ fontSize: 88, fontWeight: '900', color: '#800020' }}>{match.home_score || 0}</span>
+          <span style={{ fontSize: 88, fontWeight: '900', color: '#800020' }}>{match.away_score || 0}</span>
         </div>
 
         {/* DCR */}
         {(match.home_penalties !== null || match.away_penalties !== null) && (
           <div style={{ position: 'absolute', top: 800, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
-            <span style={{ fontSize: 28, fontWeight: '700', color: '#9333ea' }}>
+            <span style={{ fontSize: 32, fontWeight: '700', color: '#9333ea' }}>
               dcr ({match.home_penalties}-{match.away_penalties})
             </span>
           </div>
@@ -128,9 +128,9 @@ export async function GET(
         <div
         style={{
           position: 'absolute',
-          top: 850,
-          left: 55,
-          right: 55,
+          top: 880,
+          left: 60,
+          right: 60,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -195,7 +195,7 @@ export async function GET(
                     style={{
                       fontSize: 32,
                       fontWeight: '700',
-                      color: '#333',
+                      color: '#800026',
                     }}
                   >
                     {scorer.name}
@@ -243,7 +243,7 @@ export async function GET(
                 style={{
                   fontSize: 32,
                   fontWeight: '700',
-                  color: '#333',
+                  color: '#800026',
                 }}
               >
                 {scorer.name}
