@@ -513,20 +513,17 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
             onPhotoUpload={handleTeamPhotoUpload} 
           />
                 ) : (
-                    <div 
+                              <div 
             className="rounded-xl overflow-hidden shadow-md bg-gray-300 relative h-40 cursor-pointer group z-10"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log('--- CLICK FOTO SQUADRA ---');
-              console.log('Valore teamData.teamPhoto:', teamData.teamPhoto);
+              // ✅ ALERT DEFINITIVO: se questo non appare, il codice non è aggiornato nel browser
+              alert('CLICK FOTO SQUADRA REGISTRATO!\nURL: ' + (teamData.teamPhoto || 'VUOTO'));
               
               if (teamData.teamPhoto && teamData.teamPhoto.trim() !== '') {
-                console.log('✅ Apro lightbox con:', teamData.teamPhoto);
                 setLightboxImage(teamData.teamPhoto);
                 setLightboxType('team');
-              } else {
-                console.log('❌ La foto squadra è vuota, null o stringa vuota');
               }
             }}
           >
@@ -644,15 +641,12 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        console.log('--- CLICK FOTO GIOCATORE (LISTA) ---');
-                        console.log('Giocatore:', player.name, '| Valore player.photo:', player.photo);
+                        // ✅ ALERT DEFINITIVO
+                        alert('CLICK FOTO GIOCATORE REGISTRATO!\nGiocatore: ' + player.name + '\nURL: ' + (player.photo || 'VUOTO'));
                         
                         if (player.photo && player.photo.trim() !== '') {
-                          console.log('✅ Apro lightbox con:', player.photo);
                           setLightboxImage(player.photo);
                           setLightboxType('player');
-                        } else {
-                          console.log('❌ La foto giocatore è vuota, null o stringa vuota');
                         }
                       }}
                     >
