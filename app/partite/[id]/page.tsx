@@ -1086,9 +1086,17 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
 
         console.log('🎯 Path Supabase:', filePath);
 
-        const { data, error } = await supabase.storage
-          .from('tournament-files')
-          .upload(filePath, compressedFile, { cacheControl: '3600', upsert: false });
+        const folder = match.media_folder_path;
+
+        const filePath = `${folder}/${Date.now()}_${file.name}`;
+        
+        const { error } = await supabase.storage
+          .from("tournament-files")
+          .upload(filePath, file, {
+            upsert: false,
+            cacheControl: "3600",
+            contentType: file.type,
+          });
 
         if (error) {
           console.error('❌ Errore upload:', error);
