@@ -125,15 +125,22 @@ export const AdminPartiteButton = ({ onMatchCreated }: { onMatchCreated?: () => 
     
     const supabase = createClient();
     
-    // ✅ 1. Aggiunto .select('id').single() per ottenere l'ID della partita appena creata
-    const { data, error } = await supabase.from('matches').insert({
-      home_team_id: homeTeam,
-      away_team_id: awayTeam,
-      match_date: matchDate,
-      match_time: matchTime,
-      status: 'PROGRAMMATA',
-      phase: 'GIRONI'
-    }).select('id').single();
+    const matchId = crypto.randomUUID();
+
+    const { data, error } = await supabase
+      .from("matches")
+      .insert({
+        id: matchId,
+        home_team_id: homeTeam,
+        away_team_id: awayTeam,
+        match_date: matchDate,
+        match_time: matchTime,
+        status: "PROGRAMMATA",
+        phase: "GIRONI",
+        media_folder_path: `match-media/${matchId}`,
+      })
+      .select("id")
+      .single();
 
     if (error) {
       setError('Errore nel salvataggio');
