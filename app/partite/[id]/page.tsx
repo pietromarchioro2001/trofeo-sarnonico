@@ -1104,23 +1104,21 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         
         console.log("🎯 Path Supabase:", filePath);
         
-        const { error } = await supabase.storage
+        const { data, error } = await supabase.storage
           .from("tournament-files")
           .upload(filePath, file, {
             upsert: false,
             cacheControl: "3600",
             contentType: file.type,
           });
-
+        
         if (error) {
-          console.error('❌ Errore upload:', error);
-          alert(`Errore nel caricamento di ${file.name}: ${error.message}`);
+          console.error(error);
           continue;
         }
         
-        console.log('✅ Upload completato:', data);
+        console.log("✅ Upload completato:", data);
         uploadedCount++;
-      }
 
       alert(`✅ ${uploadedCount} foto caricate con successo!`);
       setMediaRefreshKey(prev => prev + 1);
