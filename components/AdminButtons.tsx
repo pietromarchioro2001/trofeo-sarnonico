@@ -105,6 +105,7 @@ export const AdminPartiteButton = ({ onMatchCreated }: { onMatchCreated?: () => 
   const [matchTime, setMatchTime] = useState('');
   const [error, setError] = useState('');
   const [teams, setTeams] = useState<any[]>([]);
+  const supabase = createClient();
 
   useEffect(() => {
     if (isOpen) {
@@ -1038,13 +1039,13 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
             </h3>
           
             {userRole === "staff" && templateDoc && (
-              <button
-                onClick={handleDeleteTemplate}
-                className="w-9 h-9 flex items-center justify-center rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            )}
+                <button
+                  onClick={handleDeleteTemplate}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg border border-red-200 text-red-600 hover:bg-red-50"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
           </div>
           <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
             <div className="flex items-center gap-3">
