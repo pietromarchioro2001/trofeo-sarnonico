@@ -1022,7 +1022,7 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
               MODELLO DA COMPILARE
             </h3>
           
-            {userRole === "staff" && liberatoria && (
+            {userRole === "staff" && liberatoriaFile && (
               <button
                 onClick={handleDeleteLiberatoria}
                 className="w-9 h-9 flex items-center justify-center rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition"
