@@ -1014,19 +1014,21 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
   };
 
   const handleDeleteTemplate = async () => {
-    if (!templateDoc) return;
-  
-    await supabase.storage
-      .from("documents")
-      .remove([templateDoc.path]);
-  
-    await supabase
-      .from("team_documents")
-      .delete()
-      .eq("id", templateDoc.id);
-  
-    await fetchTeamDocuments();
-  };
+  if (!templateDoc) return;
+
+  // elimina il PDF dallo Storage
+  await supabase.storage
+    .from("documents")
+    .remove([templateDoc.file_path]);
+
+  // elimina il record dal database
+  await supabase
+    .from("team_documents")
+    .delete()
+    .eq("id", templateDoc.id);
+
+  setTemplateDoc(null);
+};
 
   return (
     <div className="space-y-4">
@@ -1041,7 +1043,7 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
             {userRole === "staff" && templateDoc && (
                 <button
                   onClick={handleDeleteTemplate}
-                  className="w-9 h-9 flex items-center justify-center rounded-lg border border-red-200 text-red-600 hover:bg-red-50"
+                  className="w-9 h-9 flex items-center justify-center rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
