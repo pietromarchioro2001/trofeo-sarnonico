@@ -23,6 +23,7 @@ interface MatchData {
   home_penalties: number | null;  // ✅ AGGIUNGI
   away_penalties: number | null;  // ✅ AGGIUNGI
   status: string;
+  media_folder_path: string | null;
   phase: string;
   match_date: string | null;
   match_time: string | null;
