@@ -984,8 +984,8 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
 
-  const handleTemplateUpload = async (file: File) => {
-    const file = e.target.files?.[0];
+  // ✅ FIX 1: Rimossa la ridefinizione errata di 'file'
+  const handleTemplateUpload = (file: File) => {
     if (file) {
       onTemplateUpload({
         id: Date.now().toString(), url: URL.createObjectURL(file), fileName: file.name,
@@ -1014,24 +1014,23 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
   };
 
   const handleDeleteTemplate = async () => {
-  if (!templateDoc) return;
+    if (!templateDoc) return;
 
-  const storagePath = templateDoc.url.split("/documents/")[1];
+    const storagePath = templateDoc.url.split("/documents/")[1];
 
-  if (storagePath) {
-    await supabase.storage
-      .from("documents")
-      .remove([storagePath]);
-  }
+    if (storagePath) {
+      await supabase.storage
+        .from("documents")
+        .remove([storagePath]);
+    }
 
-  await supabase
-    .from("team_documents")
-    .delete()
-    .eq("id", templateDoc.id);
+    await supabase
+      .from("team_documents")
+      .delete()
+      .eq("id", templateDoc.id);
 
-  // comunica al parent che non esiste più il template
-  onTemplateUpload(undefined as any);
-};
+    onTemplateUpload(undefined as any);
+  };
 
   return (
     <div className="space-y-4">
@@ -1113,8 +1112,9 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
                   <Eye className="w-5 h-5" />
                 </a>
       
+                {/* ✅ FIX 2: Corretto il nome della funzione da handleDeleteLiberatoria a handleDeleteTemplate */}
                 <button
-                  onClick={handleDeleteLiberatoria}
+                  onClick={handleDeleteTemplate}
                   className="p-2 rounded-lg text-red-600 hover:bg-red-50"
                 >
                   <Trash2 className="w-5 h-5" />
@@ -1133,7 +1133,7 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
         {teams.map(team => {
           const hasDocs = team.documents.length > 0;
           const canEdit = userRole === 'staff' || (userRole === 'captain' && team.teamId === userTeamId);
-          const isLockedForCaptain = isTournamentLocked && userRole === 'captain'; // ✅ Blocco specifico per capitani
+          const isLockedForCaptain = isTournamentLocked && userRole === 'captain';
           
           return (
             <div 
@@ -1179,7 +1179,6 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
               </button>
             </div>
             <div className="p-4 space-y-4">
-              {/* Upload per chi ha i permessi */}
               {userRole === 'staff' || (userRole === 'captain' && selectedTeam.teamId === userTeamId) ? (
                 <div>
                   <label className="block text-xs font-bold text-gray-600 uppercase mb-2">
@@ -1198,7 +1197,6 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
                 </p>
               )}
 
-              {/* Storico */}
               <div>
                 <h3 className="text-xs font-bold text-gray-600 uppercase mb-2">Storico Documenti</h3>
                 <div className="space-y-2">
@@ -1211,7 +1209,6 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
                           <p className="text-xs text-gray-500">{new Date(doc.uploadedAt).toLocaleDateString('it-IT')}</p>
                         </div>
                       </div>
-                      {/* Elimina solo se sei staff o se hai caricato tu il file */}
                       {(userRole === 'staff' || doc.uploadedBy === userRole) && (
                         <button 
                           onClick={() => handleDeleteDocument(selectedTeam.teamId, doc.id)} 
@@ -1237,7 +1234,7 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
         <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
             <h3 className="text-lg font-bold text-[#581C24] uppercase mb-4">Carica Modello Base</h3>
-            <input type="file" accept=".pdf,.doc,.docx" ref={fileInputRef} onChange={handleTemplateUpload} className="w-full mb-4" />
+            <input type="file" accept=".pdf,.doc,.docx" ref={fileInputRef} onChange={(e) => e.target.files?.[0] && handleTemplateUpload(e.target.files[0])} className="w-full mb-4" />
             <div className="flex gap-3">
               <button onClick={() => setShowTemplateUpload(false)} className="flex-1 py-2 border border-gray-300 rounded-lg font-bold text-sm">Annulla</button>
               <button onClick={() => fileInputRef.current?.click()} className="flex-1 py-2 bg-[#581C24] text-white rounded-lg font-bold text-sm">Carica</button>
