@@ -176,7 +176,19 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
 
   try {
-      const filePath = `${folder}/${baseName}.jpg`;
+    const bucket = supabase.storage.from("tournament-files");
+    const folder = "team-logos";
+    const baseName = `logo_${params.id}`;
+
+    // Elimina eventuali vecchie versioni
+    await bucket.remove([
+      `${folder}/${baseName}.jpg`,
+      `${folder}/${baseName}.jpeg`,
+      `${folder}/${baseName}.png`,
+      `${folder}/${baseName}.webp`,
+    ]);
+
+    const filePath = `${folder}/${baseName}.jpg`;
 
     const { error } = await bucket.upload(filePath, file, {
       upsert: true,
@@ -187,17 +199,20 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     if (error) throw error;
 
     const { data } = bucket.getPublicUrl(filePath);
+    const finalUrl = `${data.publicUrl}?t=${Date.now()}`;
 
     await supabase
       .from("teams")
-      .update({ logo_url: `${data.publicUrl}?t=${Date.now()}` })
+      .update({ logo_url: finalUrl })
       .eq("id", params.id);
 
-    setTeamData((p: any) => ({
-      ...p,
-      logo: `${data.publicUrl}?t=${Date.now()}`
+    setTeamData((prev: any) => ({
+      ...prev,
+      logo: finalUrl,
     }));
-
+  } catch (err) {
+    console.error(err);
+    alert("Errore caricamento logo");
   } finally {
     setLoading(false);
   }
