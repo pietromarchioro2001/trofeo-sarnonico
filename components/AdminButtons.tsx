@@ -1068,7 +1068,7 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
       )}
 
       {/* TEMPLATE CAPITANI */}
-      {userRole === "staff" && (
+      {userRole === "captain" && (
         <div className="mb-6">
           <h3 className="text-sm font-bold text-gray-700 uppercase mb-3">
             Template capitani
