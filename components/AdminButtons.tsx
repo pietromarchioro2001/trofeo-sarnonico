@@ -984,15 +984,51 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
 
-  // ✅ FIX 1: Rimossa la ridefinizione errata di 'file'
-  const handleTemplateUpload = (file: File) => {
-    if (file) {
-      onTemplateUpload({
-        id: Date.now().toString(), url: URL.createObjectURL(file), fileName: file.name,
-        uploadedAt: new Date().toISOString(), uploadedBy: 'staff'
+  const handleTemplateUpload = async (file: File) => {
+    const fileName = `template_${Date.now()}.pdf`;
+  
+    // 1. Upload Storage
+    const { error: uploadError } = await supabase.storage
+      .from("documents")
+      .upload(fileName, file, {
+        contentType: "application/pdf",
+        upsert: true,
       });
-      setShowTemplateUpload(false);
+  
+    if (uploadError) {
+      alert(uploadError.message);
+      return;
     }
+  
+    // 2. URL pubblico
+    const { data } = supabase.storage
+      .from("documents")
+      .getPublicUrl(fileName);
+  
+    // 3. Riga database
+    const { data: row, error } = await supabase
+      .from("team_documents")
+      .insert({
+        file_name: file.name,
+        file_url: data.publicUrl,
+        document_category: "template_liberatoria",
+        uploaded_by: "staff",
+      })
+      .select()
+      .single();
+  
+    if (error) {
+      alert(error.message);
+      return;
+    }
+  
+    onTemplateUpload({
+      id: row.id,
+      url: row.file_url,
+      fileName: row.file_name,
+      uploadedAt: row.uploaded_at,
+      uploadedBy: row.uploaded_by,
+    });
   };
 
   const handleTeamDocumentUpload = (teamId: string, e: React.ChangeEvent<HTMLInputElement>) => {
