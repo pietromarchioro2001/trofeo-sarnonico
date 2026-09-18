@@ -1024,8 +1024,9 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
           
             {userRole === "staff" && templateDoc && (
               <button
-                onClick={handleDeleteTemplate}
+                onClick={() => onTemplateUpload(undefined as any)}
                 className="w-9 h-9 flex items-center justify-center rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition"
+                title="Elimina modello"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
