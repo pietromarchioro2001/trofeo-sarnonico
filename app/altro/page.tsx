@@ -278,6 +278,10 @@ export default function AltroPage() {
 
       <div className="relative z-10 mt-4 px-3 sm:px-4 space-y-3">
         {MENU_ITEMS.map((item) => {
+          // Solo lo Staff vede "Post Social"
+          if (item.id === "social" && !isStaffMode) return null;
+          
+          // Le altre sezioni riservate sono visibili anche ai Capitani
           if (item.restricted && !showRestricted) return null;
           const isOpen = openSection === item.id;
 
