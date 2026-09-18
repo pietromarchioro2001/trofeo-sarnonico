@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, X, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, X, AlertTriangle, ExternalLink } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { createClient } from '@/lib/supabase/client';
@@ -46,8 +46,6 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
   const [editingPlayer, setEditingPlayer] = useState<PlayerData | null>(null);
   const [isCaptain, setIsCaptain] = useState(false);
   const [captainTeamId, setCaptainTeamId] = useState('');
-  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
-  const [lightboxType, setLightboxType] = useState<'team' | 'player'>('team');
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -398,6 +396,15 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     }
   };
 
+  // ✅ FUNZIONE SEMPLICE PER APRIRE FOTO IN NUOVA SCHEDA
+  const openImageInNewTab = (imageUrl: string | null) => {
+    if (imageUrl) {
+      // Codifica l'URL per gestire spazi e caratteri speciali
+      const encodedUrl = encodeURI(imageUrl);
+      window.open(encodedUrl, '_blank');
+    }
+  };
+
   const isMyTeam = isCaptain && captainTeamId === params.id && !teamData?.isTournamentLocked;
 
   if (loading) {
@@ -455,7 +462,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
         )}
       </div>
 
-      {/* FOTO SQUADRA */}
+      {/* FOTO SQUADRA - CLICCA PER APRIRE IN NUOVA SCHEDA */}
       <div className="px-4 mb-6">
         {isStaffMode ? (
           <AdminTeamPhotoEditor 
@@ -465,14 +472,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
         ) : (
           <div 
             className="rounded-xl overflow-hidden shadow-md bg-gray-300 relative h-40 cursor-pointer group z-10"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              if (teamData.teamPhoto) {
-                setLightboxImage(teamData.teamPhoto);
-                setLightboxType('team');
-              }
-            }}
+            onClick={() => openImageInNewTab(teamData.teamPhoto)}
           >
             {teamData.teamPhoto ? (
               <>
@@ -483,9 +483,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
                   className="object-cover transition-transform duration-300 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                  <svg className="w-10 h-10 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                  </svg>
+                  <ExternalLink className="w-10 h-10 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               </>
             ) : (
@@ -593,10 +591,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        if (player.photo) {
-                          setLightboxImage(player.photo);
-                          setLightboxType('player');
-                        }
+                        openImageInNewTab(player.photo);
                       }}
                     >
                       {player.photo ? (
@@ -655,12 +650,8 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
                 <div 
                   className="w-20 h-20 bg-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden cursor-pointer group relative z-10"
                   onClick={(e) => {
-                    e.preventDefault();
                     e.stopPropagation();
-                    if (selectedPlayer.photo) {
-                      setLightboxImage(selectedPlayer.photo);
-                      setLightboxType('player');
-                    }
+                    openImageInNewTab(selectedPlayer.photo);
                   }}
                 >
                   {selectedPlayer.photo ? (
@@ -672,9 +663,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
                         className="object-cover transition-transform duration-300 group-hover:scale-110" 
                       />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                        <svg className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                        </svg>
+                        <ExternalLink className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
                     </>
                   ) : <span className="text-[10px] text-gray-400">FOTO</span>}
@@ -715,61 +704,6 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
                 <p className="text-2xl font-black text-[#581C24]">{selectedPlayer.red ?? 0}</p>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-     {/* ✅ LIGHTBOX PER FOTO SQUADRA E GIOCATORE */}
-      {lightboxImage && (
-        <div 
-          className="fixed inset-0 bg-black/95 z-[200] flex items-center justify-center p-4"
-          onClick={() => setLightboxImage(null)}
-        >
-          {/* Pulsante chiusura */}
-          <button 
-            onClick={(e) => { e.stopPropagation(); setLightboxImage(null); }}
-            className="absolute top-4 right-4 p-2 bg-white/20 rounded-full text-white hover:bg-white/30 transition-colors z-30"
-          >
-            <X size={24} />
-          </button>
-
-          {/* Etichetta */}
-          <div className="absolute top-4 left-4 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg z-30">
-            <p className="text-white font-bold text-sm uppercase">
-              {lightboxType === 'team' ? 'Foto Squadra' : 'Foto Giocatore'}
-            </p>
-          </div>
-
-          {/* Immagine ingrandita */}
-          <div 
-            className="relative w-full h-full max-w-5xl max-h-[85vh] flex items-center justify-center" 
-            onClick={(e) => e.stopPropagation()}
-          >
-            <img 
-              src={encodeURI(lightboxImage)} 
-              alt={lightboxType === 'team' ? teamData.name : selectedPlayer?.name || 'Giocatore'}
-              className="max-w-full max-h-full w-auto h-auto object-contain rounded-lg shadow-2xl"
-              onError={(e) => {
-                console.error('❌ Errore caricamento immagine:', lightboxImage);
-                e.currentTarget.style.display = 'none';
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'text-white text-center p-8';
-                errorDiv.innerHTML = `
-                  <svg class="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                  </svg>
-                  <p class="text-xl font-bold mb-2">Impossibile caricare l'immagine</p>
-                  <p class="text-sm text-gray-400">Il file potrebbe essere stato eliminato o non essere più disponibile</p>
-                `;
-                e.currentTarget.parentElement?.appendChild(errorDiv);
-              }}
-              style={{ 
-                maxWidth: '100%', 
-                maxHeight: '85vh',
-                width: 'auto',
-                height: 'auto'
-              }}
-            />
           </div>
         </div>
       )}
