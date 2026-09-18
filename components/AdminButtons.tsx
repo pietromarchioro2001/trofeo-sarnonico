@@ -1016,18 +1016,28 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
   const handleDeleteTemplate = async () => {
   if (!templateDoc) return;
 
-  // elimina il PDF dallo Storage
-  await supabase.storage
-    .from("documents")
-    .remove([templateDoc.file_path]);
+  const supabase = createClient();
 
-  // elimina il record dal database
+  // ricava la path dallo Storage URL
+  const storagePath = templateDoc.url.split("/documents/")[1];
+
+  if (storagePath) {
+    await supabase.storage
+      .from("documents")
+      .remove([storagePath]);
+  }
+
   await supabase
     .from("team_documents")
     .delete()
     .eq("id", templateDoc.id);
 
-  setTemplateDoc(null);
+  onUpdate(
+    teams.map(team => ({
+      ...team,
+      documents: team.documents.filter(d => d.id !== templateDoc.id)
+    }))
+  );
 };
 
   return (
