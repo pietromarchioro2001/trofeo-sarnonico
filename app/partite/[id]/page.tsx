@@ -1080,15 +1080,21 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         const options = { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true };
         const compressedFile = await imageCompression(file, options);
         
-        const fileExt = file.name.split('.').pop() || 'jpg';
+        const folder = match.media_folder_path || `match-media/${match.id}`;
+
+        const fileExt = file.name.split(".").pop() || "jpg";
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = `${basePath}/${fileName}`;
-
-        console.log('🎯 Path Supabase:', filePath);
-
-        const folder = match.media_folder_path;
-
-        const filePath = `${folder}/${Date.now()}_${file.name}`;
+        const filePath = `${folder}/${fileName}`;
+        
+        console.log("🎯 Path Supabase:", filePath);
+        
+        const { error } = await supabase.storage
+          .from("tournament-files")
+          .upload(filePath, file, {
+            upsert: false,
+            cacheControl: "3600",
+            contentType: file.type,
+          });
         
         const { error } = await supabase.storage
           .from("tournament-files")
