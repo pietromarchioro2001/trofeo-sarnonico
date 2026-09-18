@@ -174,8 +174,9 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     setLoading(true);
     const supabase = createClient();
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}_logo_${teamData.name.replace(/\s/g, '_')}.${fileExt}`;
+      // ✅ FORZA ESTENSIONE MINUSCOLA
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const fileName = `${Date.now()}_logo_${teamData.name.rep
       const { error: uploadError } = await supabase.storage.from('tournament-files').upload(`team-logos/${fileName}`, file, { cacheControl: '3600', upsert: true });
       if (uploadError) throw uploadError;
       const { data: { publicUrl } } = supabase.storage.from('tournament-files').getPublicUrl(`team-logos/${fileName}`);
@@ -196,7 +197,8 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     setLoading(true);
     const supabase = createClient();
     try {
-      const fileExt = file.name.split('.').pop();
+      // ✅ FORZA ESTENSIONE MINUSCOLA
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
       const newFileName = `team_${params.id}_${Date.now()}.${fileExt}`;
       const newPath = `team-photos/${newFileName}`;
 
@@ -247,8 +249,8 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
 
       let finalPhotoUrl = null;
       if (newPlayer.photoFile) {
-        const fileExt = newPlayer.photoFile.name.split('.').pop();
-        const newFileName = `player_${data.id}_${Date.now()}.${fileExt}`;
+        const fileExt = newPlayer.photoFile.name.split('.').pop()?.toLowerCase() || 'jpg';
+        const newFileName = `player_${data.id}_${Date.now()}.${fi
         const newPath = `player-photos/${newFileName}`;
         
         const { error: uploadError } = await supabase.storage.from('tournament-files').upload(newPath, newPlayer.photoFile, { cacheControl: '3600', upsert: true });
@@ -291,9 +293,9 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
 
     if (updatedData.photoFile) {
       try {
-        const fileExt = updatedData.photoFile.name.split('.').pop();
-        const newFileName = `player_${currentPlayer.id}_${Date.now()}.${fileExt}`;
-        const newPath = `player-photos/${newFileName}`;
+        // ✅ FORZA ESTENSIONE MINUSCOLA
+        const fileExt = updatedData.photoFile.name.split('.').pop()?.toLowerCase() || 'jpg';
+        const newFileName = `player_${currentPlayer.id}_${Dat
         
         const { error: uploadError } = await supabase.storage.from('tournament-files').upload(newPath, updatedData.photoFile, { cacheControl: '3600', upsert: true });
         if (uploadError) throw uploadError;
