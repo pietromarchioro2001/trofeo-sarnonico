@@ -193,43 +193,80 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
   };
 
   const handleTeamPhotoUpload = async (file: File) => {
-    if (!file || !teamData) return;
-    setLoading(true);
-    const supabase = createClient();
-    try {
-      // ✅ FORZA ESTENSIONE MINUSCOLA
-      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-      const newFileName = `team_${params.id}_${Date.now()}.${fileExt}`;
-      const newPath = `team-photos/${newFileName}`;
+  if (!file || !teamData) return;
+  setLoading(true);
+  const supabase = createClient();
+  
+  try {
+    // ✅ 1. Estrai estensione in minuscolo
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    const newFileName = `team_${params.id}_${Date.now()}.${fileExt}`;
+    const newPath = `team-photos/${newFileName}`;
 
-      const { error: uploadError } = await supabase.storage.from('tournament-files').upload(newPath, file, { cacheControl: '3600', upsert: true });
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage.from('tournament-files').getPublicUrl(newPath);
-
-      const { error: updateError } = await supabase.from('teams').update({ team_photo_url: publicUrl }).eq('id', params.id);
-      if (updateError) throw updateError;
-
-      if (teamData.teamPhoto && teamData.teamPhoto.includes('supabase')) {
-        try {
-          const oldUrl = new URL(teamData.teamPhoto);
-          const pathParts = oldUrl.pathname.split('/');
-          const oldFilePath = `${pathParts[pathParts.length - 2]}/${pathParts[pathParts.length - 1]}`;
-          await supabase.storage.from('tournament-files').remove([oldFilePath]);
-        } catch (deleteErr) {
-          console.warn('Impossibile eliminare la vecchia foto:', deleteErr);
-        }
-      }
-
-      setTeamData((prev: any) => ({ ...prev, teamPhoto: publicUrl }));
-      alert('✅ Foto squadra aggiornata con successo!');
-    } catch (err) {
-      console.error('Errore upload foto:', err);
-      alert('Errore nel caricamento della foto');
-    } finally {
-      setLoading(false);
+    // ✅ 2. Upload nuova foto
+    const { error: uploadError } = await supabase.storage
+      .from('tournament-files')
+      .upload(newPath, file, { cacheControl: '3600', upsert: true });
+    
+    if (uploadError) {
+      console.error('Errore upload:', uploadError);
+      throw uploadError;
     }
-  };
+
+    // ✅ 3. Ottieni URL pubblico della NUOVA foto
+    const { data: { publicUrl } } = supabase.storage
+      .from('tournament-files')
+      .getPublicUrl(newPath);
+
+    // ✅ 4. Prima aggiorna il DB con il nuovo URL
+    const { error: updateError } = await supabase
+      .from('teams')
+      .update({ team_photo_url: publicUrl })
+      .eq('id', params.id);
+    
+    if (updateError) {
+      console.error('Errore update DB:', updateError);
+      throw updateError;
+    }
+
+    // ✅ 5. SOLO DOPO aver aggiornato il DB, elimina la vecchia foto
+    if (teamData.teamPhoto && teamData.teamPhoto.includes('supabase')) {
+      try {
+        console.log('Vecchio URL:', teamData.teamPhoto);
+        const oldUrl = new URL(teamData.teamPhoto);
+        const pathParts = oldUrl.pathname.split('/');
+        // Estrae 'team-photos/nome_vecchio_file.jpg'
+        const oldFilePath = `${pathParts[pathParts.length - 2]}/${pathParts[pathParts.length - 1]}`;
+        
+        console.log('Path da eliminare:', oldFilePath);
+        
+        const { error: deleteError } = await supabase.storage
+          .from('tournament-files')
+          .remove([oldFilePath]);
+        
+        if (deleteError) {
+          console.warn('Attenzione: impossibile eliminare la vecchia foto:', deleteError.message);
+          // Non bloccare il processo se l'eliminazione fallisce
+        } else {
+          console.log('✅ Vecchia foto eliminata con successo');
+        }
+      } catch (deleteErr) {
+        console.warn('Impossibile eliminare la vecchia foto:', deleteErr);
+        // Non bloccare il processo se l'eliminazione fallisce
+      }
+    }
+
+    // ✅ 6. Aggiorna lo stato locale
+    setTeamData((prev: any) => ({ ...prev, teamPhoto: publicUrl }));
+    alert('✅ Foto squadra aggiornata con successo!');
+    
+  } catch (err) {
+    console.error(' Errore completo:', err);
+    alert('Errore nel caricamento della foto: ' + (err as Error).message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleAddPlayer = async (newPlayer: PlayerData) => {
     setLoading(true);
