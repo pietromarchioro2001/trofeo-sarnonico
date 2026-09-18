@@ -417,16 +417,6 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
       setIsPlayerEditorOpen(false);
     }
   }
-const bucket = supabase.storage.from("tournament-files");
-const folder = "player-photos";
-const baseName = `player_${currentPlayer.id}`;
-
-await bucket.remove([
-  `${folder}/${baseName}.jpg`,
-  `${folder}/${baseName}.jpeg`,
-  `${folder}/${baseName}.png`,
-  `${folder}/${baseName}.webp`,
-]);
 
   const handleDeletePlayer = async () => {
   if (!editingPlayer) return;
