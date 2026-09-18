@@ -540,7 +540,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       try {
         const { data: matchData, error: matchError } = await supabase
           .from('matches')
-          .select('id, home_score, away_score, home_penalties, away_penalties, status, phase, match_date, match_time, home_team_id, away_team_id')
+          .select('id, home_score, away_score, home_penalties, away_penalties, status, phase, match_date, match_time, home_team_id, away_team_id', media_folder_path)
           .eq('id', matchId)
           .maybeSingle(); 
           
