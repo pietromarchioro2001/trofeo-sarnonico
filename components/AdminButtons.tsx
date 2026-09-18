@@ -984,7 +984,7 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
 
-  const handleTemplateUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTemplateUpload = async (file: File) => {
     const file = e.target.files?.[0];
     if (file) {
       onTemplateUpload({
