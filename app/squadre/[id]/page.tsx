@@ -170,99 +170,107 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
   };
 
   const handleLogoUpload = async (file: File) => {
-    if (!file || !teamData) return;
-    setLoading(true);
-    const supabase = createClient();
-    try {
-      // ✅ FORZA ESTENSIONE MINUSCOLA
-      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-      const fileName = `${Date.now()}_logo_${teamData.name.replace(/\s/g, '_')}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage.from('tournament-files').upload(`team-logos/${fileName}`, file, { cacheControl: '3600', upsert: true });
-      if (uploadError) throw uploadError;
-      const { data: { publicUrl } } = supabase.storage.from('tournament-files').getPublicUrl(`team-logos/${fileName}`);
-      const { error: updateError } = await supabase.from('teams').update({ logo_url: publicUrl }).eq('id', params.id);
-      if (updateError) throw updateError;
-      setTeamData((prev: any) => ({ ...prev, logo: publicUrl }));
-      alert('✅ Logo caricato con successo!');
-    } catch (err) {
-      console.error('Errore upload logo:', err);
-      alert('Errore nel caricamento del logo');
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (!file || !teamData) return;
+  setLoading(true);
+  const supabase = createClient();
+  try {
+    // ✅ NOME FILE FISSO: logo_ID_SQUADRA.jpg
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    const fileName = `logo_${params.id}.${fileExt}`;
+    const filePath = `team-logos/${fileName}`;
 
+    // ✅ 1. Elimina il vecchio logo se esiste
+    if (teamData.logo && teamData.logo.includes('supabase')) {
+      try {
+        const oldUrl = new URL(teamData.logo);
+        const pathParts = oldUrl.pathname.split('/');
+        const oldFilePath = `${pathParts[pathParts.length - 2]}/${pathParts[pathParts.length - 1]}`;
+        await supabase.storage.from('tournament-files').remove([oldFilePath]);
+      } catch (err) {
+        console.warn('Vecchio logo non eliminato:', err);
+      }
+    }
+
+    // ✅ 2. Carica il nuovo logo
+    const { error: uploadError } = await supabase.storage
+      .from('tournament-files')
+      .upload(filePath, file, { cacheControl: '3600', upsert: true });
+    
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('tournament-files')
+      .getPublicUrl(filePath);
+
+    const { error: updateError } = await supabase
+      .from('teams')
+      .update({ logo_url: publicUrl })
+      .eq('id', params.id);
+    
+    if (updateError) throw updateError;
+    
+    setTeamData((prev: any) => ({ ...prev, logo: publicUrl }));
+    alert('✅ Logo caricato con successo!');
+  } catch (err) {
+    console.error('Errore upload logo:', err);
+    alert('Errore nel caricamento del logo');
+  } finally {
+    setLoading(false);
+  }
+};
   const handleTeamPhotoUpload = async (file: File) => {
   if (!file || !teamData) return;
   setLoading(true);
   const supabase = createClient();
   
   try {
-    // ✅ 1. Estrai estensione in minuscolo
+    // ✅ NOME FILE FISSO: team_ID_SQUADRA.jpg (senza timestamp)
     const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-    const newFileName = `team_${params.id}_${Date.now()}.${fileExt}`;
-    const newPath = `team-photos/${newFileName}`;
+    const fileName = `team_${params.id}.${fileExt}`;
+    const filePath = `team-photos/${fileName}`;
 
-    // ✅ 2. Upload nuova foto
-    const { error: uploadError } = await supabase.storage
-      .from('tournament-files')
-      .upload(newPath, file, { cacheControl: '3600', upsert: true });
-    
-    if (uploadError) {
-      console.error('Errore upload:', uploadError);
-      throw uploadError;
+    // ✅ 1. Elimina la vecchia foto se esiste
+    if (teamData.teamPhoto && teamData.teamPhoto.includes('supabase')) {
+      try {
+        const oldUrl = new URL(teamData.teamPhoto);
+        const pathParts = oldUrl.pathname.split('/');
+        const oldFilePath = `${pathParts[pathParts.length - 2]}/${pathParts[pathParts.length - 1]}`;
+        await supabase.storage.from('tournament-files').remove([oldFilePath]);
+        console.log('✅ Vecchia foto eliminata');
+      } catch (err) {
+        console.warn('Vecchia foto non eliminata (potrebbe non esistere):', err);
+      }
     }
 
-    // ✅ 3. Ottieni URL pubblico della NUOVA foto
+    // ✅ 2. Carica la nuova foto (sovrascrive se esiste già)
+    const { error: uploadError } = await supabase.storage
+      .from('tournament-files')
+      .upload(filePath, file, { 
+        cacheControl: '3600', 
+        upsert: true // ✅ Sovrascrive il file esistente
+      });
+    
+    if (uploadError) throw uploadError;
+
+    // ✅ 3. Ottieni URL pubblico
     const { data: { publicUrl } } = supabase.storage
       .from('tournament-files')
-      .getPublicUrl(newPath);
+      .getPublicUrl(filePath);
 
-    // ✅ 4. Prima aggiorna il DB con il nuovo URL
+    // ✅ 4. Aggiorna il database
     const { error: updateError } = await supabase
       .from('teams')
       .update({ team_photo_url: publicUrl })
       .eq('id', params.id);
     
-    if (updateError) {
-      console.error('Errore update DB:', updateError);
-      throw updateError;
-    }
+    if (updateError) throw updateError;
 
-    // ✅ 5. SOLO DOPO aver aggiornato il DB, elimina la vecchia foto
-    if (teamData.teamPhoto && teamData.teamPhoto.includes('supabase')) {
-      try {
-        console.log('Vecchio URL:', teamData.teamPhoto);
-        const oldUrl = new URL(teamData.teamPhoto);
-        const pathParts = oldUrl.pathname.split('/');
-        // Estrae 'team-photos/nome_vecchio_file.jpg'
-        const oldFilePath = `${pathParts[pathParts.length - 2]}/${pathParts[pathParts.length - 1]}`;
-        
-        console.log('Path da eliminare:', oldFilePath);
-        
-        const { error: deleteError } = await supabase.storage
-          .from('tournament-files')
-          .remove([oldFilePath]);
-        
-        if (deleteError) {
-          console.warn('Attenzione: impossibile eliminare la vecchia foto:', deleteError.message);
-          // Non bloccare il processo se l'eliminazione fallisce
-        } else {
-          console.log('✅ Vecchia foto eliminata con successo');
-        }
-      } catch (deleteErr) {
-        console.warn('Impossibile eliminare la vecchia foto:', deleteErr);
-        // Non bloccare il processo se l'eliminazione fallisce
-      }
-    }
-
-    // ✅ 6. Aggiorna lo stato locale
     setTeamData((prev: any) => ({ ...prev, teamPhoto: publicUrl }));
     alert('✅ Foto squadra aggiornata con successo!');
     
   } catch (err) {
-    console.error(' Errore completo:', err);
-    alert('Errore nel caricamento della foto: ' + (err as Error).message);
+    console.error('❌ Errore:', err);
+    alert('Errore nel caricamento: ' + (err as Error).message);
   } finally {
     setLoading(false);
   }
@@ -330,35 +338,47 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     let photoUrl = currentPlayer.photo;
 
     if (updatedData.photoFile) {
+  try {
+    // ✅ NOME FILE FISSO: player_ID_GIOCATORE.jpg
+    const fileExt = updatedData.photoFile.name.split('.').pop()?.toLowerCase() || 'jpg';
+    const fileName = `player_${currentPlayer.id}.${fileExt}`;
+    const filePath = `player-photos/${fileName}`;
+    
+    // ✅ 1. Elimina la vecchia foto
+    if (currentPlayer.photo && currentPlayer.photo.includes('supabase')) {
       try {
-        // ✅ FORZA ESTENSIONE MINUSCOLA
-        const fileExt = updatedData.photoFile.name.split('.').pop()?.toLowerCase() || 'jpg';
-        const newFileName = `player_${currentPlayer.id}_${Date.now()}.${fileExt}`;
-        const newPath = `player-photos/${newFileName}`;
-        
-        const { error: uploadError } = await supabase.storage.from('tournament-files').upload(newPath, updatedData.photoFile, { cacheControl: '3600', upsert: true });
-        if (uploadError) throw uploadError;
-        
-        const { data: { publicUrl } } = supabase.storage.from('tournament-files').getPublicUrl(newPath);
-        photoUrl = publicUrl;
-
-        if (currentPlayer.photo && currentPlayer.photo.includes('supabase')) {
-          try {
-            const oldUrl = new URL(currentPlayer.photo);
-            const pathParts = oldUrl.pathname.split('/');
-            const oldFilePath = `${pathParts[pathParts.length - 2]}/${pathParts[pathParts.length - 1]}`;
-            await supabase.storage.from('tournament-files').remove([oldFilePath]);
-          } catch (deleteErr) {
-            console.warn('Impossibile eliminare la vecchia foto giocatore:', deleteErr);
-          }
-        }
+        const oldUrl = new URL(currentPlayer.photo);
+        const pathParts = oldUrl.pathname.split('/');
+        const oldFilePath = `${pathParts[pathParts.length - 2]}/${pathParts[pathParts.length - 1]}`;
+        await supabase.storage.from('tournament-files').remove([oldFilePath]);
+        console.log('✅ Vecchia foto giocatore eliminata');
       } catch (err) {
-        console.error('Errore upload foto giocatore:', err);
-        alert('Errore nel caricamento della foto del giocatore');
-        setLoading(false);
-        return;
+        console.warn('Vecchia foto non eliminata:', err);
       }
     }
+
+    // ✅ 2. Carica la nuova foto
+    const { error: uploadError } = await supabase.storage
+      .from('tournament-files')
+      .upload(filePath, updatedData.photoFile, { 
+        cacheControl: '3600', 
+        upsert: true 
+      });
+    
+    if (uploadError) throw uploadError;
+    
+    const { data: { publicUrl } } = supabase.storage
+      .from('tournament-files')
+      .getPublicUrl(filePath);
+      
+    photoUrl = publicUrl;
+  } catch (err) {
+    console.error('Errore upload foto giocatore:', err);
+    alert('Errore nel caricamento della foto del giocatore');
+    setLoading(false);
+    return;
+  }
+}
 
     try {
       const { error } = await supabase.from('players').update({
