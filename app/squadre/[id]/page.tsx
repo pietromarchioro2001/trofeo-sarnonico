@@ -472,7 +472,11 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
         ) : (
           <div 
             className="rounded-xl overflow-hidden shadow-md bg-gray-300 relative h-40 cursor-pointer group z-10"
-            onClick={() => openImageInNewTab(teamData.teamPhoto)}
+            onClick={() => {
+              if (teamData.teamPhoto) {
+                window.open(teamData.teamPhoto, '_blank');
+              }
+            }}
           >
             {teamData.teamPhoto ? (
               <>
@@ -589,10 +593,12 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
                     <div
                       className="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden cursor-pointer hover:ring-2 hover:ring-[#581C24] transition-all relative"
                       onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openImageInNewTab(player.photo);
-                      }}
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (player.photo) {
+                            window.open(player.photo, '_blank');
+                          }
+                        }}
                     >
                       {player.photo ? (
                         <Image 
@@ -650,9 +656,11 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
                 <div 
                   className="w-20 h-20 bg-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden cursor-pointer group relative z-10"
                   onClick={(e) => {
-                    e.stopPropagation();
-                    openImageInNewTab(selectedPlayer.photo);
-                  }}
+                      e.stopPropagation();
+                      if (selectedPlayer.photo) {
+                        window.open(selectedPlayer.photo, '_blank');
+                      }
+                    }}
                 >
                   {selectedPlayer.photo ? (
                     <>
