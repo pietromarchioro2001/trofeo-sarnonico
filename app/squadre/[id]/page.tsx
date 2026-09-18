@@ -176,19 +176,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
 
   try {
-    const bucket = supabase.storage.from("tournament-files");
-    const folder = "team-logos";
-    const baseName = `logo_${params.id}`;
-
-    // elimina qualsiasi vecchia estensione
-    await bucket.remove([
-      `${folder}/${baseName}.jpg`,
-      `${folder}/${baseName}.jpeg`,
-      `${folder}/${baseName}.png`,
-      `${folder}/${baseName}.webp`,
-    ]);
-
-    const filePath = `${folder}/${baseName}.jpg`;
+      const filePath = `${folder}/${baseName}.jpg`;
 
     const { error } = await bucket.upload(filePath, file, {
       upsert: true,
@@ -441,29 +429,61 @@ await bucket.remove([
 ]);
 
   const handleDeletePlayer = async () => {
-    if (!editingPlayer) return;
-    const isConfirmed = window.confirm(`⚠️ Eliminare definitivamente ${editingPlayer.firstName} ${editingPlayer.lastName}?\n\nQuesta azione è irreversibile.`);
-    if (!isConfirmed) return;
+  if (!editingPlayer) return;
 
-    setLoading(true);
-    const supabase = createClient();
-    const currentPlayer = teamData.players.find((p: any) => p.id === editingPlayer.id);
-    if (!currentPlayer || !currentPlayer.id) { alert('Giocatore non trovato'); setLoading(false); return; }
+  const isConfirmed = window.confirm(
+    `⚠️ Eliminare definitivamente ${editingPlayer.firstName} ${editingPlayer.lastName}?\n\nQuesta azione è irreversibile.`
+  );
+  if (!isConfirmed) return;
 
-    try {
-      const { error } = await supabase.from('players').delete().eq('id', currentPlayer.id);
-      if (error) throw error;
-      setTeamData((prev: any) => ({ ...prev, players: prev.players.filter((p: any) => p.id !== currentPlayer.id) }));
-      alert('✅ Giocatore eliminato con successo');
-    } catch (err) {
-      console.error('Errore:', err);
-      alert('Errore nell\'eliminazione');
-    } finally {
-      setLoading(false);
-      setIsPlayerEditorOpen(false);
-      setEditingPlayer(null);
-    }
-  };
+  setLoading(true);
+  const supabase = createClient();
+
+  const currentPlayer = teamData.players.find(
+    (p: any) => p.id === editingPlayer.id
+  );
+
+  if (!currentPlayer) {
+    setLoading(false);
+    return;
+  }
+
+  try {
+    // Elimina la foto da Storage
+    const bucket = supabase.storage.from("tournament-files");
+    const folder = "player-photos";
+    const baseName = `player_${currentPlayer.id}`;
+
+    await bucket.remove([
+      `${folder}/${baseName}.jpg`,
+      `${folder}/${baseName}.jpeg`,
+      `${folder}/${baseName}.png`,
+      `${folder}/${baseName}.webp`,
+    ]);
+
+    // Elimina il record dal DB
+    const { error } = await supabase
+      .from("players")
+      .delete()
+      .eq("id", currentPlayer.id);
+
+    if (error) throw error;
+
+    setTeamData((prev: any) => ({
+      ...prev,
+      players: prev.players.filter((p: any) => p.id !== currentPlayer.id),
+    }));
+
+    alert("✅ Giocatore eliminato con successo");
+  } catch (err) {
+    console.error(err);
+    alert("Errore nell'eliminazione");
+  } finally {
+    setLoading(false);
+    setIsPlayerEditorOpen(false);
+    setEditingPlayer(null);
+  }
+};
 
   const handlePlayerClick = (player: any) => {
     if (isStaffMode || isMyTeam) {
