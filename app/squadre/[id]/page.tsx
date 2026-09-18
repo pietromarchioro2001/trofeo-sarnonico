@@ -171,167 +171,193 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
 
   const handleLogoUpload = async (file: File) => {
   if (!file || !teamData) return;
+
   setLoading(true);
   const supabase = createClient();
+
   try {
-    // ✅ NOME FILE FISSO: logo_ID_SQUADRA.jpg
-    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-    const fileName = `logo_${params.id}.${fileExt}`;
-    const filePath = `team-logos/${fileName}`;
+    const bucket = supabase.storage.from("tournament-files");
+    const folder = "team-logos";
+    const baseName = `logo_${params.id}`;
 
-    // ✅ 1. Elimina il vecchio logo se esiste
-    if (teamData.logo && teamData.logo.includes('supabase')) {
-      try {
-        const oldUrl = new URL(teamData.logo);
-        const pathParts = oldUrl.pathname.split('/');
-        const oldFilePath = `${pathParts[pathParts.length - 2]}/${pathParts[pathParts.length - 1]}`;
-        await supabase.storage.from('tournament-files').remove([oldFilePath]);
-      } catch (err) {
-        console.warn('Vecchio logo non eliminato:', err);
-      }
-    }
+    // elimina qualsiasi vecchia estensione
+    await bucket.remove([
+      `${folder}/${baseName}.jpg`,
+      `${folder}/${baseName}.jpeg`,
+      `${folder}/${baseName}.png`,
+      `${folder}/${baseName}.webp`,
+    ]);
 
-    // ✅ 2. Carica il nuovo logo
-    const { error: uploadError } = await supabase.storage
-      .from('tournament-files')
-      .upload(filePath, file, { cacheControl: '3600', upsert: true });
-    
-    if (uploadError) throw uploadError;
+    const filePath = `${folder}/${baseName}.jpg`;
 
-    const { data: { publicUrl } } = supabase.storage
-      .from('tournament-files')
-      .getPublicUrl(filePath);
+    const { error } = await bucket.upload(filePath, file, {
+      upsert: true,
+      cacheControl: "0",
+      contentType: "image/jpeg",
+    });
 
-    const { error: updateError } = await supabase
-      .from('teams')
-      .update({ logo_url: publicUrl })
-      .eq('id', params.id);
-    
-    if (updateError) throw updateError;
-    
-    setTeamData((prev: any) => ({ ...prev, logo: publicUrl }));
-    alert('✅ Logo caricato con successo!');
-  } catch (err) {
-    console.error('Errore upload logo:', err);
-    alert('Errore nel caricamento del logo');
+    if (error) throw error;
+
+    const { data } = bucket.getPublicUrl(filePath);
+
+    await supabase
+      .from("teams")
+      .update({ logo_url: `${data.publicUrl}?t=${Date.now()}` })
+      .eq("id", params.id);
+
+    setTeamData((p: any) => ({
+      ...p,
+      logo: `${data.publicUrl}?t=${Date.now()}`
+    }));
+
   } finally {
     setLoading(false);
   }
 };
+
+  const openImage = (url?: string) => {
+  if (!url) return;
+  window.open(url, "_blank", "noopener,noreferrer");
+};
   
-  const handleTeamPhotoUpload = async (file: File) => {
+ const handleTeamPhotoUpload = async (file: File) => {
   if (!file || !teamData) return;
+
   setLoading(true);
   const supabase = createClient();
-  
+
   try {
-    // ✅ NOME FILE FISSO: team_ID_SQUADRA.jpg (SENZA timestamp)
-    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-    const fileName = `team_${params.id}.${fileExt}`;
-    const filePath = `team-photos/${fileName}`;
+    const bucket = supabase.storage.from("tournament-files");
+    const folder = "team-photos";
+    const baseName = `team_${params.id}`;
 
-    // ✅ 1. Carica la nuova foto (sovrascrive se esiste già grazie a upsert: true)
-    const { error: uploadError } = await supabase.storage
-      .from('tournament-files')
-      .upload(filePath, file, { 
-        cacheControl: '3600', 
-        upsert: true // ✅ QUESTO FA LA DIFFERENZA - sovrascrive il file esistente
-      });
-    
-    if (uploadError) {
-      console.error(' Errore upload:', uploadError);
-      throw uploadError;
-    }
+    await bucket.remove([
+      `${folder}/${baseName}.jpg`,
+      `${folder}/${baseName}.jpeg`,
+      `${folder}/${baseName}.png`,
+      `${folder}/${baseName}.webp`,
+    ]);
 
-    // ✅ 2. Ottieni URL pubblico
-    const { data: { publicUrl } } = supabase.storage
-      .from('tournament-files')
-      .getPublicUrl(filePath);
+    const filePath = `${folder}/${baseName}.jpg`;
 
-    // ✅ 3. Aggiorna il database
-    const { error: updateError } = await supabase
-      .from('teams')
-      .update({ team_photo_url: publicUrl })
-      .eq('id', params.id);
-    
-    if (updateError) {
-      console.error(' Errore update DB:', updateError);
-      throw updateError;
-    }
+    const { error } = await bucket.upload(filePath, file, {
+      upsert: true,
+      cacheControl: "0",
+      contentType: "image/jpeg",
+    });
 
-    // ✅ 4. Aggiorna lo stato locale
-    setTeamData((prev: any) => ({ ...prev, teamPhoto: publicUrl }));
-    alert('✅ Foto squadra aggiornata con successo!');
-    
-  } catch (err) {
-    console.error(' Errore completo:', err);
-    alert('Errore nel caricamento della foto: ' + (err as Error).message);
+    if (error) throw error;
+
+    const { data } = bucket.getPublicUrl(filePath);
+
+    const finalUrl = `${data.publicUrl}?t=${Date.now()}`;
+
+    await supabase
+      .from("teams")
+      .update({ team_photo_url: finalUrl })
+      .eq("id", params.id);
+
+    setTeamData((p: any) => ({
+      ...p,
+      teamPhoto: finalUrl
+    }));
+
   } finally {
     setLoading(false);
   }
 };
+   const handleAddPlayer = async (newPlayer: PlayerData) => {
+  setLoading(true);
+  const supabase = createClient();
 
-    const handleAddPlayer = async (newPlayer: PlayerData) => {
-    setLoading(true);
-    const supabase = createClient();
-    const playerData = {
-      team_id: params.id,
-      first_name: newPlayer.firstName.trim(),
-      last_name: newPlayer.lastName.trim(),
-      jersey_number: newPlayer.number === '-' ? null : newPlayer.number,
-      birth_date: newPlayer.birthDate || null,
-      photo_url: null, 
+  try {
+    // 1. Crea il giocatore
+    const { data, error } = await supabase
+      .from("players")
+      .insert({
+        team_id: params.id,
+        first_name: newPlayer.firstName.trim(),
+        last_name: newPlayer.lastName.trim(),
+        jersey_number: newPlayer.number === "-" ? null : newPlayer.number,
+        birth_date: newPlayer.birthDate || null,
+        photo_url: null,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    let finalPhotoUrl = "";
+
+    // 2. Carica la foto (se presente)
+    if (newPlayer.photoFile) {
+      const bucket = supabase.storage.from("tournament-files");
+      const folder = "player-photos";
+      const baseName = `player_${data.id}`;
+
+      // Elimina eventuali vecchie estensioni
+      await bucket.remove([
+        `${folder}/${baseName}.jpg`,
+        `${folder}/${baseName}.jpeg`,
+        `${folder}/${baseName}.png`,
+        `${folder}/${baseName}.webp`,
+      ]);
+
+      const filePath = `${folder}/${baseName}.jpg`;
+
+      const { error: uploadError } = await bucket.upload(
+        filePath,
+        newPlayer.photoFile,
+        {
+          upsert: true,
+          cacheControl: "0",
+          contentType: "image/jpeg",
+        }
+      );
+
+      if (uploadError) throw uploadError;
+
+      const {
+        data: { publicUrl },
+      } = bucket.getPublicUrl(filePath);
+
+      finalPhotoUrl = `${publicUrl}?t=${Date.now()}`;
+
+      await supabase
+        .from("players")
+        .update({ photo_url: finalPhotoUrl })
+        .eq("id", data.id);
+    }
+
+    // 3. Aggiorna lo stato locale
+    const mappedPlayer = {
+      id: data.id,
+      number: data.jersey_number || "-",
+      name: `${data.first_name.toUpperCase()} ${data.last_name.toUpperCase()}`,
+      firstName: data.first_name,
+      lastName: data.last_name,
+      birthDate: data.birth_date || "",
+      photo: finalPhotoUrl,
+      goals: 0,
+      yellow: 0,
+      red: 0,
+      mvp: 0,
+      isSuspended: false,
     };
 
-    try {
-      // 1. Inseriamo prima il giocatore nel DB per ottenere il suo ID
-      const { data, error } = await supabase.from('players').insert(playerData).select().single();
-      if (error) throw error;
+    setTeamData((prev: any) => ({
+      ...prev,
+      players: [...prev.players, mappedPlayer],
+    }));
 
-      let finalPhotoUrl = null;
-      if (newPlayer.photoFile) {
-        // ✅ FORZA ESTENSIONE MINUSCOLA
-        const fileExt = newPlayer.photoFile.name.split('.').pop()?.toLowerCase() || 'jpg';
-        
-        // ✅ CORRETTO: usa data.id (l'ID del giocatore appena creato), NON currentPlayer.id
-        const newFileName = `player_${data.id}.${fileExt}`;
-        const newPath = `player-photos/${newFileName}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('tournament-files')
-          .upload(newPath, newPlayer.photoFile, { cacheControl: '3600', upsert: true });
-          
-        if (!uploadError) {
-          const { data: { publicUrl } } = supabase.storage
-            .from('tournament-files')
-            .getPublicUrl(newPath);
-          finalPhotoUrl = publicUrl;
-          
-          // 3. Aggiorniamo il record del giocatore con l'URL della nuova foto
-          await supabase.from('players').update({ photo_url: finalPhotoUrl }).eq('id', data.id);
-        }
-      }
-
-      const mappedPlayer = {
-        id: data.id,
-        number: data.jersey_number || '-',
-        name: `${data.first_name.toUpperCase()} ${data.last_name.toUpperCase()}`,
-        firstName: data.first_name,
-        lastName: data.last_name,
-        birthDate: data.birth_date || '',
-        photo: finalPhotoUrl || '',
-        goals: 0, yellow: 0, red: 0, mvp: 0, isSuspended: false,
-      };
-      
-      setTeamData((prev: any) => ({ ...prev, players: [...prev.players, mappedPlayer] }));
-      alert('✅ Giocatore aggiunto con successo!');
-    } catch (err) {
-      console.error('Errore aggiunta giocatore:', err);
-      alert('Errore nel salvataggio del giocatore: ' + (err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    alert("✅ Giocatore aggiunto con successo!");
+  } catch (err) {
+    console.error(err);
+    alert("Errore nel salvataggio del giocatore");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleUpdatePlayer = async (updatedData: PlayerData) => {
     if (!editingPlayer) return;
@@ -343,47 +369,30 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     let photoUrl = currentPlayer.photo;
 
     if (updatedData.photoFile) {
-  try {
-    // ✅ NOME FILE FISSO: player_ID_GIOCATORE.jpg
-    const fileExt = updatedData.photoFile.name.split('.').pop()?.toLowerCase() || 'jpg';
-    const fileName = `player_${currentPlayer.id}.${fileExt}`;
-    const filePath = `player-photos/${fileName}`;
+      const bucket = supabase.storage.from("tournament-files");
+      const folder = "player-photos";
+      const baseName = `player_${currentPlayer.id}`;
     
-    // ✅ 1. Elimina la vecchia foto
-    if (currentPlayer.photo && currentPlayer.photo.includes('supabase')) {
-      try {
-        const oldUrl = new URL(currentPlayer.photo);
-        const pathParts = oldUrl.pathname.split('/');
-        const oldFilePath = `${pathParts[pathParts.length - 2]}/${pathParts[pathParts.length - 1]}`;
-        await supabase.storage.from('tournament-files').remove([oldFilePath]);
-        console.log('✅ Vecchia foto giocatore eliminata');
-      } catch (err) {
-        console.warn('Vecchia foto non eliminata:', err);
-      }
-    }
-
-    // ✅ 2. Carica la nuova foto
-    const { error: uploadError } = await supabase.storage
-      .from('tournament-files')
-      .upload(filePath, updatedData.photoFile, { 
-        cacheControl: '3600', 
-        upsert: true 
+      await bucket.remove([
+        `${folder}/${baseName}.jpg`,
+        `${folder}/${baseName}.jpeg`,
+        `${folder}/${baseName}.png`,
+        `${folder}/${baseName}.webp`,
+      ]);
+    
+      const filePath = `${folder}/${baseName}.jpg`;
+    
+      const { error } = await bucket.upload(filePath, updatedData.photoFile, {
+        upsert: true,
+        cacheControl: "0",
+        contentType: "image/jpeg",
       });
     
-    if (uploadError) throw uploadError;
+      if (error) throw error;
     
-    const { data: { publicUrl } } = supabase.storage
-      .from('tournament-files')
-      .getPublicUrl(filePath);
-      
-    photoUrl = publicUrl;
-  } catch (err) {
-    console.error('Errore upload foto giocatore:', err);
-    alert('Errore nel caricamento della foto del giocatore');
-    setLoading(false);
-    return;
-  }
-}
+      const { data } = bucket.getPublicUrl(filePath);
+      photoUrl = `${data.publicUrl}?t=${Date.now()}`;
+    }
 
     try {
       const { error } = await supabase.from('players').update({
@@ -419,7 +428,17 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
       setEditingPlayer(null);
       setIsPlayerEditorOpen(false);
     }
-  };
+  }
+const bucket = supabase.storage.from("tournament-files");
+const folder = "player-photos";
+const baseName = `player_${currentPlayer.id}`;
+
+await bucket.remove([
+  `${folder}/${baseName}.jpg`,
+  `${folder}/${baseName}.jpeg`,
+  `${folder}/${baseName}.png`,
+  `${folder}/${baseName}.webp`,
+]);
 
   const handleDeletePlayer = async () => {
     if (!editingPlayer) return;
@@ -459,15 +478,6 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
       setIsPlayerEditorOpen(true);
     } else {
       setSelectedPlayer(player);
-    }
-  };
-
-  // ✅ FUNZIONE SEMPLICE PER APRIRE FOTO IN NUOVA SCHEDA
-  const openImageInNewTab = (imageUrl: string | null) => {
-    if (imageUrl) {
-      // Codifica l'URL per gestire spazi e caratteri speciali
-      const encodedUrl = encodeURI(imageUrl);
-      window.open(encodedUrl, '_blank');
     }
   };
 
@@ -515,10 +525,24 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
           />
         ) : (
           <div className="bg-white rounded-xl shadow-lg p-4 flex items-center gap-3">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 relative overflow-hidden">
+            <div
+              className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 relative overflow-hidden cursor-pointer"
+              onClick={() => {
+                if (!isStaffMode && !isMyTeam && teamData.logo) {
+                  window.open(teamData.logo, "_blank");
+                }
+              }}
+            >
               {teamData.logo ? (
-                <Image src={teamData.logo} alt="Logo" fill className="object-cover rounded-full" />
-              ) : <span className="text-[10px] text-gray-400">LOGO</span>}
+                <Image
+                  src={teamData.logo}
+                  alt="Logo"
+                  fill
+                  className="object-cover rounded-full"
+                />
+              ) : (
+                <span className="text-[10px] text-gray-400">LOGO</span>
+              )}
             </div>
             <div>
               <h1 className="text-2xl font-black text-[#581C24] uppercase tracking-wider">{teamData.name}</h1>
@@ -539,10 +563,10 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
           <div 
             className="rounded-xl overflow-hidden shadow-md bg-gray-300 relative h-40 cursor-pointer group z-10"
             onClick={() => {
-              if (teamData.teamPhoto) {
-                window.open(teamData.teamPhoto, '_blank');
-              }
-            }}
+                if (!isStaffMode && !isMyTeam) {
+                  openImage(teamData.teamPhoto);
+                }
+              }}
           >
             {teamData.teamPhoto ? (
               <>
@@ -659,12 +683,12 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
                     <div
                       className="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden cursor-pointer hover:ring-2 hover:ring-[#581C24] transition-all relative"
                       onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          if (player.photo) {
-                            window.open(player.photo, '_blank');
-                          }
-                        }}
+                        e.stopPropagation();
+                      
+                        if (!isStaffMode && !isMyTeam) {
+                          openImage(player.photo);
+                        }
+                      }}
                     >
                       {player.photo ? (
                         <Image 
@@ -723,8 +747,9 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
                   className="w-20 h-20 bg-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden cursor-pointer group relative z-10"
                   onClick={(e) => {
                       e.stopPropagation();
-                      if (selectedPlayer.photo) {
-                        window.open(selectedPlayer.photo, '_blank');
+                    
+                      if (!isStaffMode && !isMyTeam) {
+                        openImage(selectedPlayer.photo);
                       }
                     }}
                 >
