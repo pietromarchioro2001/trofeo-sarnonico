@@ -105,7 +105,6 @@ export const AdminPartiteButton = ({ onMatchCreated }: { onMatchCreated?: () => 
   const [matchTime, setMatchTime] = useState('');
   const [error, setError] = useState('');
   const [teams, setTeams] = useState<any[]>([]);
-  const supabase = createClient();
 
   useEffect(() => {
     if (isOpen) {
@@ -983,6 +982,7 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
   const [selectedTeam, setSelectedTeam] = useState<TeamLiberatorie | null>(null);
   const [showTemplateUpload, setShowTemplateUpload] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const supabase = createClient();
 
   const handleTemplateUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
