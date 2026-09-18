@@ -20,8 +20,8 @@ interface MatchData {
   id: string;
   home_score: number | null;
   away_score: number | null;
-  home_penalties: number | null;  // ✅ AGGIUNGI
-  away_penalties: number | null;  // ✅ AGGIUNGI
+  home_penalties: number | null;  
+  away_penalties: number | null; 
   status: string;
   media_folder_path: string | null;
   phase: string;
@@ -564,8 +564,10 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         
         const typedMatch: MatchData = {
           ...matchData,
+          media_folder_path:
+            matchData.media_folder_path ?? `match-media/${matchData.id}`,
           home_team: homeTeam as TeamData,
-          away_team: awayTeam as TeamData
+          away_team: awayTeam as TeamData,
         };
         
         setMatch(typedMatch);
