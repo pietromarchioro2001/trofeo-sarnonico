@@ -1095,14 +1095,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
             cacheControl: "3600",
             contentType: file.type,
           });
-        
-        const { error } = await supabase.storage
-          .from("tournament-files")
-          .upload(filePath, file, {
-            upsert: false,
-            cacheControl: "3600",
-            contentType: file.type,
-          });
 
         if (error) {
           console.error('❌ Errore upload:', error);
