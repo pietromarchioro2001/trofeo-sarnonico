@@ -1119,7 +1119,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         
         console.log("✅ Upload completato:", data);
         uploadedCount++;
-
+      }
       alert(`✅ ${uploadedCount} foto caricate con successo!`);
       setMediaRefreshKey(prev => prev + 1);
       
