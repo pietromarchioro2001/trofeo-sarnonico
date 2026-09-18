@@ -187,35 +187,113 @@ export default function AltroPage() {
     fetchAltroData();
   }, []);
 
-  const handleRealUpload = async (files: FileList, category: 'evento' | 'sponsor' | 'regolamento' | 'liberatoria', teamId?: string) => {
-    if (!files.length) return;
-    
+  const handleRealUpload = async (
+  files: FileList,
+  category: "evento" | "sponsor" | "regolamento" | "liberatoria",
+  teamId?: string
+) => {
+  if (!files.length) return;
+
+  setLoading(true);
+  const supabase = createClient();
+
+  try {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      let folder = 'documents';
-      if (category === 'sponsor') folder = 'sponsors';
-      
-      try {
-        const publicUrl = await uploadFile(folder, file);
-        const supabase = createClient();
-        
-        await supabase.from('documents').insert({
-          team_id: teamId || null,
-          file_url: publicUrl,
-          file_type: file.type.split('/')[1] || 'unknown',
-          file_name: file.name,
-          document_category: category === 'liberatoria' ? 'liberatoria' : 
-                           category === 'regolamento' ? 'regolamento' : 'altro'
+      const ext = file.name.split(".").pop()?.toLowerCase() || "pdf";
+
+      let folder = "documents";
+      let fileName = "";
+
+      if (category === "regolamento") {
+        fileName = `regolamento.${ext}`;
+
+        await supabase.storage.from("tournament-files").remove([
+          `${folder}/regolamento.pdf`,
+          `${folder}/regolamento.doc`,
+          `${folder}/regolamento.docx`,
+        ]);
+      }
+
+      else if (category === "evento") {
+        fileName = `evento_${crypto.randomUUID()}.${ext}`;
+      }
+
+      else if (category === "liberatoria") {
+        const cleanName = file.name
+          .replace(/\.[^/.]+$/, "")
+          .replace(/[^a-zA-Z0-9_-]/g, "_");
+
+        fileName = `liberatoria_${teamId}_${cleanName}.${ext}`;
+
+        await supabase.storage
+          .from("tournament-files")
+          .remove([`${folder}/${fileName}`]);
+      }
+
+      else if (category === "sponsor") {
+        folder = "sponsors";
+
+        const cleanName = file.name
+          .replace(/\.[^/.]+$/, "")
+          .replace(/[^a-zA-Z0-9_-]/g, "_");
+
+        fileName = `sponsor_${cleanName}.${ext}`;
+
+        await supabase.storage
+          .from("tournament-files")
+          .remove([`${folder}/${fileName}`]);
+      }
+
+      const path = `${folder}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("tournament-files")
+        .upload(path, file, {
+          upsert: true,
+          cacheControl: "0",
+          contentType: file.type,
         });
 
-        alert(`✅ ${file.name} caricato con successo!`);
-      } catch (err) {
-        console.error('Errore upload:', err);
-        alert('Errore nel caricamento del file');
+      if (uploadError) throw uploadError;
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage
+        .from("tournament-files")
+        .getPublicUrl(path);
+
+      if (category === "regolamento") {
+        await supabase
+          .from("documents")
+          .delete()
+          .eq("document_category", "regolamento");
       }
+      
+      await supabase.from("documents").insert({
+        team_id: teamId || null,
+        file_url: `${publicUrl}?t=${Date.now()}`,
+        file_type: file.type,
+        file_name: file.name,
+        document_category:
+          category === "liberatoria"
+            ? "liberatoria"
+            : category === "regolamento"
+            ? "regolamento"
+            : "altro",
+      });
     }
+
+    alert("✅ Caricamento completato!");
     window.location.reload();
-  };
+
+  } catch (err) {
+    console.error(err);
+    alert("Errore nel caricamento dei documenti");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const toggleSection = (sectionId: SectionId) => {
     setOpenSection(openSection === sectionId ? null : sectionId);
