@@ -1032,98 +1032,70 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
     onTemplateUpload(undefined as any);
   };
 
-  return (
-    <div className="space-y-4">
-      {/* 1. DOWNLOAD MODELLO (Visibile a TUTTI se esiste) */}
-      {templateDoc && (
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bebas text-[#6B1E1E]">
-              MODELLO DA COMPILARE
-            </h3>
-          
-            {userRole === "staff" && templateDoc && (
-                <button
-                  onClick={handleDeleteTemplate}
-                  className="w-9 h-9 flex items-center justify-center rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              )}
-          </div>
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-            <div className="flex items-center gap-3">
-              <Download className="w-5 h-5 text-[#581C24]" />
-              <span className="text-sm font-medium">{templateDoc.fileName}</span>
-            </div>
-            <a 
-              href={templateDoc.url} 
-              download 
-              className="px-3 py-1.5 bg-[#581C24] text-white text-xs font-bold rounded-lg hover:bg-[#581C24]/90 transition-colors flex items-center gap-1"
-            >
-              <Download className="w-3.5 h-3.5" /> Scarica
-            </a>
-          </div>
-        </div>
-      )}
+ return (
+  <div className="space-y-4">
 
-      {/* TEMPLATE CAPITANI */}
-      {userRole === "captain" && (
-        <div className="mb-6">
-          <h3 className="text-sm font-bold text-gray-700 uppercase mb-3">
-            Template capitani
+    {/* STAFF: Gestione modello */}
+    {userRole === "staff" && templateDoc && (
+      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-bebas text-[#6B1E1E]">
+            MODELLO DA COMPILARE
           </h3>
-      
-          {!templateDoc ? (
-            <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-[#581C24]/30 rounded-xl cursor-pointer hover:bg-[#581C24]/5 transition">
-              <Upload className="w-8 h-8 text-[#581C24] mb-2" />
-              <span className="font-bold text-[#581C24]">
-                Carica template PDF
-              </span>
-              <span className="text-xs text-gray-500 mt-1">
-                Documento che scaricheranno i capitani
-              </span>
-      
-              <input
-                type="file"
-                accept=".pdf"
-                className="hidden"
-                onChange={(e) =>
-                  e.target.files?.[0] &&
-                  handleTemplateUpload(e.target.files[0])
-                }
-              />
-            </label>
-          ) : (
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border">
-              <div>
-                <p className="font-bold">{templateDoc.fileName}</p>
-                <p className="text-xs text-gray-500">
-                  {new Date(templateDoc.uploadedAt).toLocaleDateString("it-IT")}
-                </p>
-              </div>
-      
-              <div className="flex gap-2">
-                <a
-                  href={templateDoc.url}
-                  target="_blank"
-                  className="p-2 rounded-lg hover:bg-gray-200"
-                >
-                  <Eye className="w-5 h-5" />
-                </a>
-      
-                {/* ✅ FIX 2: Corretto il nome della funzione da handleDeleteLiberatoria a handleDeleteTemplate */}
-                <button
-                  onClick={handleDeleteTemplate}
-                  className="p-2 rounded-lg text-red-600 hover:bg-red-50"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-          )}
+
+          <button
+            onClick={handleDeleteTemplate}
+            className="w-9 h-9 flex items-center justify-center rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
         </div>
-      )}
+
+        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center gap-3">
+            <Download className="w-5 h-5 text-[#581C24]" />
+            <span className="text-sm font-medium">
+              {templateDoc.fileName}
+            </span>
+          </div>
+
+          <a
+            href={templateDoc.url}
+            download
+            className="px-3 py-1.5 bg-[#581C24] text-white text-xs font-bold rounded-lg hover:bg-[#581C24]/90 transition flex items-center gap-1"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Scarica
+          </a>
+        </div>
+      </div>
+    )}
+
+    {/* CAPITANI: Solo download */}
+    {userRole === "captain" && templateDoc && (
+      <div className="mb-6">
+        <h3 className="text-sm font-bold text-gray-700 uppercase mb-3">
+          TEMPLATE CAPITANI
+        </h3>
+
+        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border">
+          <div>
+            <p className="font-bold">{templateDoc.fileName}</p>
+            <p className="text-xs text-gray-500">
+              {new Date(templateDoc.uploadedAt).toLocaleDateString("it-IT")}
+            </p>
+          </div>
+
+          <a
+            href={templateDoc.url}
+            download
+            className="p-2 rounded-lg hover:bg-gray-200"
+          >
+            <Download className="w-5 h-5 text-[#581C24]" />
+          </a>
+        </div>
+      </div>
+    )}
 
       {/* 3. LISTA SQUADRE E UPLOAD DOCUMENTI */}
       <div className="space-y-2">
