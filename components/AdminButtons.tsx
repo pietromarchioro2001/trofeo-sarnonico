@@ -1017,7 +1017,21 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
       {/* 1. DOWNLOAD MODELLO (Visibile a TUTTI se esiste) */}
       {templateDoc && (
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <h3 className="text-sm font-bold text-[#581C24] uppercase mb-3">Modello da Compilare</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bebas text-[#6B1E1E]">
+              MODELLO DA COMPILARE
+            </h3>
+          
+            {isStaff && liberatoria && (
+              <button
+                onClick={handleDeleteLiberatoria}
+                className="w-9 h-9 flex items-center justify-center rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition"
+                title="Elimina modello"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+            )}
+          </div>
           <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
             <div className="flex items-center gap-3">
               <Download className="w-5 h-5 text-[#581C24]" />
@@ -1031,25 +1045,6 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
               <Download className="w-3.5 h-3.5" /> Scarica
             </a>
           </div>
-        </div>
-      )}
-
-      {/* 2. GESTIONE TEMPLATE (Solo Staff) */}
-      {userRole === 'staff' && (
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <h3 className="text-sm font-bold text-[#581C24] uppercase mb-3">Gestione Modello (Solo Staff)</h3>
-          {templateDoc ? (
-            <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-100">
-              <span className="text-xs font-medium text-red-700">Il modello è già caricato. Puoi sostituirlo o eliminarlo.</span>
-              <button onClick={() => onTemplateUpload({} as any)} className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors">
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          ) : (
-            <button onClick={() => setShowTemplateUpload(true)} className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-[#581C24] hover:text-[#581C24] transition-colors text-sm font-medium">
-              + Carica Nuovo Modello
-            </button>
-          )}
         </div>
       )}
 
