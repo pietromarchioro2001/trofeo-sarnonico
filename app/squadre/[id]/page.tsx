@@ -271,7 +271,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
   }
 };
 
-  const handleAddPlayer = async (newPlayer: PlayerData) => {
+    const handleAddPlayer = async (newPlayer: PlayerData) => {
     setLoading(true);
     const supabase = createClient();
     const playerData = {
@@ -284,6 +284,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     };
 
     try {
+      // 1. Inseriamo prima il giocatore nel DB per ottenere il suo ID
       const { data, error } = await supabase.from('players').insert(playerData).select().single();
       if (error) throw error;
 
@@ -291,13 +292,22 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
       if (newPlayer.photoFile) {
         // ✅ FORZA ESTENSIONE MINUSCOLA
         const fileExt = newPlayer.photoFile.name.split('.').pop()?.toLowerCase() || 'jpg';
-        const newFileName = `player_${currentPlayer.id}.${fileExt}`; // invece di Date.now()
+        
+        // ✅ CORRETTO: usa data.id (l'ID del giocatore appena creato), NON currentPlayer.id
+        const newFileName = `player_${data.id}.${fileExt}`;
         const newPath = `player-photos/${newFileName}`;
         
-        const { error: uploadError } = await supabase.storage.from('tournament-files').upload(newPath, newPlayer.photoFile, { cacheControl: '3600', upsert: true });
+        const { error: uploadError } = await supabase.storage
+          .from('tournament-files')
+          .upload(newPath, newPlayer.photoFile, { cacheControl: '3600', upsert: true });
+          
         if (!uploadError) {
-          const { data: { publicUrl } } = supabase.storage.from('tournament-files').getPublicUrl(newPath);
+          const { data: { publicUrl } } = supabase.storage
+            .from('tournament-files')
+            .getPublicUrl(newPath);
           finalPhotoUrl = publicUrl;
+          
+          // 3. Aggiorniamo il record del giocatore con l'URL della nuova foto
           await supabase.from('players').update({ photo_url: finalPhotoUrl }).eq('id', data.id);
         }
       }
@@ -317,7 +327,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
       alert('✅ Giocatore aggiunto con successo!');
     } catch (err) {
       console.error('Errore aggiunta giocatore:', err);
-      alert('Errore nel salvataggio del giocatore');
+      alert('Errore nel salvataggio del giocatore: ' + (err as Error).message);
     } finally {
       setLoading(false);
     }
