@@ -1016,9 +1016,6 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
   const handleDeleteTemplate = async () => {
   if (!templateDoc) return;
 
-  const supabase = createClient();
-
-  // ricava la path dallo Storage URL
   const storagePath = templateDoc.url.split("/documents/")[1];
 
   if (storagePath) {
@@ -1027,31 +1024,13 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
       .remove([storagePath]);
   }
 
-  const template = docsData?.find(
-  d => d.document_category === "template_liberatoria"
-);
-
-if (template) {
-  setTemplateDoc({
-    id: template.id,
-    url: template.file_url,
-    fileName: template.file_name,
-    uploadedAt: template.uploaded_at,
-    uploadedBy: template.uploaded_by || ""
-  });
-}
-
   await supabase
     .from("team_documents")
     .delete()
     .eq("id", templateDoc.id);
 
-  onUpdate(
-    teams.map(team => ({
-      ...team,
-      documents: team.documents.filter(d => d.id !== templateDoc.id)
-    }))
-  );
+  // comunica al parent che non esiste più il template
+  onTemplateUpload(undefined as any);
 };
 
   return (
