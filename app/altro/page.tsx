@@ -366,28 +366,6 @@ export default function AltroPage() {
 
       alert("✅ Evento caricato!");
     }
-
-    if (category === "sponsor") {
-      await supabase.from("sponsors").insert({
-        name: file.name.replace(/\.[^/.]+$/, ""),
-        logo_url: `${publicUrl}?t=${Date.now()}`,
-        website_url: null,
-        display_order: sponsors.length + i,
-      });
-    } else {
-      await supabase.from("documents").insert({
-        team_id: teamId || null,
-        file_url: `${publicUrl}?t=${Date.now()}`,
-        file_type: file.type,
-        file_name: file.name,
-        document_category:
-          category === "liberatoria"
-            ? "liberatoria"
-            : category === "regolamento"
-            ? "regolamento"
-            : "altro",
-      });
-    }
   }
   } catch (err) {
     console.error(err);
