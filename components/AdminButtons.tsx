@@ -987,25 +987,26 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
   const handleTemplateUpload = async (file: File) => {
   const fileName = `template_${Date.now()}.pdf`;
   const path = `documents/${fileName}`;
-  
+
+  // 1. Upload nello Storage
   const { error: uploadError } = await supabase.storage
     .from("tournament-files")
     .upload(path, file, {
       contentType: "application/pdf",
       upsert: true,
     });
-  
+
   if (uploadError) {
     alert(uploadError.message);
     return;
   }
-  
-  // URL pubblico del file
+
+  // 2. URL pubblico
   const { data } = supabase.storage
     .from("tournament-files")
     .getPublicUrl(path);
-  
-  // Salva il documento nel database
+
+  // 3. Salva nella tabella documents
   const { data: row, error: dbError } = await supabase
     .from("documents")
     .insert({
@@ -1016,13 +1017,13 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
     })
     .select()
     .single();
-  
+
   if (dbError) {
     alert(dbError.message);
     return;
   }
-  
-  // Aggiorna l'interfaccia
+
+  // 4. Aggiorna la UI
   onTemplateUpload({
     id: row.id,
     url: row.file_url,
@@ -1030,7 +1031,7 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
     uploadedAt: row.uploaded_at,
     uploadedBy: "staff",
   });
-  };
+};
 
   const handleTeamDocumentUpload = (teamId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
