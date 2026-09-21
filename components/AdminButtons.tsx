@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { X, Upload, Trash2, Download, Eye } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
-// ==================== TIPI DATI (NUOVI) ====================
+// ==================== TIPI DATI (NUOVI) ===================
 export interface UploadedDocument {
   id: string;
   url: string;
