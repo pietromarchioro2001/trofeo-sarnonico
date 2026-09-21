@@ -1007,7 +1007,7 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
   
     // 3. Riga database
     const { data: row, error } = await supabase
-      .from("team_documents")
+      .from("documents")
       .insert({
         file_name: file.name,
         file_url: data.publicUrl,
@@ -1069,7 +1069,7 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
     }
 
     await supabase
-      .from("team_documents")
+      .from("documents")
       .delete()
       .eq("id", templateDoc.id);
 
