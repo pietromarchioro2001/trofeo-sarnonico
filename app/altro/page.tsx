@@ -258,18 +258,14 @@ export default function AltroPage() {
       }
 
       else if (category === "sponsor") {
-        folder = "sponsors";
-
-        const cleanName = file.name
-          .replace(/\.[^/.]+$/, "")
-          .replace(/[^a-zA-Z0-9_-]/g, "_");
-
-        fileName = `sponsor_${cleanName}.${ext}`;
-
-        await supabase.storage
-          .from("tournament-files")
-          .remove([`${folder}/${fileName}`]);
-      }
+          folder = "sponsors";
+        
+          const cleanName = file.name
+            .replace(/\.[^/.]+$/, "")
+            .replace(/[^a-zA-Z0-9_-]/g, "_");
+        
+          fileName = `sponsor_${cleanName}_${Date.now()}.${ext}`;
+        }
 
       const path = `${folder}/${fileName}`;
 
@@ -288,6 +284,17 @@ export default function AltroPage() {
       } = supabase.storage
         .from("tournament-files")
         .getPublicUrl(path);
+
+      if (category === "sponsor") {
+        await supabase.from("sponsors").insert({
+          name: file.name.replace(/\.[^/.]+$/, ""),
+          logo_url: `${publicUrl}?t=${Date.now()}`,
+          website_url: null,
+          display_order: sponsors.length + i,
+        });
+      
+        continue;
+      }
 
       if (category === "regolamento") {
         await supabase
@@ -347,6 +354,28 @@ export default function AltroPage() {
       );
 
       alert("✅ Evento caricato!");
+    }
+
+    if (category === "sponsor") {
+      await supabase.from("sponsors").insert({
+        name: file.name.replace(/\.[^/.]+$/, ""),
+        logo_url: `${publicUrl}?t=${Date.now()}`,
+        website_url: null,
+        display_order: sponsors.length + i,
+      });
+    } else {
+      await supabase.from("documents").insert({
+        team_id: teamId || null,
+        file_url: `${publicUrl}?t=${Date.now()}`,
+        file_type: file.type,
+        file_name: file.name,
+        document_category:
+          category === "liberatoria"
+            ? "liberatoria"
+            : category === "regolamento"
+            ? "regolamento"
+            : "altro",
+      });
     }
   }
   } catch (err) {
@@ -415,6 +444,35 @@ export default function AltroPage() {
       alert("Errore durante l'eliminazione");
     }
   };
+
+  const handleDeleteSponsor = async (sponsor: Sponsor) => {
+  if (!confirm(`Eliminare ${sponsor.name}?`)) return;
+
+  const supabase = createClient();
+
+  try {
+    const path = decodeURIComponent(
+      sponsor.logoUrl
+        .split("/storage/v1/object/public/tournament-files/")[1]
+        .split("?")[0]
+    );
+
+    await supabase.storage
+      .from("tournament-files")
+      .remove([path]);
+
+    await supabase
+      .from("sponsors")
+      .delete()
+      .eq("id", sponsor.id);
+
+    setSponsors(prev => prev.filter(s => s.id !== sponsor.id));
+
+  } catch (err) {
+    console.error(err);
+    alert("Errore eliminazione sponsor");
+  }
+};
 
   const toggleSection = (sectionId: SectionId) => {
     setOpenSection(openSection === sectionId ? null : sectionId);
@@ -672,12 +730,32 @@ export default function AltroPage() {
                       <h2 className="text-lg font-black text-[#581C24] uppercase tracking-wider mb-4">Sponsor Ufficiali</h2>
                       {sponsors.length > 0 ? (
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                          {sponsors.map(s => (
-                            <div key={s.id} className="aspect-square rounded-lg overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center relative group">
-                              <Image src={s.logoUrl} alt={s.name} fill className="object-contain p-2" />
-                              {s.website && <a href={s.website} target="_blank" rel="noopener noreferrer" className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-sm">VISITA SITO</a>}
+                          { sponsors.map(s => (
+                            <div key={s.id} className="relative group">
+                              <a
+                                href={s.logoUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block aspect-square rounded-xl overflow-hidden border bg-white"
+                              >
+                                <Image
+                                  src={s.logoUrl}
+                                  alt={s.name}
+                                  fill
+                                  className="object-contain p-3"
+                                />
+                              </a>
+                          
+                              {isStaffMode && (
+                                <button
+                                  onClick={() => handleDeleteSponsor(s)}
+                                  className="absolute top-2 right-2 bg-white rounded-full p-2 shadow hover:bg-red-50 text-red-600 opacity-0 group-hover:opacity-100 transition"
+                                >
+                                  {/* SVG cestino */}
+                                </button>
+                              )}
                             </div>
-                          ))}
+                          )) }
                         </div>
                       ) : <p className="text-gray-500 text-center py-8">Nessuno sponsor pubblicato.</p>}
                       {isStaffMode && (
