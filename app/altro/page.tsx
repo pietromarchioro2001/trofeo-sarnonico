@@ -308,25 +308,46 @@ export default function AltroPage() {
             ? "regolamento"
             : "altro",
       });
+          // ===== Refresh REGOLAMENTO =====
+    if (category === "regolamento") {
+      const { data: refreshed } = await supabase
+        .from("documents")
+        .select("*")
+        .eq("document_category", "regolamento")
+        .order("uploaded_at", { ascending: false });
+
+      setRegolamentoDocs(
+        (refreshed ?? []).map(d => ({
+          id: d.id,
+          url: d.file_url,
+          fileName: d.file_name,
+          uploadedAt: d.uploaded_at,
+          uploadedBy: d.uploaded_by ?? "",
+        }))
+      );
+
+      alert("✅ Regolamento aggiornato!");
     }
 
-    const { data: refreshed } = await supabase
-      .from("documents")
-      .select("*")
-      .eq("document_category", "regolamento")
-      .order("uploaded_at", { ascending: false });
-    
-    setRegolamentoDocs(
-      (refreshed ?? []).map(d => ({
-        id: d.id,
-        url: d.file_url,
-        fileName: d.file_name,
-        uploadedAt: d.uploaded_at,
-        uploadedBy: d.uploaded_by ?? "",
-      }))
-    );
-    
-    alert("✅ Regolamento aggiornato!");
+    // ===== Refresh EVENTI =====
+    if (category === "evento") {
+      const { data: eventiRefresh } = await supabase
+        .from("documents")
+        .select("*")
+        .eq("document_category", "altro")
+        .order("uploaded_at", { ascending: false });
+
+      setEventi(
+        (eventiRefresh ?? []).map(d => ({
+          id: d.id,
+          url: d.file_url,
+          type: d.file_type === "application/pdf" ? "pdf" : "image",
+          uploadedAt: d.uploaded_at,
+        }))
+      );
+
+      alert("✅ Evento caricato!");
+    }
 
   } catch (err) {
     console.error(err);
@@ -335,21 +356,6 @@ export default function AltroPage() {
     setLoading(false);
   }
 };
-
-  const { data: eventiRefresh } = await supabase
-  .from("documents")
-  .select("*")
-  .eq("document_category", "altro")
-  .order("uploaded_at", { ascending: false });
-
-setEventi(
-  (eventiRefresh ?? []).map(d => ({
-    id: d.id,
-    url: d.file_url,
-    type: d.file_type === "pdf" ? "pdf" : "image",
-    uploadedAt: d.uploaded_at,
-  }))
-);
 
   const handleDeleteRegolamento = async (doc: UploadedDocument) => {
   if (!confirm(`Eliminare "${doc.fileName}"?`)) return;
