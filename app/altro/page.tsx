@@ -290,10 +290,21 @@ export default function AltroPage() {
           name: file.name.replace(/\.[^/.]+$/, ""),
           logo_url: `${publicUrl}?t=${Date.now()}`,
           website_url: null,
-          display_order: sponsors.length + i,
         });
       
-        continue;
+        const { data } = await supabase
+          .from("sponsors")
+          .select("id,name,logo_url,website_url")
+          .order("display_order", { ascending: true });
+      
+        setSponsors((data ?? []).map(s => ({
+          id: s.id,
+          name: s.name,
+          logoUrl: s.logo_url,
+          website: s.website_url ?? undefined,
+        })));
+      
+        continue; // IMPORTANTISSIMO
       }
 
       if (category === "regolamento") {
