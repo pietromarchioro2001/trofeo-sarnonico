@@ -1379,14 +1379,16 @@ export const AdminRegolamentoManager: React.FC<AdminRegolamentoManagerProps> = (
       .insert({
         file_name: file.name,
         file_url: publicUrl,
-        file_type: "pdf",
+        file_type: "pdf",          // <-- ESATTAMENTE così
         document_category: "regolamento",
+        uploaded_by: null,
       })
       .select()
       .single();
     
     if (dbError) {
-      alert(dbError.message);
+      console.error("ERRORE DOCUMENTS:", dbError);
+      alert(JSON.stringify(dbError, null, 2));
       return;
     }
 
