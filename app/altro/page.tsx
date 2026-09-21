@@ -467,21 +467,22 @@ export default function AltroPage() {
                                 <span className="font-semibold">{doc.fileName}</span>
                               </div>
                           
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                 <a
                                   href={doc.url}
                                   target="_blank"
-                                  className="p-2 rounded-lg hover:bg-gray-200"
+                                  className="flex items-center gap-3 flex-1"
                                 >
-                                  <Download className="w-5 h-5 text-[#6B1E1E]" />
+                                  <FileDown className="w-5 h-5 text-[#6B1E1E]" />
+                                  <span className="font-medium">Scarica Regolamento</span>
                                 </a>
-                          
+                              
                                 {userRole === "staff" && (
                                   <button
                                     onClick={() => handleDeleteRegolamento(doc)}
-                                    className="p-2 rounded-lg hover:bg-red-100 text-red-600"
+                                    className="ml-2 p-2 rounded-lg hover:bg-red-50 text-red-600"
                                   >
-                                    <Trash2 className="w-5 h-5" />
+                                    <Trash2 className="w-4 h-4" />
                                   </button>
                                 )}
                               </div>
