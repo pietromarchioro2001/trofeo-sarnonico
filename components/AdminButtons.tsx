@@ -1051,7 +1051,7 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
     .eq("id", doc.id);
 
   // aggiorna ALTRO.tsx
-  onRegolamentoUpload(undefined as any);
+  onTemplateUpload(undefined as any);
 };
 
   const handleTeamDocumentUpload = (teamId: string, e: React.ChangeEvent<HTMLInputElement>) => {
