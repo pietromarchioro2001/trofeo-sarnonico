@@ -238,8 +238,12 @@ export default function AltroPage() {
       }
 
       else if (category === "evento") {
-        fileName = `evento_${crypto.randomUUID()}.${ext}`;
-      }
+          const cleanName = file.name
+            .replace(/\.[^/.]+$/, "")
+            .replace(/[^a-zA-Z0-9_-]/g, "_");
+        
+          fileName = `evento_${cleanName}_${Date.now()}.${ext}`;
+        }
 
       else if (category === "liberatoria") {
         const cleanName = file.name
@@ -332,6 +336,21 @@ export default function AltroPage() {
   }
 };
 
+  const { data: eventiRefresh } = await supabase
+  .from("documents")
+  .select("*")
+  .eq("document_category", "altro")
+  .order("uploaded_at", { ascending: false });
+
+setEventi(
+  (eventiRefresh ?? []).map(d => ({
+    id: d.id,
+    url: d.file_url,
+    type: d.file_type === "pdf" ? "pdf" : "image",
+    uploadedAt: d.uploaded_at,
+  }))
+);
+
   const handleDeleteRegolamento = async (doc: UploadedDocument) => {
   if (!confirm(`Eliminare "${doc.fileName}"?`)) return;
 
@@ -355,6 +374,36 @@ export default function AltroPage() {
     setRegolamentoDocs(prev => prev.filter(d => d.id !== doc.id));
 
     alert("✅ Regolamento eliminato");
+  } catch (err) {
+    console.error(err);
+    alert("Errore durante l'eliminazione");
+  }
+};
+
+  const handleDeleteEvento = async (doc: EventoProloco) => {
+  if (!confirm("Eliminare questo documento?")) return;
+
+  const supabase = createClient();
+
+  try {
+    const storagePath = doc.url
+      .split("/tournament-files/")[1]
+      ?.split("?")[0];
+
+    if (storagePath) {
+      await supabase.storage
+        .from("tournament-files")
+        .remove([storagePath]);
+    }
+
+    await supabase
+      .from("documents")
+      .delete()
+      .eq("id", doc.id);
+
+    setEventi(prev => prev.filter(e => e.id !== doc.id));
+
+    alert("✅ Documento eliminato");
   } catch (err) {
     console.error(err);
     alert("Errore durante l'eliminazione");
