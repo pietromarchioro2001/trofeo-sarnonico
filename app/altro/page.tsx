@@ -184,6 +184,21 @@ export default function AltroPage() {
           });
         }
 
+        // REGOLAMENTO
+        const regolamento = docsData?.find(
+          d => d.document_category === "regolamento"
+        );
+        
+        if (regolamento) {
+          setRegolamentoDoc({
+            id: regolamento.id,
+            url: regolamento.file_url,
+            fileName: regolamento.file_name,
+            uploadedAt: regolamento.uploaded_at,
+            uploadedBy: regolamento.uploaded_by ?? "",
+          });
+        }
+
         const { count: finalPhaseCount } = await supabase
           .from('matches')
           .select('*', { count: 'exact', head: true })
