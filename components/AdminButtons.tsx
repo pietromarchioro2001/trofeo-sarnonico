@@ -1373,9 +1373,10 @@ export const AdminRegolamentoManager: React.FC<AdminRegolamentoManagerProps> = (
       .from("documents")
       .insert({
         file_name: file.name,
-        file_url: data.publicUrl,
-        file_type: "pdf",
+        file_url: publicUrl,
+        file_type: "document",
         document_category: "regolamento",
+        uploaded_by: "staff",
       })
       .select()
       .single();
