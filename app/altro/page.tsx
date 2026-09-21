@@ -170,7 +170,7 @@ export default function AltroPage() {
           }
         }
 
-        const template = docsData.find(
+        const template = docsData?.find(
           d => d.document_category === "template_liberatoria"
         );
         
