@@ -1011,7 +1011,7 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
     .insert({
       file_name: file.name,
       file_url: data.publicUrl,
-      file_type: "application/pdf",
+      file_type: "pdf",
       document_category: "template_liberatoria",
     })
     .select()
