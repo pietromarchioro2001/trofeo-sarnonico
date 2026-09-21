@@ -1338,6 +1338,123 @@ export const AdminMultiUpload: React.FC<AdminMultiUploadProps> = ({ items, onUpl
   );
 };
 
+interface AdminRegolamentoManagerProps {
+  regolamento?: UploadedDocument;
+  onUpload: (doc: UploadedDocument) => void;
+}
+
+export const AdminRegolamentoManager: React.FC<AdminRegolamentoManagerProps> = ({
+  regolamento,
+  onUpload,
+}) => {
+  const supabase = createClient();
+
+  const handleUpload = async (file: File) => {
+    const fileName = `regolamento_${Date.now()}.pdf`;
+    const path = `documents/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("tournament-files")
+      .upload(path, file, {
+        contentType: "application/pdf",
+        upsert: true,
+      });
+
+    if (uploadError) {
+      alert(uploadError.message);
+      return;
+    }
+
+    const { data } = supabase.storage
+      .from("tournament-files")
+      .getPublicUrl(path);
+
+    const { data: row, error: dbError } = await supabase
+      .from("documents")
+      .insert({
+        file_name: file.name,
+        file_url: data.publicUrl,
+        file_type: "pdf",
+        document_category: "regolamento",
+      })
+      .select()
+      .single();
+
+    if (dbError) {
+      alert(dbError.message);
+      return;
+    }
+
+    onUpload({
+      id: row.id,
+      url: row.file_url,
+      fileName: row.file_name,
+      uploadedAt: row.uploaded_at,
+      uploadedBy: "staff",
+    });
+  };
+
+  const handleDelete = async () => {
+    if (!regolamento) return;
+
+    const storagePath = regolamento.url.split("/documents/")[1];
+
+    if (storagePath) {
+      await supabase.storage
+        .from("tournament-files")
+        .remove([`documents/${storagePath}`]);
+    }
+
+    await supabase
+      .from("documents")
+      .delete()
+      .eq("id", regolamento.id);
+
+    onUpload(undefined as any);
+  };
+
+  return (
+    <div className="bg-white rounded-xl p-4 shadow-sm border space-y-3">
+      <div className="flex justify-between items-center">
+        <h3 className="text-xl font-bebas text-[#6B1E1E]">
+          REGOLAMENTO
+        </h3>
+
+        {regolamento && (
+          <button onClick={handleDelete}>
+            <Trash2 className="w-4 h-4 text-red-600" />
+          </button>
+        )}
+      </div>
+
+      {!regolamento ? (
+        <label className="border-2 border-dashed rounded-xl p-6 flex flex-col items-center cursor-pointer">
+          <Upload className="w-8 h-8 mb-2 text-[#581C24]" />
+          <span>Carica PDF regolamento</span>
+
+          <input
+            type="file"
+            accept=".pdf"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleUpload(file);
+            }}
+          />
+        </label>
+      ) : (
+        <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+          <span>{regolamento.fileName}</span>
+
+          <a href={regolamento.url} download>
+            <Download className="w-5 h-5 text-[#581C24]" />
+          </a>
+        </div>
+      )}
+    </div>
+  );
+};
+
 interface AdminContactsEditorProps {
   contacts: ContattiData;
   onSave: (contacts: ContattiData) => void;
