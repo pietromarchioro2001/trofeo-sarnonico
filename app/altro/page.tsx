@@ -190,14 +190,16 @@ export default function AltroPage() {
         );
         
         if (regolamento) {
-          setRegolamentoDoc({
-            id: regolamento.id,
-            url: regolamento.file_url,
-            fileName: regolamento.file_name,
-            uploadedAt: regolamento.uploaded_at,
-            uploadedBy: regolamento.uploaded_by ?? "",
-          });
-        }
+            setRegolamentoDocs([
+              {
+                id: regolamento.id,
+                url: regolamento.file_url,
+                fileName: regolamento.file_name,
+                uploadedAt: regolamento.uploaded_at,
+                uploadedBy: regolamento.uploaded_by ?? "",
+              },
+            ]);
+          }
 
         const { count: finalPhaseCount } = await supabase
           .from('matches')
