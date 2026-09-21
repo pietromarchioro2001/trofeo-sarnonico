@@ -170,6 +170,20 @@ export default function AltroPage() {
           }
         }
 
+        const template = docsData.find(
+          d => d.document_category === "template_liberatoria"
+        );
+        
+        if (template) {
+          setTemplateDoc({
+            id: template.id,
+            url: template.file_url,
+            fileName: template.file_name,
+            uploadedAt: template.uploaded_at,
+            uploadedBy: template.uploaded_by,
+          });
+        }
+
         const { count: finalPhaseCount } = await supabase
           .from('matches')
           .select('*', { count: 'exact', head: true })
