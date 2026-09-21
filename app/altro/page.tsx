@@ -103,7 +103,7 @@ export default function AltroPage() {
   const [teamsLiberatorie, setTeamsLiberatorie] = useState<TeamLiberatorie[]>([]);
   const [templateDoc, setTemplateDoc] = useState<UploadedDocument | undefined>(undefined);
   const [alboDoro, setAlboDoro] = useState<AlboDoroData | null>(null);
-  const [regolamentoDocs, setRegolamentoDocs] = useState<EventoProloco[]>([]);
+  const [regolamentoDocs, setRegolamentoDocs] = useState<UploadedDocument[]>([]);
   const [eventi, setEventi] = useState<EventoProloco[]>([]);
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [contatti, setContatti] = useState<ContattiData>({
@@ -142,9 +142,17 @@ export default function AltroPage() {
           .order('uploaded_at', { ascending: false });
 
         if (docsData) {
-          setRegolamentoDocs(docsData.filter(d => d.document_category === 'regolamento').map(d => ({
-            id: d.id, url: d.file_url, type: d.file_type.includes('pdf') ? 'pdf' : 'image', uploadedAt: d.uploaded_at
-          })));
+          setRegolamentoDocs(
+              docsData
+                .filter(d => d.document_category === "regolamento")
+                .map(d => ({
+                  id: d.id,
+                  url: d.file_url,
+                  fileName: d.file_name,
+                  uploadedAt: d.uploaded_at,
+                  uploadedBy: d.uploaded_by ?? "",
+                }))
+            );
           
           setEventi(docsData.filter(d => d.document_category === 'altro').map(d => ({
             id: d.id, url: d.file_url, type: d.file_type.includes('pdf') ? 'pdf' : 'image', uploadedAt: d.uploaded_at
@@ -182,17 +190,6 @@ export default function AltroPage() {
             uploadedAt: template.uploaded_at,
             uploadedBy: template.uploaded_by,
           });
-        }
-
-        // REGOLAMENTO
-        const regolamento = docsData?.find(
-          d => d.document_category === "regolamento"
-        );
-        
-        if (regolamento) {
-          setRegolamentoDocs([
-            regolamento
-          ]);
         }
 
         const { count: finalPhaseCount } = await supabase
@@ -309,8 +306,23 @@ export default function AltroPage() {
       });
     }
 
-    alert("✅ Caricamento completato!");
-    window.location.reload();
+    const { data: refreshed } = await supabase
+      .from("documents")
+      .select("*")
+      .eq("document_category", "regolamento")
+      .order("uploaded_at", { ascending: false });
+    
+    setRegolamentoDocs(
+      (refreshed ?? []).map(d => ({
+        id: d.id,
+        url: d.file_url,
+        fileName: d.file_name,
+        uploadedAt: d.uploaded_at,
+        uploadedBy: d.uploaded_by ?? "",
+      }))
+    );
+    
+    alert("✅ Regolamento aggiornato!");
 
   } catch (err) {
     console.error(err);
