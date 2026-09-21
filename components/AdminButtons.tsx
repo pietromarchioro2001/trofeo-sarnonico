@@ -1033,27 +1033,6 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
   });
 };
 
-  const handleDeleteRegolamento = async (doc: UploadedDocument) => {
-  const supabase = createClient();
-
-  // elimina dallo Storage
-  const storagePath = doc.url.split("/tournament-files/")[1];
-  if (storagePath) {
-    await supabase.storage
-      .from("tournament-files")
-      .remove([storagePath]);
-  }
-
-  // elimina dalla tabella documents
-  await supabase
-    .from("documents")
-    .delete()
-    .eq("id", doc.id);
-
-  // aggiorna ALTRO.tsx
-  onTemplateUpload(undefined as any);
-};
-
   const handleTeamDocumentUpload = (teamId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -1393,26 +1372,23 @@ export const AdminRegolamentoManager: React.FC<AdminRegolamentoManagerProps> = (
       .getPublicUrl(path);
     
     const publicUrl = publicData.publicUrl;
-    
-    // Salva nella tabella documents
+
     const { data: row, error: dbError } = await supabase
       .from("documents")
       .insert({
         file_name: file.name,
         file_url: publicUrl,
-        file_type: "pdf",          // <-- ESATTAMENTE così
+        file_type: "pdf",
         document_category: "regolamento",
-        uploaded_by: null,
       })
       .select()
       .single();
     
     if (dbError) {
-      console.error("ERRORE DOCUMENTS:", dbError);
-      alert(JSON.stringify(dbError, null, 2));
+      alert(dbError.message);
       return;
     }
-
+    
     onUpload({
       id: row.id,
       url: row.file_url,
@@ -1429,8 +1405,8 @@ export const AdminRegolamentoManager: React.FC<AdminRegolamentoManagerProps> = (
 
     if (storagePath) {
       await supabase.storage
-        .from("tournament-files")
-        .remove([`documents/${storagePath}`]);
+      .from("tournament-files")
+      .remove([storagePath]);
     }
 
     await supabase
