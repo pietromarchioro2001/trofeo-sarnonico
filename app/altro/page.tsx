@@ -458,10 +458,29 @@ export default function AltroPage() {
                       {regolamentoDocs.length > 0 ? (
                         <div className="grid grid-cols-1 gap-3">
                           {regolamentoDocs.map(doc => (
-                            <a key={doc.id} href={doc.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                              <svg className="w-5 h-5 text-[#581C24]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                              <span className="font-bold text-sm text-[#581C24]">Scarica Regolamento</span>
-                            </a>
+                            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                              <a
+                                href={regolamentoDoc.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-3 flex-1"
+                              >
+                                <FileDown className="w-6 h-6 text-[#581C24]" />
+                                <span className="font-bold text-[#581C24]">
+                                  Scarica Regolamento
+                                </span>
+                              </a>
+                            
+                              {userRole === "staff" && (
+                                <button
+                                  onClick={() => handleDeleteRegolamento(regolamentoDoc)}
+                                  className="ml-3 p-2 rounded-lg text-red-600 hover:bg-red-50 transition"
+                                  title="Elimina regolamento"
+                                >
+                                  <Trash2 className="w-5 h-5" />
+                                </button>
+                              )}
+                            </div>
                           ))}
                         </div>
                       ) : (
