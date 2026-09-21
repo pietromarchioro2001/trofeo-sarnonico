@@ -348,7 +348,7 @@ export default function AltroPage() {
 
       alert("✅ Evento caricato!");
     }
-
+  }
   } catch (err) {
     console.error(err);
     alert("Errore nel caricamento dei documenti");
