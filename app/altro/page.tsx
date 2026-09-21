@@ -740,7 +740,19 @@ export default function AltroPage() {
                                   onClick={() => handleDeleteSponsor(s)}
                                   className="absolute top-2 right-2 bg-white rounded-full p-2 shadow hover:bg-red-50 text-red-600 opacity-0 group-hover:opacity-100 transition"
                                 >
-                                  {/* SVG cestino */}
+                                  <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M19 7H5M10 11v6M14 11v6M6 7l1 13a2 2 0 002 2h6a2 2 0 002-2l1-13M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"
+                                    />
+                                  </svg>
                                 </button>
                               )}
                             </div>
