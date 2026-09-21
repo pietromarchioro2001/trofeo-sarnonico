@@ -1353,33 +1353,38 @@ export const AdminRegolamentoManager: React.FC<AdminRegolamentoManagerProps> = (
     const fileName = `regolamento_${Date.now()}.pdf`;
     const path = `documents/${fileName}`;
 
+    // Upload nello Storage
     const { error: uploadError } = await supabase.storage
       .from("tournament-files")
       .upload(path, file, {
         contentType: "application/pdf",
         upsert: true,
       });
-
+    
     if (uploadError) {
       alert(uploadError.message);
       return;
     }
-
-    const { data } = supabase.storage
+    
+    // Ottieni URL pubblico
+    const { data: publicData } = supabase.storage
       .from("tournament-files")
       .getPublicUrl(path);
-
+    
+    const publicUrl = publicData.publicUrl;
+    
+    // Salva nella tabella documents
     const { data: row, error: dbError } = await supabase
       .from("documents")
       .insert({
         file_name: file.name,
         file_url: publicUrl,
-        file_type: "document",
+        file_type: "pdf",
         document_category: "regolamento",
       })
       .select()
       .single();
-  
+    
     if (dbError) {
       alert(dbError.message);
       return;
