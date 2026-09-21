@@ -989,54 +989,47 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
   const path = `documents/${fileName}`;
   
   const { error: uploadError } = await supabase.storage
-      .from("tournament-files")
-      .upload(path, file, {
-        contentType: "application/pdf",
-        upsert: true,
-      })
-    
-    if (uploadError) {
-      alert(uploadError.message);
-      return;
-    }
+    .from("tournament-files")
+    .upload(path, file, {
+      contentType: "application/pdf",
+      upsert: true,
+    });
   
-    // 2. URL pubblico
-    const { data } = supabase.storage
-      .from("tournament-files")
-      .getPublicUrl(path);
+  if (uploadError) {
+    alert(uploadError.message);
+    return;
+  }
   
-    // 3. Riga database
-    const { data: row, error } = await supabase
-      .from("documents")
-      .insert({
-        file_name: file.name,
-        file_url: data.publicUrl,
-        document_category: "template_liberatoria",
-        uploaded_by: "staff",
-      })
-      .select()
-      .single();
+  // URL pubblico del file
+  const { data } = supabase.storage
+    .from("tournament-files")
+    .getPublicUrl(path);
   
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    await supabase.from("tournament-files").insert({
+  // Salva il documento nel database
+  const { data: row, error: dbError } = await supabase
+    .from("documents")
+    .insert({
       file_name: file.name,
       file_url: data.publicUrl,
       file_type: "application/pdf",
       document_category: "template_liberatoria",
-      uploaded_by: "staff",
-    });
+    })
+    .select()
+    .single();
   
-    onTemplateUpload({
-      id: row.id,
-      url: row.file_url,
-      fileName: row.file_name,
-      uploadedAt: row.uploaded_at,
-      uploadedBy: row.uploaded_by,
-    });
+  if (dbError) {
+    alert(dbError.message);
+    return;
+  }
+  
+  // Aggiorna l'interfaccia
+  onTemplateUpload({
+    id: row.id,
+    url: row.file_url,
+    fileName: row.file_name,
+    uploadedAt: row.uploaded_at,
+    uploadedBy: "staff",
+  });
   };
 
   const handleTeamDocumentUpload = (teamId: string, e: React.ChangeEvent<HTMLInputElement>) => {
