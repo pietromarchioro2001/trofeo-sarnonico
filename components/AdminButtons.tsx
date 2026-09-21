@@ -2,7 +2,7 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import { X, Upload, Trash2, Download, Eye } from 'lucide-react';
+import { X, Upload, FileDown, Trash2, Download, Eye } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 // ==================== TIPI DATI (NUOVI) ====================
