@@ -1376,7 +1376,6 @@ export const AdminRegolamentoManager: React.FC<AdminRegolamentoManagerProps> = (
         file_url: publicUrl,
         file_type: "document",
         document_category: "regolamento",
-        uploaded_by: "staff",
       })
       .select()
       .single();
