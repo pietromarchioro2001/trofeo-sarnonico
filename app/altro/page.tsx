@@ -463,7 +463,19 @@ export default function AltroPage() {
                               className="flex items-center justify-between p-4 bg-gray-50 rounded-xl"
                             >
                               <div className="flex items-center gap-3">
-                                <FileDown className="w-5 h-5 text-[#6B1E1E]" />
+                                <svg
+                                  className="w-5 h-5 text-[#6B1E1E]"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M12 10v6m0 0l-3-3m3 3l3-3M5 20h14"
+                                  />
+                                </svg>
                                 <span className="font-semibold">{doc.fileName}</span>
                               </div>
                           
@@ -473,16 +485,40 @@ export default function AltroPage() {
                                   target="_blank"
                                   className="flex items-center gap-3 flex-1"
                                 >
-                                  <FileDown className="w-5 h-5 text-[#6B1E1E]" />
+                                  <svg
+                                    className="w-5 h-5 text-[#6B1E1E]"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M12 10v6m0 0l-3-3m3 3l3-3M5 20h14"
+                                    />
+                                  </svg>
                                   <span className="font-medium">Scarica Regolamento</span>
                                 </a>
                               
-                                {userRole === "staff" && (
+                                {isStaffMode && (
                                   <button
                                     onClick={() => handleDeleteRegolamento(doc)}
                                     className="ml-2 p-2 rounded-lg hover:bg-red-50 text-red-600"
                                   >
-                                    <Trash2 className="w-4 h-4" />
+                                    <svg
+                                      className="w-4 h-4"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M19 7L5 7M10 11v6M14 11v6M6 7l1 13a2 2 0 002 2h6a2 2 0 002-2l1-13M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"
+                                      />
+                                    </svg>
                                   </button>
                                 )}
                               </div>
