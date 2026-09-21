@@ -985,16 +985,16 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
   const supabase = createClient();
 
   const handleTemplateUpload = async (file: File) => {
-    const fileName = `template_${Date.now()}.pdf`;
+  const fileName = `template_${Date.now()}.pdf`;
+  const path = `documents/${fileName}`;
   
-    // 1. Upload Storage
-    const { error: uploadError } = await supabase.storage
-      .from("documents")
-      .upload(fileName, file, {
+  const { error: uploadError } = await supabase.storage
+      .from("tournament-files")
+      .upload(path, file, {
         contentType: "application/pdf",
         upsert: true,
-      });
-  
+      })
+    
     if (uploadError) {
       alert(uploadError.message);
       return;
@@ -1002,8 +1002,8 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
   
     // 2. URL pubblico
     const { data } = supabase.storage
-      .from("documents")
-      .getPublicUrl(fileName);
+      .from("tournament-files")
+      .getPublicUrl(path);
   
     // 3. Riga database
     const { data: row, error } = await supabase
@@ -1021,6 +1021,14 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
       alert(error.message);
       return;
     }
+
+    await supabase.from("tournament-files").insert({
+      file_name: file.name,
+      file_url: data.publicUrl,
+      file_type: "application/pdf",
+      document_category: "template_liberatoria",
+      uploaded_by: "staff",
+    });
   
     onTemplateUpload({
       id: row.id,
@@ -1056,7 +1064,7 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
 
     if (storagePath) {
       await supabase.storage
-        .from("documents")
+        .from("tournament-files")
         .remove([storagePath]);
     }
 
