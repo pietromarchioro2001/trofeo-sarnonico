@@ -155,7 +155,7 @@ export default function AltroPage() {
             );
           
           setEventi(docsData.filter(d => d.document_category === 'altro').map(d => ({
-            id: d.id, url: d.file_url, type: d.file_type.includes('pdf') ? 'pdf' : 'image', uploadedAt: d.uploaded_at
+            id: d.id, url: d.file_url, type: d.file_type === "application/pdf" ? "pdf" : "image", uploadedAt: d.uploaded_at
           })));
 
           const { data: teamsData } = await supabase.from('teams').select('id, name');
@@ -381,34 +381,34 @@ setEventi(
 };
 
   const handleDeleteEvento = async (doc: EventoProloco) => {
-  if (!confirm("Eliminare questo documento?")) return;
-
-  const supabase = createClient();
-
-  try {
-    const storagePath = doc.url
-      .split("/tournament-files/")[1]
-      ?.split("?")[0];
-
-    if (storagePath) {
+    if (!confirm("Eliminare questo documento?")) return;
+  
+    const supabase = createClient();
+  
+    try {
+      // ricava il percorso nello Storage
+      const path = decodeURIComponent(
+        doc.url.split("/storage/v1/object/public/tournament-files/")[1].split("?")[0]
+      );
+  
+      // elimina dallo Storage
       await supabase.storage
         .from("tournament-files")
-        .remove([storagePath]);
+        .remove([path]);
+  
+      // elimina dalla tabella documents
+      await supabase
+        .from("documents")
+        .delete()
+        .eq("id", doc.id);
+  
+      // aggiorna la UI
+      setEventi(prev => prev.filter(e => e.id !== doc.id));
+    } catch (err) {
+      console.error(err);
+      alert("Errore durante l'eliminazione");
     }
-
-    await supabase
-      .from("documents")
-      .delete()
-      .eq("id", doc.id);
-
-    setEventi(prev => prev.filter(e => e.id !== doc.id));
-
-    alert("✅ Documento eliminato");
-  } catch (err) {
-    console.error(err);
-    alert("Errore durante l'eliminazione");
-  }
-};
+  };
 
   const toggleSection = (sectionId: SectionId) => {
     setOpenSection(openSection === sectionId ? null : sectionId);
@@ -602,9 +602,53 @@ setEventi(
                       {eventi.length > 0 ? (
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                           {eventi.map(ev => (
-                            <div key={ev.id} className="relative group aspect-square rounded-lg overflow-hidden bg-gray-100">
-                              {ev.type === 'image' ? <Image src={ev.url} alt="Evento" fill className="object-cover" /> : <div className="flex items-center justify-center h-full"><svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg></div>}
-                              <a href={ev.url} download className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></a>
+                            <div
+                              key={ev.id}
+                              className="flex items-center justify-between p-3 bg-gray-50 rounded-xl"
+                            >
+                              <a
+                                href={ev.url}
+                                target="_blank"
+                                className="flex items-center gap-3 flex-1"
+                              >
+                                {ev.type === "image" ? (
+                                  <Image
+                                    src={ev.url}
+                                    alt="Evento"
+                                    width={48}
+                                    height={48}
+                                    className="w-12 h-12 rounded-lg object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-12 h-12 rounded-lg bg-red-100 flex items-center justify-center">
+                                    <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                        d="M7 7h10v10H7z M9 3h6v4H9z" />
+                                    </svg>
+                                  </div>
+                                )}
+                          
+                                <div>
+                                  <p className="font-medium text-sm">
+                                    {ev.type === "image" ? "Immagine evento" : "PDF evento"}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    {new Date(ev.uploadedAt).toLocaleDateString("it-IT")}
+                                  </p>
+                                </div>
+                              </a>
+                          
+                              {isStaffMode && (
+                                <button
+                                  onClick={() => handleDeleteEvento(ev)}
+                                  className="ml-2 p-2 rounded-lg hover:bg-red-50 text-red-600"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                      d="M19 7H5M10 11v6M14 11v6M6 7l1 13a2 2 0 002 2h6a2 2 0 002-2l1-13M9 7V4h6v3"/>
+                                  </svg>
+                                </button>
+                              )}
                             </div>
                           ))}
                         </div>
