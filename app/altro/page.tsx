@@ -136,6 +136,22 @@ export default function AltroPage() {
           })));
         }
 
+        const { data: contactsData } = await supabase
+          .from("contacts")
+          .select("*")
+          .limit(1)
+          .single();
+        
+        if (contactsData) {
+          setContatti({
+            phone: contactsData.phone ?? "",
+            email: contactsData.email ?? "",
+            facebook: contactsData.facebook ?? "",
+            instagram: contactsData.instagram ?? "",
+            whatsapp: contactsData.whatsapp ?? "",
+          });
+        }
+
         const { data: docsData } = await supabase
           .from('documents')
           .select('*')
@@ -463,6 +479,42 @@ export default function AltroPage() {
   }
 };
 
+  const handleSaveContacts = async (newContacts: ContattiData) => {
+    const supabase = createClient();
+  
+    try {
+      const { data: existing } = await supabase
+        .from("contacts")
+        .select("id")
+        .limit(1)
+        .single();
+  
+      if (existing) {
+        await supabase
+          .from("contacts")
+          .update({
+            phone: newContacts.phone,
+            email: newContacts.email,
+            facebook: newContacts.facebook,
+            instagram: newContacts.instagram,
+            whatsapp: newContacts.whatsapp,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existing.id);
+      } else {
+        await supabase.from("contacts").insert({
+          ...newContacts,
+        });
+      }
+  
+      setContatti(newContacts);
+      alert("✅ Contatti aggiornati");
+    } catch (err) {
+      console.error(err);
+      alert("Errore durante il salvataggio");
+    }
+  };
+
   const toggleSection = (sectionId: SectionId) => {
     setOpenSection(openSection === sectionId ? null : sectionId);
   };
@@ -771,7 +823,10 @@ export default function AltroPage() {
                     <div>
                       <h2 className="text-lg font-black text-[#581C24] uppercase tracking-wider mb-4">Contatti</h2>
                       {isStaffMode ? (
-                        <AdminContactsEditor contacts={contatti} onSave={setContatti} />
+                        <AdminContactsEditor
+                          contacts={contatti}
+                          onSave={handleSaveContacts}
+                        />
                       ) : (
                         <div className="space-y-3">
                           {contatti.phone && <a href={`tel:${contatti.phone}`} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"><div className="w-10 h-10 bg-[#581C24]/10 rounded-full flex items-center justify-center"><svg className="w-5 h-5 text-[#581C24]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg></div><div><p className="text-xs font-bold text-gray-500 uppercase">Telefono</p><p className="text-sm font-bold text-[#581C24]">{contatti.phone}</p></div></a>}
