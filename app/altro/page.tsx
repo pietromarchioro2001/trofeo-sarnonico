@@ -332,6 +332,35 @@ export default function AltroPage() {
   }
 };
 
+  const handleDeleteRegolamento = async (doc: UploadedDocument) => {
+  if (!confirm(`Eliminare "${doc.fileName}"?`)) return;
+
+  const supabase = createClient();
+
+  try {
+    // Ricava il path dello Storage dall'URL pubblico
+    const storagePath = doc.url.split("/tournament-files/")[1]?.split("?")[0];
+
+    if (storagePath) {
+      await supabase.storage
+        .from("tournament-files")
+        .remove([storagePath]);
+    }
+
+    await supabase
+      .from("documents")
+      .delete()
+      .eq("id", doc.id);
+
+    setRegolamentoDocs(prev => prev.filter(d => d.id !== doc.id));
+
+    alert("✅ Regolamento eliminato");
+  } catch (err) {
+    console.error(err);
+    alert("Errore durante l'eliminazione");
+  }
+};
+
   const toggleSection = (sectionId: SectionId) => {
     setOpenSection(openSection === sectionId ? null : sectionId);
   };
@@ -456,13 +485,17 @@ export default function AltroPage() {
                     <div>
                       <h2 className="text-lg font-black text-[#581C24] uppercase tracking-wider mb-4">Regolamento</h2>
                       {regolamentoDocs.length > 0 ? (
-                        <div className="grid grid-cols-1 gap-3">
+                        <div className="space-y-3">
                           {regolamentoDocs.map((doc) => (
                             <div
                               key={doc.id}
-                              className="flex items-center justify-between p-4 bg-gray-50 rounded-xl"
+                              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                             >
-                              <div className="flex items-center gap-3">
+                              <a
+                                href={doc.url}
+                                target="_blank"
+                                className="flex items-center gap-3 flex-1"
+                              >
                                 <svg
                                   className="w-5 h-5 text-[#6B1E1E]"
                                   fill="none"
@@ -476,17 +509,17 @@ export default function AltroPage() {
                                     d="M12 10v6m0 0l-3-3m3 3l3-3M5 20h14"
                                   />
                                 </svg>
-                                <span className="font-semibold">{doc.fileName}</span>
-                              </div>
-                          
-                              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                <a
-                                  href={doc.url}
-                                  target="_blank"
-                                  className="flex items-center gap-3 flex-1"
+                        
+                                <span className="font-medium">{doc.fileName}</span>
+                              </a>
+                        
+                              {isStaffMode && (
+                                <button
+                                  onClick={() => handleDeleteRegolamento(doc)}
+                                  className="ml-2 p-2 rounded-lg hover:bg-red-50 text-red-600"
                                 >
                                   <svg
-                                    className="w-5 h-5 text-[#6B1E1E]"
+                                    className="w-4 h-4"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -495,33 +528,11 @@ export default function AltroPage() {
                                       strokeLinecap="round"
                                       strokeLinejoin="round"
                                       strokeWidth={2}
-                                      d="M12 10v6m0 0l-3-3m3 3l3-3M5 20h14"
+                                      d="M19 7H5M10 11v6M14 11v6M6 7l1 13a2 2 0 002 2h6a2 2 0 002-2l1-13M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"
                                     />
                                   </svg>
-                                  <span className="font-medium">Scarica Regolamento</span>
-                                </a>
-                              
-                                {isStaffMode && (
-                                  <button
-                                    onClick={() => handleDeleteRegolamento(doc)}
-                                    className="ml-2 p-2 rounded-lg hover:bg-red-50 text-red-600"
-                                  >
-                                    <svg
-                                      className="w-4 h-4"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M19 7L5 7M10 11v6M14 11v6M6 7l1 13a2 2 0 002 2h6a2 2 0 002-2l1-13M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"
-                                      />
-                                    </svg>
-                                  </button>
-                                )}
-                              </div>
+                                </button>
+                              )}
                             </div>
                           ))}
                         </div>
