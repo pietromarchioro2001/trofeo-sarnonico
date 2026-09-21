@@ -1033,6 +1033,27 @@ export const AdminLiberatorieManager: React.FC<AdminLiberatorieManagerProps> = (
   });
 };
 
+  const handleDeleteRegolamento = async (doc: UploadedDocument) => {
+  const supabase = createClient();
+
+  // elimina dallo Storage
+  const storagePath = doc.url.split("/tournament-files/")[1];
+  if (storagePath) {
+    await supabase.storage
+      .from("tournament-files")
+      .remove([storagePath]);
+  }
+
+  // elimina dalla tabella documents
+  await supabase
+    .from("documents")
+    .delete()
+    .eq("id", doc.id);
+
+  // aggiorna ALTRO.tsx
+  onRegolamentoUpload(undefined as any);
+};
+
   const handleTeamDocumentUpload = (teamId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
