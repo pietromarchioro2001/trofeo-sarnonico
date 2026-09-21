@@ -457,29 +457,34 @@ export default function AltroPage() {
                       <h2 className="text-lg font-black text-[#581C24] uppercase tracking-wider mb-4">Regolamento</h2>
                       {regolamentoDocs.length > 0 ? (
                         <div className="grid grid-cols-1 gap-3">
-                          {regolamentoDocs.map(doc => (
-                            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                              <a
-                                href={regolamentoDoc.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-3 flex-1"
-                              >
-                                <FileDown className="w-6 h-6 text-[#581C24]" />
-                                <span className="font-bold text-[#581C24]">
-                                  Scarica Regolamento
-                                </span>
-                              </a>
-                            
-                              {userRole === "staff" && (
-                                <button
-                                  onClick={() => handleDeleteRegolamento(regolamentoDoc)}
-                                  className="ml-3 p-2 rounded-lg text-red-600 hover:bg-red-50 transition"
-                                  title="Elimina regolamento"
+                          {regolamentoDocs.map((doc) => (
+                            <div
+                              key={doc.id}
+                              className="flex items-center justify-between p-4 bg-gray-50 rounded-xl"
+                            >
+                              <div className="flex items-center gap-3">
+                                <FileDown className="w-5 h-5 text-[#6B1E1E]" />
+                                <span className="font-semibold">{doc.fileName}</span>
+                              </div>
+                          
+                              <div className="flex items-center gap-2">
+                                <a
+                                  href={doc.url}
+                                  target="_blank"
+                                  className="p-2 rounded-lg hover:bg-gray-200"
                                 >
-                                  <Trash2 className="w-5 h-5" />
-                                </button>
-                              )}
+                                  <Download className="w-5 h-5 text-[#6B1E1E]" />
+                                </a>
+                          
+                                {userRole === "staff" && (
+                                  <button
+                                    onClick={() => handleDeleteRegolamento(doc)}
+                                    className="p-2 rounded-lg hover:bg-red-100 text-red-600"
+                                  >
+                                    <Trash2 className="w-5 h-5" />
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           ))}
                         </div>
