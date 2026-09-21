@@ -140,7 +140,7 @@ export default function AltroPage() {
           .from("contacts")
           .select("*")
           .limit(1)
-          .single();
+          .maybeSingle();
         
         if (contactsData) {
           setContatti({
