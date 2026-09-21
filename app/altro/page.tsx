@@ -190,19 +190,10 @@ export default function AltroPage() {
         );
         
         if (regolamento) {
-        setDocuments(prev => [
-          ...prev.filter(d => d.document_category !== "regolamento"),
-          {
-            id: regolamento.id,
-            file_name: regolamento.file_name,
-            file_url: regolamento.file_url,
-            file_type: "pdf",
-            document_category: "regolamento",
-            uploaded_at: regolamento.uploaded_at,
-            uploaded_by: regolamento.uploaded_by,
-          },
-        ]);
-      }
+          setRegolamentoDocs([
+            regolamento
+          ]);
+        }
 
         const { count: finalPhaseCount } = await supabase
           .from('matches')
