@@ -1,20 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-
-export interface TeamStats {
-  id: string
-  name: string
-  logo_url: string | null
-  pt: number
-  pg: number
-  v: number
-  p: number
-  s: number
-  gf: number
-  gs: number
-  dr: number
-}
+import type { TeamStats } from '@/components/AdminButtons'
 
 interface Props {
   gironeA: TeamStats[]
