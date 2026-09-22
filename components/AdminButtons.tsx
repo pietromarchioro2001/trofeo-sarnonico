@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { X, Upload, Trash2, Download, Eye } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import GironiSnapshot from '@/components/albo/GironiSnapshot'
 
 type TabType = "gironi" | "marcatori" | "fase-finale" | "media"
 
@@ -2507,20 +2508,12 @@ export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, cu
   
             <div className="p-4">
 
-            {previewTab === "gironi" && (
-              <div>
-                <h3 className="font-black text-[#581C24] mb-3">GIRONI</h3>
-          
-                <div className="bg-white rounded-xl border p-6 text-center">
-                  <svg className="w-10 h-10 mx-auto text-[#581C24]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 12h18M3 17h18"/>
-                  </svg>
-          
-                  <p className="font-bold mt-3">Screenshot Classifiche Gironi</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Verrà acquisito automaticamente dalla pagina CLASSIFICHE
-                  </p>
-                </div>
+            {previewTab === 'gironi' && (
+              <div id="preview-gironi">
+                <GironiSnapshot
+                  gironeA={standings.gironeA}
+                  gironeB={standings.gironeB}
+                />
               </div>
             )}
           
