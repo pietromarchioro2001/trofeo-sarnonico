@@ -8,6 +8,7 @@ import GironiSnapshot from '@/components/albo/GironiSnapshot';
 import MarcatoriSnapshot from '@/components/albo/MarcatoriSnapshot';
 import FaseFinaleSnapshot from '@/components/albo/FaseFinaleSnapshot'
 import { toBlob } from 'html-to-image';
+import { createClient } from "@/lib/supabase/client";
 
 type TabType = "gironi" | "marcatori" | "fase-finale" | "media"
 
@@ -175,44 +176,64 @@ export const AdminPartiteButton = ({ onMatchCreated }: { onMatchCreated?: () => 
   const filteredTeams = teams.filter(t => t.girone === selectedGroup);
 
   const handleSave = async () => {
-    if (!homeTeam || !awayTeam || !matchDate || !matchTime) { setError('⚠️ Compila tutti i campi!'); return; }
-    if (homeTeam === awayTeam) { setError('⚠️ Le squadre devono essere diverse!'); return; }
-    
+  if (!formData.winner || !formData.topScorer || !formData.mvp) return;
+
+  const year = formData.year || currentYear;
+
+  if (
+    !screenshotsRef.current.gironi ||
+    !screenshotsRef.current.marcatori ||
+    !screenshotsRef.current.faseFinale
+  ) {
+    alert("Screenshot non disponibili");
+    return;
+  }
+
+  setSaving(true);
+
+  try {
     const supabase = createClient();
-    
-    const matchId = crypto.randomUUID();
 
-    const { data, error } = await supabase
-      .from("matches")
-      .insert({
-        id: matchId,
-        home_team_id: homeTeam,
-        away_team_id: awayTeam,
-        match_date: matchDate,
-        match_time: matchTime,
-        status: "PROGRAMMATA",
-        phase: "GIRONI",
-        media_folder_path: `match-media/${matchId}`,
-      })
-      .select("id")
-      .single();
+    const files = [
+      { name: "gironi.png", blob: screenshotsRef.current.gironi },
+      { name: "marcatori.png", blob: screenshotsRef.current.marcatori },
+      { name: "fase-finale.png", blob: screenshotsRef.current.faseFinale },
+    ];
 
-    if (error) {
-      setError('Errore nel salvataggio');
-      return;
+    for (const file of files) {
+      await supabase.storage
+        .from("tournament-files")
+        .upload(
+          `albo-doro/${year}/${file.name}`,
+          file.blob!,
+          {
+            upsert: true,
+            contentType: "image/png",
+          }
+        );
     }
 
-    // ✅ 2. Genera automaticamente il post "In programma" in background
-    if (data?.id) {
-      fetch(`/api/matches/${data.id}/generate-post?type=PRE_MATCH`).catch(console.error);
-    }
+    await onSave({
+      year,
+      winner: formData.winner,
+      runnerUp: formData.runnerUp || "",
+      topScorer: formData.topScorer,
+      mvp: formData.mvp,
+      standings_snapshot: formData.standings_snapshot!,
+      scorers_snapshot: formData.scorers_snapshot!,
+      bracket_snapshot: formData.bracket_snapshot!,
+      media_zip_url: null,
+    });
 
-    alert('✅ Partita creata con successo!');
-    setIsOpen(false);
-    setHomeTeam(''); setAwayTeam(''); setMatchDate(''); setMatchTime(''); setError('');
-    
-    if (onMatchCreated) onMatchCreated();
-  };
+    setShowPassword(false);
+    alert("✅ Albo d'Oro salvato!");
+  } catch (e) {
+    console.error(e);
+    alert("Errore nel salvataggio");
+  } finally {
+    setSaving(false);
+  }
+};
 
   const handleClose = () => { setIsOpen(false); setHomeTeam(''); setAwayTeam(''); setMatchDate(''); setMatchTime(''); setError(''); };
 
@@ -264,7 +285,13 @@ export const AdminPartiteButton = ({ onMatchCreated }: { onMatchCreated?: () => 
             </div>
             <div className="p-4 border-t border-gray-200 flex gap-3">
               <button onClick={handleClose} className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 font-bold rounded-lg hover:bg-gray-50 transition-colors text-sm">Annulla</button>
-              <button onClick={handleSave} className="flex-1 px-4 py-2.5 bg-[#581C24] text-white font-bold rounded-lg hover:bg-[#581C24]/90 transition-colors text-sm shadow-md">SALVA</button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="flex-1 bg-[#581C24] text-white rounded-xl py-3 font-bold disabled:opacity-50"
+              >
+                {saving ? "SALVATAGGIO..." : "CONFERMA"}
+              </button>
             </div>
           </div>
         </div>
@@ -2439,6 +2466,7 @@ export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, cu
   const [previewTab, setPreviewTab] = useState<TabType>("gironi")
   const [password, setPassword] = useState("");
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const [previewStandings, setPreviewStandings] = useState<{
     gironeA: TeamStats[];
