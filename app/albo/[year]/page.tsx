@@ -416,7 +416,7 @@ export default function AlboDoroPage() {
             <h3 className="font-black text-[#581C24] uppercase">
               Media Trofeo {year}
             </h3>
-          
+        
             <p className="text-sm text-gray-500 mt-2 mb-5">
               Archivio completo delle fotografie del torneo.
             </p>
