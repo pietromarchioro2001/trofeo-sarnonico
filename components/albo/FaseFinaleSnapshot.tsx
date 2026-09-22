@@ -18,11 +18,35 @@ interface PhaseSectionProps {
 }
 
 function MatchCardView({ match }: { match: MatchCard }) {
+  const isFinished =
+    match.played &&
+    match.homeScore !== null &&
+    match.awayScore !== null
+
+  let homeWon = false
+  let awayWon = false
+
+  if (isFinished) {
+    if (match.homeScore! > match.awayScore!) {
+      homeWon = true
+    } else if (match.awayScore! > match.homeScore!) {
+      awayWon = true
+    }
+  }
+
+  const homeLost = isFinished && awayWon
+  const awayLost = isFinished && homeWon
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="px-3 py-3">
+
         {/* CASA */}
-        <div className="flex items-center justify-between gap-3">
+        <div
+          className={`flex items-center justify-between gap-3 transition-opacity ${
+            homeLost ? 'opacity-30' : ''
+          }`}
+        >
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <div className="w-7 h-7 rounded-full overflow-hidden bg-gray-100 flex-shrink-0 flex items-center justify-center">
               {match.homeLogo ? (
@@ -51,7 +75,11 @@ function MatchCardView({ match }: { match: MatchCard }) {
         </div>
 
         {/* OSPITE */}
-        <div className="flex items-center justify-between gap-3 mt-2">
+        <div
+          className={`flex items-center justify-between gap-3 mt-2 transition-opacity ${
+            awayLost ? 'opacity-30' : ''
+          }`}
+        >
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <div className="w-7 h-7 rounded-full overflow-hidden bg-gray-100 flex-shrink-0 flex items-center justify-center">
               {match.awayLogo ? (
