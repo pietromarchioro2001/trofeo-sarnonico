@@ -282,10 +282,9 @@ export const AdminPartiteButton = ({ onMatchCreated }: { onMatchCreated?: () => 
               <button onClick={handleClose} className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 font-bold rounded-lg hover:bg-gray-50 transition-colors text-sm">Annulla</button>
               <button
                 onClick={handleSave}
-                disabled={saving}
-                className="flex-1 bg-[#581C24] text-white rounded-xl py-3 font-bold disabled:opacity-50"
+                className="flex-1 bg-[#581C24] text-white rounded-xl py-3 font-bold"
               >
-                {saving ? "SALVATAGGIO..." : "CONFERMA"}
+                SALVA
               </button>
             </div>
           </div>
