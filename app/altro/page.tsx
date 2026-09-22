@@ -631,7 +631,15 @@ export default function AltroPage() {
                         </h2>
                   
                         {isStaffMode && (
-                          <AdminSaveAlboDoro />
+                          <AdminSaveAlboDoro
+                              currentYear={new Date().getFullYear()}
+                              onSave={async (data) => {
+                                console.log("Snapshot Albo d'Oro:", data);
+                            
+                                // Qui nel prossimo step salveremo tutto su Supabase
+                                // (classifiche, marcatori, bracket e media)
+                              }}
+                            />
                         )}
                       </div>
                   
