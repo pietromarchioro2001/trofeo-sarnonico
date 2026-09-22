@@ -2464,7 +2464,7 @@ export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, cu
             {/* Header */}
             <div className="relative h-40">
               <Image
-                src="/header-classifiche.jpg"
+                src="/header-standing.jpg"
                 alt="Albo d'Oro"
                 fill
                 className="object-cover"
