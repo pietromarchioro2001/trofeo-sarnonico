@@ -703,7 +703,16 @@ export default function AltroPage() {
                               // Aggiorna subito la lista Albo d'Oro
                               const { data: anni } = await supabase
                                 .from("albo_doro")
-                                .select("id, year, winner")
+                                .select(`
+                                  id,
+                                  year,
+                                  winner,
+                                  runner_up,
+                                  standings_snapshot,
+                                  scorers_snapshot,
+                                  bracket_snapshot,
+                                  media_zip_url
+                                `)
                                 .order("year", { ascending: false });
                           
                               setAlboDoro(
@@ -715,7 +724,7 @@ export default function AltroPage() {
                                   standings_snapshot: a.standings_snapshot,
                                   scorers_snapshot: a.scorers_snapshot,
                                   bracket_snapshot: a.bracket_snapshot,
-                                  media_zip_url: a.media_zip_url
+                                  media_zip_url: a.media_zip_url,
                                 }))
                               );
                           
