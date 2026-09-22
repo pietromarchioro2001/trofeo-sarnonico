@@ -656,14 +656,14 @@ export default function AltroPage() {
                           
                               const { error } = await supabase.from("albo_doro").insert({
                                 year: data.year,
-                                winner: data.winner,
-                                runner_up: data.runnerUp,
-                                standings_snapshot: data.groupStandings,
-                                scorers_snapshot: data.topScorers,
-                                bracket_snapshot: data.playoffBracket,
-                                media_zip_url: null
+                                winner: data.winnerTeam,
+                                runner_up: data.runnerUpTeam,
+                                standings_snapshot: data.standings_snapshot,
+                                scorers_snapshot: data.scorers_snapshot,
+                                bracket_snapshot: data.bracket_snapshot,
+                                media_zip_url: data.media_zip_url
                               });
-                          
+                                                        
                               if (error) {
                                 console.error(error);
                                 alert("Errore durante il salvataggio");
