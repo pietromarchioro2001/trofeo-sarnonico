@@ -97,8 +97,8 @@ export default function ClassifichePage() {
 
   const [standings, setStandings] = useState<{ gironeA: TeamStats[], gironeB: TeamStats[] }>({ gironeA: [], gironeB: [] });
   const [phaseMatches, setPhaseMatches] = useState<MatchData[]>([]);
-  const gironeA = standings.filter((t) => t.girone === "A");
-  const gironeB = standings.filter((t) => t.girone === "B");
+  const gironeA = standings.gironeA;
+  const gironeB = standings.gironeB;
   const [topScorers, setTopScorers] = useState<PlayerData[]>([]);
   const [barMeters, setBarMeters] = useState<BarMeterData[]>([]);
   const [liveMatchesMap, setLiveMatchesMap] = useState<Map<string, { matchId: string; score: string }>>(new Map());
