@@ -97,8 +97,31 @@ export default function ClassifichePage() {
 
   const [standings, setStandings] = useState<{ gironeA: TeamStats[], gironeB: TeamStats[] }>({ gironeA: [], gironeB: [] });
   const [phaseMatches, setPhaseMatches] = useState<MatchData[]>([]);
-  const gironeA = standings.gironeA;
-  const gironeB = standings.gironeB;
+  const gironeA = standings.gironeA.map((t) => ({
+  team: t.name,
+  logo: t.logo_url,
+  punti: t.pt,
+  giocate: t.pg,
+  vittorie: t.v,
+  pareggi: t.p,
+  sconfitte: t.s,
+  gol_fatti: t.gf,
+  gol_subiti: t.gs,
+  diff: t.dr,
+}));
+
+const gironeB = standings.gironeB.map((t) => ({
+  team: t.name,
+  logo: t.logo_url,
+  punti: t.pt,
+  giocate: t.pg,
+  vittorie: t.v,
+  pareggi: t.p,
+  sconfitte: t.s,
+  gol_fatti: t.gf,
+  gol_subiti: t.gs,
+  diff: t.dr,
+}));
   const [topScorers, setTopScorers] = useState<PlayerData[]>([]);
   const [barMeters, setBarMeters] = useState<BarMeterData[]>([]);
   const [liveMatchesMap, setLiveMatchesMap] = useState<Map<string, { matchId: string; score: string }>>(new Map());
