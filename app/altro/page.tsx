@@ -104,7 +104,6 @@ export default function AltroPage() {
   const [isTournamentLocked, setIsTournamentLocked] = useState(false);
   const [teamsLiberatorie, setTeamsLiberatorie] = useState<TeamLiberatorie[]>([]);
   const [templateDoc, setTemplateDoc] = useState<UploadedDocument | undefined>(undefined);
-  const [alboDoro, setAlboDoro] = useState<AlboDoroData | null>(null);
   const [regolamentoDocs, setRegolamentoDocs] = useState<UploadedDocument[]>([]);
   const [eventi, setEventi] = useState<EventoProloco[]>([]);
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
