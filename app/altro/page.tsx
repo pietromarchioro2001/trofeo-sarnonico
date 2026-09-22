@@ -12,7 +12,16 @@ import {
   AdminMultiUpload,
   AdminContactsEditor,
   AdminSaveAlboDoro,
-  type AlboDoroData,
+  type AlboDoroData = {
+    id?: string;
+    year: number;
+    winner: string;
+    runnerUp: string;
+    standings_snapshot: any;
+    scorers_snapshot: any;
+    bracket_snapshot: any;
+    media_zip_url?: string | null;
+  };
   type TeamLiberatorie,
   type UploadedDocument,
   type EventoProloco,
@@ -138,30 +147,30 @@ export default function AltroPage() {
         }
 
           const { data: alboData } = await supabase
-          .from("albo_doro")
-          .select(`
-            id,
-            year,
-            winner,
-            runner_up,
-            standings_snapshot,
-            scorers_snapshot,
-            bracket_snapshot,
-            media_zip_url
-          `)
-          .order("year", { ascending: false });
+            .from("albo_doro")
+            .select(`
+              id,
+              year,
+              winner,
+              runner_up,
+              standings_snapshot,
+              scorers_snapshot,
+              bracket_snapshot,
+              media_zip_url
+            `)
+            .order("year", { ascending: false });
                   
           if (alboData) {
             setAlboDoro(
-              (anni ?? []).map(a => ({
+              alboData.map(a => ({
                 id: a.id,
                 year: a.year,
                 winner: a.winner,
-                runnerUp: "",
-                standings_snapshot: { gironeA: [], gironeB: [] },
-                scorers_snapshot: [],
-                bracket_snapshot: { quarti: [], semifinali: [], finali: [] },
-                media_zip_url: null,
+                runnerUp: a.runner_up,
+                standings_snapshot: a.standings_snapshot,
+                scorers_snapshot: a.scorers_snapshot,
+                bracket_snapshot: a.bracket_snapshot,
+                media_zip_url: a.media_zip_url
               }))
             );
           }
@@ -688,7 +697,18 @@ export default function AltroPage() {
                                 .select("id, year, winner")
                                 .order("year", { ascending: false });
                           
-                              setAlboDoro(anni ?? []);
+                              setAlboDoro(
+                                (anni ?? []).map(a => ({
+                                  id: a.id,
+                                  year: a.year,
+                                  winner: a.winner,
+                                  runnerUp: a.runner_up,
+                                  standings_snapshot: a.standings_snapshot,
+                                  scorers_snapshot: a.scorers_snapshot,
+                                  bracket_snapshot: a.bracket_snapshot,
+                                  media_zip_url: a.media_zip_url
+                                }))
+                              );
                           
                               alert("🏆 Albo d'Oro salvato!");
                             }}
