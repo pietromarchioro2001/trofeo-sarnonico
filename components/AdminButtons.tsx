@@ -2379,6 +2379,9 @@ interface AdminSaveAlboDoroProps {
 export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, currentYear }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<AlboDoroData>>({ year: currentYear });
+  const [showPreview, setShowPreview] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [password, setPassword] = useState("");
   const handleSave = () => {
     if (formData.winner && formData.topScorer && formData.mvp) {
       onSave({
@@ -2396,7 +2399,7 @@ export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, cu
   };
   return (
     <>
-      <button onClick={() => setIsOpen(true)} className="w-full py-3 bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-[#581C24] font-black rounded-xl shadow-lg hover:shadow-xl transition-shadow text-sm uppercase tracking-wider">
+      <button onClick={() => setShowPreview(true)} className="w-full py-3 bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-[#581C24] font-black rounded-xl shadow-lg hover:shadow-xl transition-shadow text-sm uppercase tracking-wider">
         Salva nell'Albo d'Oro
       </button>
       {isOpen && (
@@ -2418,6 +2421,192 @@ export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, cu
             <div className="p-4 border-t border-gray-200 flex gap-3">
               <button onClick={() => setIsOpen(false)} className="flex-1 py-2.5 border border-gray-300 rounded-lg font-bold text-sm">Annulla</button>
               <button onClick={handleSave} className="flex-1 py-2.5 bg-[#581C24] text-white rounded-lg font-bold text-sm">Salva</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showPreview && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+          <div className="bg-[#F5F5F7] w-full max-w-md rounded-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+      
+            {/* HEADER */}
+            <div className="relative h-36">
+              <Image
+                src="/header-classifiche.jpg"
+                alt="Albo d'oro"
+                fill
+                className="object-cover"
+              />
+              <div className="absolute inset-0 bg-black/45" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <h2 className="text-white text-3xl font-black uppercase">
+                  {currentYear}
+                </h2>
+              </div>
+            </div>
+      
+            {/* Toolbar */}
+            <div className="bg-white px-3 py-2 flex gap-2 border-b sticky top-0">
+              {["GIRONI","MARCATORI","FASE FINALE","MEDIA"].map((tab)=>(
+                <div
+                  key={tab}
+                  className="text-[10px] font-bold bg-[#581C24] text-white px-2 py-1 rounded-full"
+                >
+                  {tab}
+                </div>
+              ))}
+            </div>
+      
+            <div className="p-4 space-y-5">
+      
+              {/* GIRONI */}
+              <div>
+                <h3 className="font-black text-[#581C24] mb-2">GIRONI</h3>
+      
+                <div className="bg-white rounded-xl border p-3">
+                  <p className="text-xs font-bold text-center mb-2">GIRONE A</p>
+      
+                  {gironeA.slice(0,6).map((team,i)=>(
+                    <div
+                      key={team.id}
+                      className="flex items-center justify-between py-1 text-sm"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="w-5 font-bold">{i+1}</span>
+      
+                        {team.logo_url && (
+                          <Image
+                            src={team.logo_url}
+                            alt={team.name}
+                            width={18}
+                            height={18}
+                            className="rounded-full"
+                          />
+                        )}
+      
+                        <span>{team.name}</span>
+                      </div>
+      
+                      <span className="font-black">{team.pt}</span>
+                    </div>
+                  ))}
+                </div>
+      
+                <div className="bg-white rounded-xl border p-3 mt-3">
+                  <p className="text-xs font-bold text-center mb-2">GIRONE B</p>
+      
+                  {gironeB.slice(0,6).map((team,i)=>(
+                    <div
+                      key={team.id}
+                      className="flex items-center justify-between py-1 text-sm"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="w-5 font-bold">{i+1}</span>
+      
+                        {team.logo_url && (
+                          <Image
+                            src={team.logo_url}
+                            alt={team.name}
+                            width={18}
+                            height={18}
+                            className="rounded-full"
+                          />
+                        )}
+      
+                        <span>{team.name}</span>
+                      </div>
+      
+                      <span className="font-black">{team.pt}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+      
+              {/* MARCATORI */}
+              <div>
+                <h3 className="font-black text-[#581C24] mb-2">MARCATORI</h3>
+      
+                <div className="bg-white rounded-xl border p-3">
+                  {topScorers.slice(0,10).map((p,i)=>(
+                    <div
+                      key={p.id}
+                      className="flex items-center justify-between py-1 text-sm"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="w-5 font-bold">{i+1}</span>
+      
+                        {p.team?.logo_url && (
+                          <Image
+                            src={p.team.logo_url}
+                            alt=""
+                            width={18}
+                            height={18}
+                            className="rounded-full"
+                          />
+                        )}
+      
+                        <span>
+                          {p.first_name} {p.last_name}
+                        </span>
+                      </div>
+      
+                      <span className="font-black text-[#581C24]">
+                        {p.goals}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+      
+              {/* FASE FINALE */}
+              <div>
+                <h3 className="font-black text-[#581C24] mb-2">
+                  FASE FINALE
+                </h3>
+      
+                <div className="bg-white rounded-xl border p-3 text-center text-sm text-gray-500">
+                  Anteprima del bracket (verrà visualizzato come nella pagina Albo d'Oro)
+                </div>
+              </div>
+      
+              {/* MEDIA */}
+              <div>
+                <h3 className="font-black text-[#581C24] mb-2">MEDIA</h3>
+      
+                <div className="bg-white rounded-xl border p-4 flex items-center gap-3">
+                  <svg className="w-8 h-8 text-[#581C24]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7l9 4 9-4M3 17l9 4 9-4M3 12l9 4 9-4" />
+                  </svg>
+      
+                  <div>
+                    <p className="font-bold">Archivio foto torneo</p>
+                    <p className="text-xs text-gray-500">
+                      Verrà creato automaticamente lo ZIP
+                    </p>
+                  </div>
+                </div>
+              </div>
+      
+            </div>
+      
+            {/* Footer */}
+            <div className="bg-white border-t p-4 flex gap-3">
+              <button
+                onClick={() => setShowPreview(false)}
+                className="flex-1 border rounded-xl py-3 font-bold"
+              >
+                Annulla
+              </button>
+      
+              <button
+                onClick={() => {
+                  setShowPreview(false);
+                  setShowPassword(true);
+                }}
+                className="flex-1 bg-[#581C24] text-white rounded-xl py-3 font-bold"
+              >
+                AVANTI
+              </button>
             </div>
           </div>
         </div>
