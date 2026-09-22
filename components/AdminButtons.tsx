@@ -2435,6 +2435,8 @@ export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, cu
   const [showPassword, setShowPassword] = useState(false);
   const [previewTab, setPreviewTab] = useState<TabType>("gironi")
   const [password, setPassword] = useState("");
+  const gironeA = formData.standings_snapshot?.gironeA ?? [];
+  const gironeB = formData.standings_snapshot?.gironeB ?? [];
   
   const handleSave = () => {
     if (formData.winner && formData.topScorer && formData.mvp) {
