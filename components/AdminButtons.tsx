@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { X, Upload, Trash2, Download, Eye } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import GironiSnapshot from '@/components/albo/GironiSnapshot'
+import MarcatoriSnapshot from '@/components/albo/MarcatoriSnapshot'
 
 type TabType = "gironi" | "marcatori" | "fase-finale" | "media"
 
@@ -2446,6 +2447,7 @@ export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, cu
   });
   const gironeA = previewStandings.gironeA;
   const gironeB = previewStandings.gironeB;
+  const [previewScorers, setPreviewScorers] = useState<TopScorer[]>([]);
 
   const loadPreviewStandings = async () => {
   setPreviewLoading(true);
@@ -2559,6 +2561,64 @@ export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, cu
         setPreviewLoading(false);
       }
     };
+
+  const loadPreviewScorers = async () => {
+  try {
+    const supabase = createClient();
+
+    const { data: allPlayers, error: playersError } = await supabase
+      .from('players')
+      .select('id, first_name, last_name, goals, team_id')
+      .order('goals', { ascending: false })
+      .limit(50);
+
+    if (playersError) throw playersError;
+
+    const playerTeamIds = Array.from(
+      new Set(
+        (allPlayers || [])
+          .map((player) => player.team_id)
+          .filter(Boolean)
+      )
+    );
+
+    let teamsData: any[] = [];
+
+    if (playerTeamIds.length > 0) {
+      const { data: teams, error: teamsError } = await supabase
+        .from('teams')
+        .select('id, name')
+        .in('id', playerTeamIds);
+
+      if (teamsError) throw teamsError;
+
+      teamsData = teams || [];
+    }
+
+    const snapshot: TopScorer[] = (allPlayers || [])
+      .map((player: any) => ({
+        player: `${player.first_name} ${player.last_name}`,
+        team:
+          teamsData.find(
+            (team: any) => team.id === player.team_id
+          )?.name || '',
+        goals: player.goals ?? 0,
+      }))
+      .slice(0, 10);
+
+    setPreviewScorers(snapshot);
+
+    setFormData((prev) => ({
+      ...prev,
+      scorers_snapshot: snapshot,
+    }));
+  } catch (error) {
+    console.error(
+      'Errore caricamento marcatori preview:',
+      error
+    );
+  }
+};
   
   const handleSave = () => {
     if (formData.winner && formData.topScorer && formData.mvp) {
@@ -2580,7 +2640,11 @@ export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, cu
       <button
       onClick={async () => {
         setShowPreview(true);
-        await loadPreviewStandings();
+      
+        await Promise.all([
+          loadPreviewStandings(),
+          loadPreviewScorers(),
+        ]);
       }}
         className="w-full py-3 bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-[#581C24] font-black rounded-xl shadow-lg hover:shadow-xl transition-shadow text-sm uppercase tracking-wider"
       >
@@ -2654,19 +2718,10 @@ export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, cu
           )}
           
             {previewTab === "marcatori" && (
-              <div>
-                <h3 className="font-black text-[#581C24] mb-3">MARCATORI</h3>
-          
-                <div className="bg-white rounded-xl border p-6 text-center">
-                  <svg className="w-10 h-10 mx-auto text-[#581C24]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-6m4 6V7m4 10V4"/>
-                  </svg>
-          
-                  <p className="font-bold mt-3">Screenshot Top 10 Marcatori</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Copia identica della classifica finale marcatori
-                  </p>
-                </div>
+              <div id="preview-marcatori">
+                <MarcatoriSnapshot
+                  scorers={previewScorers}
+                />
               </div>
             )}
           
