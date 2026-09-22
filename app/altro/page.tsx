@@ -656,12 +656,12 @@ export default function AltroPage() {
                           
                               const { error } = await supabase.from("albo_doro").insert({
                                 year: data.year,
-                                winner: data.winnerTeam,
-                                runner_up: data.runnerUpTeam,
+                                winner: data.winner,
+                                runner_up: data.runnerUp,
                                 standings_snapshot: data.standings_snapshot,
                                 scorers_snapshot: data.scorers_snapshot,
                                 bracket_snapshot: data.bracket_snapshot,
-                                media_zip_url: data.media_zip_url
+                                media_zip_url: data.media_zip_url,
                               });
                                                         
                               if (error) {
