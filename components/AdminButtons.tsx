@@ -2479,149 +2479,101 @@ export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, cu
   
             {/* TAB NAVIGATION */}
             <div className="relative z-20 -mt-8 px-3 mb-6">
-              <div className="bg-white rounded-2xl shadow-lg p-2 flex justify-center gap-2 max-w-md mx-auto">
+              <div className="bg-white rounded-2xl shadow-lg p-2 flex gap-2">
                 {(['gironi', 'marcatori', 'fase-finale', 'media'] as const).map((tab) => (
                   <button
                     key={tab}
-                    onClick={() => setActiveTab(tab)}
+                    onClick={() => setPreviewTab(tab)}
                     className={`flex-1 py-3 rounded-xl text-[11px] font-black uppercase transition-all ${
-                      activeTab === tab
-                        ? 'bg-[#581C24] text-white shadow-md'
-                        : 'text-[#581C24]'
+                      previewTab === tab
+                        ? "bg-[#581C24] text-white shadow-md"
+                        : "text-[#581C24] hover:bg-gray-100"
                     }`}
                   >
-                    {tab === 'gironi'
-                      ? 'GIRONI'
-                      : tab === 'marcatori'
-                      ? 'MARCATORI'
-                      : tab === 'fase-finale'
-                      ? 'FASE FINALE'
-                      : 'MEDIA'}
+                    {tab === "gironi"
+                      ? "GIRONI"
+                      : tab === "marcatori"
+                      ? "MARCATORI"
+                      : tab === "fase-finale"
+                      ? "FASE FINALE"
+                      : "MEDIA"}
                   </button>
                 ))}
               </div>
             </div>
   
-            <div className="p-4 space-y-5">
-  
-              {/* GIRONI */}
+            <div className="p-4">
+
+            {previewTab === "gironi" && (
               <div>
-                <h3 className="font-black text-[#581C24] mb-2">GIRONI</h3>
-  
+                <h3 className="font-black text-[#581C24] mb-3">GIRONI</h3>
+          
                 <div className="bg-white rounded-xl border p-6 text-center">
-                  <svg
-                    className="w-10 h-10 mx-auto text-[#581C24]"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 7h18M3 12h18M3 17h18"
-                    />
+                  <svg className="w-10 h-10 mx-auto text-[#581C24]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 12h18M3 17h18"/>
                   </svg>
-  
-                  <p className="font-bold mt-3">
-                    Screenshot Classifiche Gironi
-                  </p>
-  
+          
+                  <p className="font-bold mt-3">Screenshot Classifiche Gironi</p>
                   <p className="text-xs text-gray-500 mt-1">
                     Verrà acquisito automaticamente dalla pagina CLASSIFICHE
                   </p>
                 </div>
               </div>
-  
-              {/* MARCATORI */}
+            )}
+          
+            {previewTab === "marcatori" && (
               <div>
-                <h3 className="font-black text-[#581C24] mb-2">MARCATORI</h3>
-  
+                <h3 className="font-black text-[#581C24] mb-3">MARCATORI</h3>
+          
                 <div className="bg-white rounded-xl border p-6 text-center">
-                  <svg
-                    className="w-10 h-10 mx-auto text-[#581C24]"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 17v-6m4 6V7m4 10V4"
-                    />
+                  <svg className="w-10 h-10 mx-auto text-[#581C24]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-6m4 6V7m4 10V4"/>
                   </svg>
-  
-                  <p className="font-bold mt-3">
-                    Screenshot Top 10 Marcatori
-                  </p>
-  
+          
+                  <p className="font-bold mt-3">Screenshot Top 10 Marcatori</p>
                   <p className="text-xs text-gray-500 mt-1">
                     Copia identica della classifica finale marcatori
                   </p>
                 </div>
               </div>
-  
-              {/* FASE FINALE */}
+            )}
+          
+            {previewTab === "fase-finale" && (
               <div>
-                <h3 className="font-black text-[#581C24] mb-2">
-                  FASE FINALE
-                </h3>
-  
+                <h3 className="font-black text-[#581C24] mb-3">FASE FINALE</h3>
+          
                 <div className="bg-white rounded-xl border p-6 text-center">
-                  <svg
-                    className="w-10 h-10 mx-auto text-[#581C24]"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M7 7h10M7 12h10M7 17h10"
-                    />
+                  <svg className="w-10 h-10 mx-auto text-[#581C24]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h10M7 12h10M7 17h10"/>
                   </svg>
-  
-                  <p className="font-bold mt-3">
-                    Screenshot Bracket Finale
-                  </p>
-  
+          
+                  <p className="font-bold mt-3">Screenshot Bracket Finale</p>
                   <p className="text-xs text-gray-500 mt-1">
                     Quarti, Semifinali e Finali con le card ufficiali
                   </p>
                 </div>
               </div>
-  
-              {/* MEDIA */}
+            )}
+          
+            {previewTab === "media" && (
               <div>
-                <h3 className="font-black text-[#581C24] mb-2">MEDIA</h3>
-  
-                <div className="bg-white rounded-xl border p-4 flex items-center gap-3">
-                  <svg
-                    className="w-10 h-10 text-[#581C24]"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 7l9 4 9-4M3 17l9 4 9-4M3 12l9 4 9-4"
-                    />
+                <h3 className="font-black text-[#581C24] mb-3">MEDIA</h3>
+          
+                <div className="bg-white rounded-xl border p-6 text-center">
+                  <svg className="w-10 h-10 mx-auto text-[#581C24]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7l9 4 9-4M3 17l9 4 9-4M3 12l9 4 9-4"/>
                   </svg>
-  
-                  <div>
-                    <p className="font-bold">Archivio foto del torneo</p>
-                    <p className="text-xs text-gray-500">
-                      Verrà creato automaticamente uno ZIP con le cartelle delle partite
-                    </p>
-                  </div>
+          
+                  <p className="font-bold mt-3">Archivio foto del torneo</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Verrà creato automaticamente uno ZIP con le cartelle delle partite
+                  </p>
                 </div>
               </div>
-            </div>
-  
+            )}
+          
+          </div>
+            
             {/* Footer */}
             <div className="bg-white border-t p-4 flex gap-3">
               <button
