@@ -76,8 +76,6 @@ const MedalIcon = ({ type }: { type: 'gold' | 'silver' | 'bronze' }) => {
     bronze: { bg: '#E8C8A8', border: '#B87333', text: '#8B5A2B' },
   };
   const c = colors[type];
-  const gironeA = standings.filter((t) => t.girone === "A");
-  const gironeB = standings.filter((t) => t.girone === "B");
   return (
     <div 
       className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 border"
@@ -99,6 +97,8 @@ export default function ClassifichePage() {
 
   const [standings, setStandings] = useState<{ gironeA: TeamStats[], gironeB: TeamStats[] }>({ gironeA: [], gironeB: [] });
   const [phaseMatches, setPhaseMatches] = useState<MatchData[]>([]);
+  const gironeA = standings.filter((t) => t.girone === "A");
+  const gironeB = standings.filter((t) => t.girone === "B");
   const [topScorers, setTopScorers] = useState<PlayerData[]>([]);
   const [barMeters, setBarMeters] = useState<BarMeterData[]>([]);
   const [liveMatchesMap, setLiveMatchesMap] = useState<Map<string, { matchId: string; score: string }>>(new Map());
