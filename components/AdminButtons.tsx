@@ -2430,13 +2430,135 @@ interface AdminSaveAlboDoroProps {
 
 export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, currentYear }) => {
   const [isOpen, setIsOpen] = useState(false);
-    const [formData, setFormData] = useState<Partial<AlboDoroData>>({});
+  const [formData, setFormData] = useState<Partial<AlboDoroData>>({});
   const [showPreview, setShowPreview] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [previewTab, setPreviewTab] = useState<TabType>("gironi")
   const [password, setPassword] = useState("");
-  const gironeA = formData.standings_snapshot?.gironeA ?? [];
-  const gironeB = formData.standings_snapshot?.gironeB ?? [];
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  const [previewStandings, setPreviewStandings] = useState<{
+    gironeA: TeamStats[];
+    gironeB: TeamStats[];
+  }>({
+    gironeA: [],
+    gironeB: [],
+  });
+  const gironeA = previewStandings.gironeA;
+  const gironeB = previewStandings.gironeB;
+
+  const loadPreviewStandings = async () => {
+  setPreviewLoading(true);
+
+  try {
+    const supabase = createClient();
+
+    const { data: allTeams, error: teamsError } = await supabase
+      .from("teams")
+      .select("id, name, logo_url, girone");
+
+    if (teamsError) throw teamsError;
+
+    const { data: matchesData, error: matchesError } = await supabase
+      .from("matches")
+      .select(
+        "home_team_id, away_team_id, home_score, away_score, status, phase"
+      )
+      .eq("phase", "GIRONI")
+      .in("status", ["FINITA", "LIVE", "SUPP", "RIGORI"]);
+
+    if (matchesError) throw matchesError;
+
+    const statsMap = new Map<string, TeamStats>();
+
+    (allTeams || []).forEach((team) => {
+      statsMap.set(team.id, {
+        team: team.name,
+        logo: team.logo_url,
+        punti: 0,
+        giocate: 0,
+        vittorie: 0,
+        pareggi: 0,
+        sconfitte: 0,
+        gol_fatti: 0,
+        gol_subiti: 0,
+        diff: 0,
+      });
+    });
+
+    (matchesData || []).forEach((match: any) => {
+      const homeStats = statsMap.get(match.home_team_id);
+      const awayStats = statsMap.get(match.away_team_id);
+
+      if (!homeStats || !awayStats) return;
+
+      const homeScore = match.home_score ?? 0;
+      const awayScore = match.away_score ?? 0;
+
+      homeStats.giocate += 1;
+      awayStats.giocate += 1;
+
+      homeStats.gol_fatti += homeScore;
+      homeStats.gol_subiti += awayScore;
+
+      awayStats.gol_fatti += awayScore;
+      awayStats.gol_subiti += homeScore;
+
+      homeStats.diff =
+        homeStats.gol_fatti - homeStats.gol_subiti;
+
+      awayStats.diff =
+        awayStats.gol_fatti - awayStats.gol_subiti;
+
+      if (homeScore > awayScore) {
+        homeStats.vittorie += 1;
+        homeStats.punti += 3;
+        awayStats.sconfitte += 1;
+      } else if (awayScore > homeScore) {
+        awayStats.vittorie += 1;
+        awayStats.punti += 3;
+        homeStats.sconfitte += 1;
+      } else {
+        homeStats.pareggi += 1;
+        awayStats.pareggi += 1;
+        homeStats.punti += 1;
+        awayStats.punti += 1;
+      }
+    });
+
+    const allStats = Array.from(statsMap.values());
+
+    const teamDataMap = new Map(
+      (allTeams || []).map((team) => [team.name, team])
+    );
+
+    const sortFn = (a: TeamStats, b: TeamStats) =>
+      b.punti - a.punti ||
+      b.diff - a.diff ||
+      b.gol_fatti - a.gol_fatti;
+
+    const snapshot = {
+          gironeA: allStats
+            .filter((team) => teamDataMap.get(team.team)?.girone === "A")
+            .sort(sortFn),
+    
+          gironeB: allStats
+            .filter((team) => teamDataMap.get(team.team)?.girone === "B")
+            .sort(sortFn),
+        };
+    
+        setPreviewStandings(snapshot);
+    
+        setFormData((prev) => ({
+          ...prev,
+          standings_snapshot: snapshot,
+        }));
+      } catch (error) {
+        console.error("Errore caricamento classifica preview:", error);
+      } finally {
+        setPreviewLoading(false);
+      }
+    };
   
   const handleSave = () => {
     if (formData.winner && formData.topScorer && formData.mvp) {
@@ -2456,7 +2578,10 @@ export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, cu
   return (
     <>
       <button
-        onClick={() => setShowPreview(true)}
+      onClick={async () => {
+        setShowPreview(true);
+        await loadPreviewStandings();
+      }}
         className="w-full py-3 bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-[#581C24] font-black rounded-xl shadow-lg hover:shadow-xl transition-shadow text-sm uppercase tracking-wider"
       >
         Salva nell'Albo d'Oro
@@ -2510,14 +2635,23 @@ export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, cu
   
             <div className="p-4">
 
-            {previewTab === 'gironi' && (
-              <div id="preview-gironi">
+            {previewTab === "gironi" && (
+            <div id="preview-gironi">
+              {previewLoading ? (
+                <div className="py-16 flex flex-col items-center justify-center">
+                  <div className="w-10 h-10 border-4 border-[#581C24] border-t-transparent rounded-full animate-spin mb-4" />
+                  <p className="text-xs font-bold text-[#581C24] uppercase">
+                    Caricamento classifiche...
+                  </p>
+                </div>
+              ) : (
                 <GironiSnapshot
                   gironeA={gironeA}
                   gironeB={gironeB}
                 />
-              </div>
-            )}
+              )}
+            </div>
+          )}
           
             {previewTab === "marcatori" && (
               <div>
