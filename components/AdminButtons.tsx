@@ -5,6 +5,8 @@ import Image from 'next/image';
 import { X, Upload, Trash2, Download, Eye } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
+type TabType = "gironi" | "marcatori" | "fase-finale" | "media"
+
 // ==================== TIPI DATI (NUOVI) ===================
 export interface UploadedDocument {
   id: string;
@@ -2430,6 +2432,7 @@ export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, cu
     const [formData, setFormData] = useState<Partial<AlboDoroData>>({});
   const [showPreview, setShowPreview] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [previewTab, setPreviewTab] = useState<TabType>("gironi")
   const [password, setPassword] = useState("");
   
   const handleSave = () => {
