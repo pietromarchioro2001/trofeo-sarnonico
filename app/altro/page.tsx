@@ -7,21 +7,12 @@ import { ChevronRight } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { uploadFile } from "@/lib/supabase/storage";
+
 import {
   AdminLiberatorieManager,
   AdminMultiUpload,
   AdminContactsEditor,
   AdminSaveAlboDoro,
-  type AlboDoroData = {
-    id?: string;
-    year: number;
-    winner: string;
-    runnerUp: string;
-    standings_snapshot: any;
-    scorers_snapshot: any;
-    bracket_snapshot: any;
-    media_zip_url?: string | null;
-  };
   type TeamLiberatorie,
   type UploadedDocument,
   type EventoProloco,
@@ -29,8 +20,26 @@ import {
   type ContattiData,
 } from "@/components/AdminButtons";
 
+export type AlboDoroData = {
+  id?: string;
+  year: number;
+  winner: string;
+  runnerUp: string;
+  standings_snapshot: any;
+  scorers_snapshot: any;
+  bracket_snapshot: any;
+  media_zip_url?: string | null;
+};
+
 // ✅ AGGIUNTO 'social' ai tipi
-type SectionId = 'liberatorie' | 'albo-oro' | 'regolamento' | 'eventi' | 'sponsor' | 'contatti' | 'social';
+type SectionId =
+  | "liberatorie"
+  | "albo-oro"
+  | "regolamento"
+  | "eventi"
+  | "sponsor"
+  | "contatti"
+  | "social";
 
 // ✅ AGGIUNTO l'oggetto 'social' all'inizio dell'array
 const MENU_ITEMS: { id: SectionId; title: string; restricted: boolean; icon: JSX.Element }[] = [
