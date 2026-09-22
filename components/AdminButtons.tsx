@@ -2511,8 +2511,8 @@ export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, cu
             {previewTab === 'gironi' && (
               <div id="preview-gironi">
                 <GironiSnapshot
-                  gironeA={standings.gironeA}
-                  gironeB={standings.gironeB}
+                  gironeA={gironeA}
+                  gironeB={gironeB}
                 />
               </div>
             )}
