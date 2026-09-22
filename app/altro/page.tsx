@@ -139,11 +139,19 @@ export default function AltroPage() {
 
           const { data: alboData } = await supabase
             .from("albo_doro")
-            .select("id, year, winner")
+            .select(`
+              id,
+              year,
+              winner,
+              standings_snapshot,
+              scorers_snapshot,
+              bracket_snapshot,
+              media_zip_url
+            `)
             .order("year", { ascending: false });
           
           if (alboData) {
-            setAlboDoro(alboData);
+            setAlboDoro(alboData as AlboDoroData[]);
           }
 
         const { data: contactsData } = await supabase
