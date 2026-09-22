@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import GironiSnapshot from '@/components/albo/GironiSnapshot';
 import MarcatoriSnapshot from '@/components/albo/MarcatoriSnapshot';
 import FaseFinaleSnapshot from '@/components/albo/FaseFinaleSnapshot'
+import { toBlob } from 'html-to-image';
 
 type TabType = "gironi" | "marcatori" | "fase-finale" | "media"
 
@@ -2457,6 +2458,20 @@ export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, cu
     terzoQuarto: null,
   })
 
+  const gironiCaptureRef = useRef<HTMLDivElement>(null);
+  const marcatoriCaptureRef = useRef<HTMLDivElement>(null);
+  const faseFinaleCaptureRef = useRef<HTMLDivElement>(null);
+  
+  const screenshotsRef = useRef<{
+    gironi: Blob | null;
+    marcatori: Blob | null;
+    faseFinale: Blob | null;
+  }>({
+    gironi: null,
+    marcatori: null,
+    faseFinale: null,
+  });
+
   const loadPreviewStandings = async () => {
   setPreviewLoading(true);
 
@@ -2731,6 +2746,56 @@ export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, cu
     )
   }
 }
+
+  const captureSection = async (node: HTMLElement) => {
+  const images = Array.from(node.querySelectorAll('img'));
+
+  await Promise.all(
+    images.map(
+      (img) =>
+        new Promise<void>((resolve) => {
+          if (img.complete) {
+            resolve();
+            return;
+          }
+
+          img.addEventListener('load', () => resolve(), { once: true });
+          img.addEventListener('error', () => resolve(), { once: true });
+        })
+    )
+  );
+
+  await document.fonts?.ready;
+
+  const blob = await toBlob(node, {
+    cacheBust: true,
+    backgroundColor: '#F5F5F7',
+    width: node.scrollWidth,
+    height: node.scrollHeight,
+  });
+
+  if (!blob) {
+    throw new Error('Impossibile generare lo screenshot');
+  }
+
+  return blob;
+};
+
+  const generateScreenshots = async () => {
+  if (
+    !gironiCaptureRef.current ||
+    !marcatoriCaptureRef.current ||
+    !faseFinaleCaptureRef.current
+  ) {
+    throw new Error('Elementi screenshot non disponibili');
+  }
+
+  screenshotsRef.current = {
+    gironi: await captureSection(gironiCaptureRef.current),
+    marcatori: await captureSection(marcatoriCaptureRef.current),
+    faseFinale: await captureSection(faseFinaleCaptureRef.current),
+  };
+};
   
   const handleSave = () => {
     if (formData.winner && formData.topScorer && formData.mvp) {
@@ -2878,9 +2943,16 @@ export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, cu
               </button>
   
               <button
-                onClick={() => {
-                  setShowPreview(false);
-                  setShowPassword(true);
+                onClick={async () => {
+                  try {
+                    await generateScreenshots();
+                
+                    setShowPreview(false);
+                    setShowPassword(true);
+                  } catch (error) {
+                    console.error('Errore generazione screenshot:', error);
+                    alert('Errore durante la generazione degli screenshot');
+                  }
                 }}
                 className="flex-1 bg-[#581C24] text-white rounded-xl py-3 font-bold"
               >
@@ -2890,6 +2962,43 @@ export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, cu
           </div>
         </div>
       )}
+
+            {/* ================= SCREENSHOT CAPTURE ================= */}
+      <div
+        className="absolute left-[-10000px] top-0 w-[448px]"
+        aria-hidden="true"
+      >
+        <div
+          ref={gironiCaptureRef}
+          className="w-[448px] bg-[#F5F5F7] p-4"
+        >
+          <GironiSnapshot
+            gironeA={gironeA}
+            gironeB={gironeB}
+          />
+        </div>
+
+        <div
+          ref={marcatoriCaptureRef}
+          className="w-[448px] bg-[#F5F5F7] p-4"
+        >
+          <MarcatoriSnapshot
+            scorers={previewScorers}
+          />
+        </div>
+
+        <div
+          ref={faseFinaleCaptureRef}
+          className="w-[448px] bg-[#F5F5F7] p-4"
+        >
+          <FaseFinaleSnapshot
+            quarti={previewBracket.quarti}
+            semifinali={previewBracket.semifinali}
+            finale={previewBracket.finale}
+            terzoQuarto={previewBracket.terzoQuarto}
+          />
+        </div>
+      </div>
   
       {/* ================= PASSWORD ================= */}
       {showPassword && (
