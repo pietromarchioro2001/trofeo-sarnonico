@@ -4,9 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
-export async function GET(
-  req: NextRequest
-) {
+export async function GET(req: NextRequest) {
   try {
     const year = req.nextUrl.searchParams.get("year");
 
@@ -16,144 +14,88 @@ export async function GET(
 
     const supabase = createClient();
     const zip = new JSZip();
-
     const bucket = supabase.storage.from("tournament-files");
 
-    // ============================================================
-    // 1. PRENDE TUTTE LE CARTELLE PRESENTI IN match-media
-    // ============================================================
+    // Legge TUTTI gli elementi (anche oltre 1000)
+    const listAll = async (path: string) => {
+      const pageSize = 1000;
+      let offset = 0;
+      const all: any[] = [];
 
-    const { data: folders, error: foldersError } = await bucket.list(
-      "match-media",
-      {
-        limit: 1000,
-        offset: 0,
-        sortBy: {
-          column: "name",
-          order: "asc",
-        },
-      }
-    );
-
-    if (foldersError) {
-      throw foldersError;
-    }
-
-    const realFolders = (folders || []).filter(
-      (item) => item.id === null
-    );
-
-    // ============================================================
-    // 2. PER OGNI CARTELLA PRENDE TUTTI I FILE
-    // ============================================================
-
-    for (const folder of realFolders) {
-      const folderName = folder.name;
-      const folderPath = `match-media/${folderName}`;
-
-      const { data: files, error: filesError } =
-        await bucket.list(folderPath, {
-          limit: 1000,
-          offset: 0,
+      while (true) {
+        const { data, error } = await bucket.list(path, {
+          limit: pageSize,
+          offset,
           sortBy: {
             column: "name",
             order: "asc",
           },
         });
 
-      if (filesError) {
-        console.error(
-          `Errore lettura cartella ${folderName}:`,
-          filesError
-        );
-        continue;
+        if (error) throw error;
+
+        const items = data || [];
+        all.push(...items);
+
+        if (items.length < pageSize) break;
+        offset += pageSize;
       }
 
-      // ==========================================================
-      // 3. SCARICA OGNI FILE E LO INSERISCE NELLA CARTELLA ZIP
-      // ==========================================================
+      return all;
+    };
 
-      for (const file of files || []) {
-        // Ignora eventuali sottocartelle
+    // Tutte le cartelle presenti in match-media
+    const folders = await listAll("match-media");
+    const realFolders = folders.filter((f) => f.id === null);
+
+    for (const folder of realFolders) {
+      const folderName = folder.name;
+      const folderPath = `match-media/${folderName}`;
+
+      zip.folder(folderName);
+
+      const files = await listAll(folderPath);
+
+      for (const file of files) {
         if (!file.id) continue;
 
         const filePath = `${folderPath}/${file.name}`;
 
-        const { data: fileData, error: downloadError } =
-          await bucket.download(filePath);
+        const { data } = await bucket.download(filePath);
+        if (!data) continue;
 
-        if (downloadError || !fileData) {
-          console.error(
-            `Errore download ${filePath}:`,
-            downloadError
-          );
-          continue;
-        }
+        const buffer = await data.arrayBuffer();
 
-        const arrayBuffer = await fileData.arrayBuffer();
-
-        zip
-          .folder(folderName)
-          ?.file(file.name, arrayBuffer);
+        zip.folder(folderName)?.file(file.name, buffer);
       }
     }
-
-    // ============================================================
-    // 4. GENERA ZIP
-    // ============================================================
 
     const zipBuffer = await zip.generateAsync({
       type: "nodebuffer",
       compression: "DEFLATE",
-      compressionOptions: {
-        level: 6,
-      },
+      compressionOptions: { level: 6 },
     });
 
-    // ============================================================
-    // 5. SALVA LO ZIP NELLO STORAGE
-    // ============================================================
+    const zipPath = `albo-doro/${year}/media-trofeo-${year}.zip`;
 
-    const zipPath =
-      `albo-doro/${year}/media-trofeo-${year}.zip`;
+    const { error } = await bucket.upload(zipPath, zipBuffer, {
+      upsert: true,
+      contentType: "application/zip",
+    });
 
-    const { error: uploadError } =
-      await bucket.upload(
-        zipPath,
-        zipBuffer,
-        {
-          contentType: "application/zip",
-          cacheControl: "3600",
-          upsert: true,
-        }
-      );
+    if (error) throw error;
 
-    if (uploadError) {
-      throw uploadError;
-    }
-
-    // ============================================================
-    // 6. URL PUBBLICO
-    // ============================================================
-
-    const { data: publicData } =
-      bucket.getPublicUrl(zipPath);
+    const { data: publicUrl } = bucket.getPublicUrl(zipPath);
 
     return Response.json({
       success: true,
-      url: publicData.publicUrl,
-      folders: realFolders.length,
+      url: publicUrl.publicUrl,
     });
 
-  } catch (error) {
-    console.error(
-      "Errore generazione archivio Albo d'Oro:",
-      error
-    );
-
-    return new Response(
-      "Errore generazione archivio",
-      { status: 500 }
-    );
+  } catch (err) {
+    console.error(err);
+    return new Response("Errore generazione archivio", {
+      status: 500,
+    });
   }
 }
