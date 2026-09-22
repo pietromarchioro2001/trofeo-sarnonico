@@ -82,14 +82,6 @@ export default function AlboDoroPage() {
   const [activeTab, setActiveTab] = useState<TabType>("gironi")
   const [phaseSubTab, setPhaseSubTab] = useState<"quarti" | "semifinali" | "finale">("quarti")
 
-  if (loading) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-[#F5F5F7]">
-          <div className="w-10 h-10 border-4 border-[#6B1E1E] border-t-transparent rounded-full animate-spin" />
-        </div>
-      );
-    }
-
   useEffect(() => {
     const load = async () => {
       const { data, error } = await supabase
@@ -121,6 +113,13 @@ export default function AlboDoroPage() {
   const quarti = snapshot?.bracket_snapshot.quarti ?? []
   const semifinali = snapshot?.bracket_snapshot.semifinali ?? []
   const finali = snapshot?.bracket_snapshot.finali ?? []
+
+  const currentMatches =
+  phaseSubTab === "quarti"
+    ? quarti
+    : phaseSubTab === "semifinali"
+    ? semifinali
+    : finali;
 
   const MedalIcon = ({ type }: { type: "gold" | "silver" | "bronze" }) => {
     const colors = {
@@ -339,10 +338,14 @@ export default function AlboDoroPage() {
             </div>
 
             <div className="px-4 pb-8">
-              {quarti.map((match) => (
-                <div key={match.id} className="bg-white rounded-xl shadow-sm border p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2 flex-1">
+              {currentMatches.map((match) => (
+                <div
+                  key={match.id}
+                  className="bg-white rounded-xl shadow-sm border p-3 mb-3"
+                >
+                  {/* Squadra casa */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
                       {match.home_team.logo_url && (
                         <Image
                           src={match.home_team.logo_url}
@@ -352,24 +355,27 @@ export default function AlboDoroPage() {
                           className="rounded-full"
                         />
                       )}
-                      <span className="font-bold text-xs uppercase">
+                      <span className="font-bold text-xs uppercase truncate">
                         {match.home_team.name}
                       </span>
                     </div>
-              
+            
                     <span className="font-black text-lg text-[#581C24]">
                       {match.home_score}
                     </span>
                   </div>
-              
-                  {(match.home_penalties != null && match.away_penalties != null) && (
-                    <div className="text-[10px] text-right text-purple-600 font-bold">
-                      dcr ({match.home_penalties}-{match.away_penalties})
-                    </div>
-                  )}
-              
-                  <div className="flex items-center justify-between mt-2">
-                    <div className="flex items-center gap-2 flex-1">
+            
+                  {/* Eventuali rigori */}
+                  {match.home_penalties != null &&
+                    match.away_penalties != null && (
+                      <div className="text-[10px] text-right text-purple-600 font-bold py-1">
+                        dcr ({match.home_penalties}-{match.away_penalties})
+                      </div>
+                    )}
+            
+                  {/* Squadra ospite */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
                       {match.away_team.logo_url && (
                         <Image
                           src={match.away_team.logo_url}
@@ -379,75 +385,17 @@ export default function AlboDoroPage() {
                           className="rounded-full"
                         />
                       )}
-                      <span className="font-bold text-xs uppercase">
+                      <span className="font-bold text-xs uppercase truncate">
                         {match.away_team.name}
                       </span>
                     </div>
-              
+            
                     <span className="font-black text-lg text-[#581C24]">
                       {match.away_score}
                     </span>
                   </div>
                 </div>
               ))}
-
-              {semifinali.map((match) => (
-                <div key={match.id} className="bg-white rounded-xl shadow-sm border p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2 flex-1">
-                      {match.home_team.logo_url && (
-                        <Image
-                          src={match.home_team.logo_url}
-                          alt={match.home_team.name}
-                          width={26}
-                          height={26}
-                          className="rounded-full"
-                        />
-                      )}
-                      <span className="font-bold text-xs uppercase">
-                        {match.home_team.name}
-                      </span>
-                    </div>
-              
-                    <span className="font-black text-lg text-[#581C24]">
-                      {match.home_score}
-                    </span>
-                  </div>
-              
-                  {(match.home_penalties != null && match.away_penalties != null) && (
-                    <div className="text-[10px] text-right text-purple-600 font-bold">
-                      dcr ({match.home_penalties}-{match.away_penalties})
-                    </div>
-                  )}
-              
-                  <div className="flex items-center justify-between mt-2">
-                    <div className="flex items-center gap-2 flex-1">
-                      {match.away_team.logo_url && (
-                        <Image
-                          src={match.away_team.logo_url}
-                          alt={match.away_team.name}
-                          width={26}
-                          height={26}
-                          className="rounded-full"
-                        />
-                      )}
-                      <span className="font-bold text-xs uppercase">
-                        {match.away_team.name}
-                      </span>
-                    </div>
-              
-                    <span className="font-black text-lg text-[#581C24]">
-                      {match.away_score}
-                    </span>
-                  </div>
-                </div>
-              ))}
-              {finali
-                .filter(m => m.phase === "FINALE")
-                .map(...)}
-              {finali
-                .filter(m => m.phase === "FINALE_3_4")
-                .map(...)}
             </div>
           </>
         )}
