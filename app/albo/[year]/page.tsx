@@ -125,18 +125,15 @@ export default function AlboDoroPage() {
     const colors = {
       gold: ["#F9E4A8", "#C9B037"],
       silver: ["#E8E8E8", "#A0A0A0"],
-      bronze: ["#E8C8A8", "#B87333"]
-    }
+      bronze: ["#E8C8A8", "#B87333"],
+    };
   
-    const c = colors[type]
+    const c = colors[type];
   
     return (
       <div
         className="w-5 h-5 rounded-full flex items-center justify-center border"
-        style={{
-          background: c[0],
-          borderColor: c[1]
-        }}
+        style={{ background: c[0], borderColor: c[1] }}
       >
         <span className="text-[8px] font-black">
           {type === "gold" ? "1°" : type === "silver" ? "2°" : "3°"}
