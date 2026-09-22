@@ -168,7 +168,6 @@ export default function AlboDoroPage() {
               TROFEO SARNONICO {year}
             </h1>
           </div>
-        </div>
     </div>
 
       {/* TAB NAVIGATION */}
