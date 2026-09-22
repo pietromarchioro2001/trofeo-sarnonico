@@ -142,14 +142,14 @@ export default function AlboDoroPage() {
     );
   };
 
-  if (loading) {
+    if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-10 h-10 border-4 border-[#581C24] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
-  
+
   return (
     <div className="min-h-screen bg-[#F5F5F7] pb-24">
       {/* HEADER */}
@@ -174,7 +174,7 @@ export default function AlboDoroPage() {
                 activeTab === tab ? 'bg-[#581C24] text-white shadow-md' : 'text-[#581C24] hover:bg-gray-100'
               }`}
             >
-              {tab === 'gironi' ? 'GIRONI' : tab === 'marcatori' ? 'MARCATORI' : tab === 'fase-finale' ? 'FASE FINALE' : tab === 'media' ? 'MEDIA'}
+              {tab === 'gironi' ? 'GIRONI' : tab === 'marcatori' ? 'MARCATORI' : tab === 'fase-finale' ? 'FASE FINALE' : 'MEDIA'}
             </button>
           ))}
         </div>
@@ -195,7 +195,6 @@ export default function AlboDoroPage() {
                 </h2>
         
                 <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-        
                   <div className="flex items-center px-3 py-2 bg-gray-50 border-b text-[8px] font-bold text-gray-600 uppercase">
                     <div className="w-5 text-center">#</div>
                     <div className="flex-1 pl-1">Squadra</div>
@@ -212,13 +211,11 @@ export default function AlboDoroPage() {
                   <div className="divide-y divide-gray-100">
                     {g.teams.map((team, index) => (
                       <div key={team.id} className="flex items-center px-3 py-2">
-        
                         <div className="w-5 text-center font-bold text-xs">
                           {index + 1}
                         </div>
         
                         <div className="flex-1 pl-1 flex items-center gap-2 min-w-0">
-        
                           <div className="w-5 h-5 rounded-full overflow-hidden bg-gray-100">
                             {team.logo_url && (
                               <Image
@@ -230,11 +227,9 @@ export default function AlboDoroPage() {
                               />
                             )}
                           </div>
-        
                           <span className="font-bold text-[11px] uppercase truncate">
                             {team.name}
                           </span>
-        
                         </div>
         
                         <div className="w-6 text-center font-black text-xs text-[#581C24]">{team.pt}</div>
@@ -247,11 +242,9 @@ export default function AlboDoroPage() {
                         <div className="w-6 text-center text-[10px]">
                           {team.dr > 0 ? `+${team.dr}` : team.dr}
                         </div>
-        
                       </div>
                     ))}
                   </div>
-        
                 </div>
               </div>
             ))}
@@ -261,25 +254,22 @@ export default function AlboDoroPage() {
         {/* === MARCATORI === */}
         {activeTab === "marcatori" && (
           <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-        
             <div className="flex items-center px-3 py-2 bg-gray-50 border-b text-[10px] font-bold uppercase text-gray-600">
               <div className="w-8 text-center">Pos</div>
               <div className="flex-1 pl-2">Giocatore</div>
               <div className="w-10 text-center">Gol</div>
             </div>
         
-            {marcatori.slice(0,10).map((p, index) => (
+            {marcatori.slice(0, 10).map((p, index) => (
               <div key={p.id} className="flex items-center px-3 py-2.5 border-b last:border-0">
-        
                 <div className="w-8 flex justify-center">
-                  {index===0 ? <MedalIcon type="gold"/> :
-                   index===1 ? <MedalIcon type="silver"/> :
-                   index===2 ? <MedalIcon type="bronze"/> :
-                   <span className="font-bold text-xs">{index+1}</span>}
+                  {index === 0 ? <MedalIcon type="gold"/> :
+                   index === 1 ? <MedalIcon type="silver"/> :
+                   index === 2 ? <MedalIcon type="bronze"/> :
+                   <span className="font-bold text-xs">{index + 1}</span>}
                 </div>
         
                 <div className="flex-1 flex items-center gap-2 min-w-0">
-        
                   <div className="w-5 h-5 rounded-full overflow-hidden bg-gray-100">
                     {p.team.logo_url && (
                       <Image
@@ -299,16 +289,13 @@ export default function AlboDoroPage() {
                       {p.team.name}
                     </p>
                   </div>
-        
                 </div>
         
                 <div className="w-10 text-center font-black text-[#581C24] text-lg">
                   {p.goals}
                 </div>
-        
               </div>
             ))}
-        
           </div>
         )}
 
@@ -337,7 +324,6 @@ export default function AlboDoroPage() {
                   key={match.id}
                   className="bg-white rounded-xl shadow-sm border p-3 mb-3"
                 >
-                  {/* Squadra casa */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       {match.home_team.logo_url && (
@@ -353,21 +339,17 @@ export default function AlboDoroPage() {
                         {match.home_team.name}
                       </span>
                     </div>
-            
                     <span className="font-black text-lg text-[#581C24]">
                       {match.home_score}
                     </span>
                   </div>
             
-                  {/* Eventuali rigori */}
-                  {match.home_penalties != null &&
-                    match.away_penalties != null && (
-                      <div className="text-[10px] text-right text-purple-600 font-bold py-1">
-                        dcr ({match.home_penalties}-{match.away_penalties})
-                      </div>
-                    )}
+                  {match.home_penalties != null && match.away_penalties != null && (
+                    <div className="text-[10px] text-right text-purple-600 font-bold py-1">
+                      dcr ({match.home_penalties}-{match.away_penalties})
+                    </div>
+                  )}
             
-                  {/* Squadra ospite */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       {match.away_team.logo_url && (
@@ -383,7 +365,6 @@ export default function AlboDoroPage() {
                         {match.away_team.name}
                       </span>
                     </div>
-            
                     <span className="font-black text-lg text-[#581C24]">
                       {match.away_score}
                     </span>
@@ -398,19 +379,9 @@ export default function AlboDoroPage() {
         {activeTab === 'media' && (
           <div className="bg-white rounded-xl shadow-sm border p-6 text-center">
             <div className="w-20 h-20 mx-auto rounded-2xl bg-[#581C24]/10 flex items-center justify-center mb-4">
-              <svg
-                  className="w-10 h-10 text-[#581C24]"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 7l9 4 9-4M3 17l9 4 9-4M3 12l9 4 9-4"
-                  />
-                </svg>
+              <svg className="w-10 h-10 text-[#581C24]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7l9 4 9-4M3 17l9 4 9-4M3 12l9 4 9-4" />
+              </svg>
             </div>
           
             <h3 className="font-black text-[#581C24] uppercase">
@@ -425,7 +396,7 @@ export default function AlboDoroPage() {
               <a
                 href={snapshot.media_zip_url}
                 download
-                className="inline-flex items-center gap-2 bg-[#581C24] text-white px-5 py-3 rounded-xl font-bold"
+                className="inline-flex items-center gap-2 bg-[#581C24] text-white px-5 py-3 rounded-xl font-bold hover:bg-[#581C24]/90 transition-colors"
               >
                 Scarica archivio ZIP
               </a>
