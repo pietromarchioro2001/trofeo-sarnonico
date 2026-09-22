@@ -147,15 +147,12 @@ export default function AlboDoroPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-[#581C24] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-[#581C24] font-bold uppercase">Caricamento classifiche...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-[#581C24] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
-
+  
   return (
     <div className="min-h-screen bg-[#F5F5F7] pb-24">
       {/* HEADER */}
