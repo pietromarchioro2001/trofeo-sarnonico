@@ -20,6 +20,22 @@ export interface TeamLiberatorie {
   documents: UploadedDocument[];
 }
 
+export type TeamStats = {
+  team_id?: string;
+  team_name: string;
+  logo_url?: string | null;
+
+  punti: number;
+  giocate: number;
+  vinte: number;
+  pareggiate: number;
+  perse: number;
+
+  gol_fatti: number;
+  gol_subiti: number;
+  differenza_reti: number;
+};
+
 export interface AlboDoroData {
   year: number
 
