@@ -401,7 +401,19 @@ export default function AlboDoroPage() {
         {activeTab === 'media' && (
           <div className="bg-white rounded-xl shadow-sm border p-6 text-center">
             <div className="w-20 h-20 mx-auto rounded-2xl bg-[#581C24]/10 flex items-center justify-center mb-4">
-              <svg className="w-10 h-10 text-[#581C24]" ... />
+              <svg
+                  className="w-10 h-10 text-[#581C24]"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 7l9 4 9-4M3 17l9 4 9-4M3 12l9 4 9-4"
+                  />
+                </svg>
             </div>
           
             <h3 className="font-black text-[#581C24] uppercase">
