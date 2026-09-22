@@ -151,7 +151,18 @@ export default function AltroPage() {
             .order("year", { ascending: false });
           
           if (alboData) {
-            setAlboDoro(alboData as AlboDoroData[]);
+            setAlboDoro(
+              alboData.map((a) => ({
+                id: a.id,
+                year: a.year,
+                winner: a.winner,
+                runnerUp: a.runner_up,
+                standings_snapshot: a.standings_snapshot,
+                scorers_snapshot: a.scorers_snapshot,
+                bracket_snapshot: a.bracket_snapshot,
+                media_zip_url: a.media_zip_url,
+              }))
+            );
           }
 
         const { data: contactsData } = await supabase
