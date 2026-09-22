@@ -170,29 +170,29 @@ export default function AlboDoroPage() {
       </div>
 
       {/* TAB NAVIGATION */}
-    <div className="relative z-20 -mt-8 px-2 sm:px-4 mb-6">
-      <div className="bg-white rounded-xl shadow-lg p-1.5 flex gap-1">
-        {(['gironi', 'marcatori', 'fase-finale', 'media'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`flex-1 py-2.5 px-3 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${
-              activeTab === tab
-                ? 'bg-[#581C24] text-white shadow-md'
-                : 'text-[#581C24] hover:bg-gray-100'
-            }`}
-          >
-            {tab === 'gironi'
-              ? 'GIRONI'
-              : tab === 'marcatori'
-              ? 'MARCATORI'
-              : tab === 'fase-finale'
-              ? 'FASE FINALE'
-              : 'MEDIA'}
-          </button>
-        ))}
+      <div className="relative z-20 -mt-8 px-3 mb-6">
+        <div className="bg-white rounded-2xl shadow-lg p-2 flex justify-center gap-2 max-w-md mx-auto">
+          {(['gironi', 'marcatori', 'fase-finale', 'media'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex-1 py-3 rounded-xl text-[11px] font-black uppercase transition-all ${
+                activeTab === tab
+                  ? 'bg-[#581C24] text-white shadow-md'
+                  : 'text-[#581C24]'
+              }`}
+            >
+              {tab === 'gironi'
+                ? 'GIRONI'
+                : tab === 'marcatori'
+                ? 'MARCATORI'
+                : tab === 'fase-finale'
+                ? 'FASE FINALE'
+                : 'MEDIA'}
+            </button>
+          ))}
+        </div>
       </div>
-    </div>
 
       {/* CONTENUTO TAB */}
       <div className="px-3 sm:px-4">
