@@ -632,14 +632,49 @@ export default function AltroPage() {
                   
                         {isStaffMode && (
                           <AdminSaveAlboDoro
-                              currentYear={new Date().getFullYear()}
-                              onSave={async (data) => {
-                                console.log("Snapshot Albo d'Oro:", data);
-                            
-                                // Qui nel prossimo step salveremo tutto su Supabase
-                                // (classifiche, marcatori, bracket e media)
-                              }}
-                            />
+                            currentYear={new Date().getFullYear()}
+                            onSave={async (data) => {
+                              const supabase = createClient();
+                          
+                              // Evita doppio salvataggio della stessa annata
+                              const { data: existing } = await supabase
+                                .from("albo_doro")
+                                .select("id")
+                                .eq("year", data.year)
+                                .maybeSingle();
+                          
+                              if (existing) {
+                                alert(`Esiste già l'albo d'oro ${data.year}`);
+                                return;
+                              }
+                          
+                              const { error } = await supabase.from("albo_doro").insert({
+                                year: data.year,
+                                winner: data.winner,
+                                runner_up: data.runnerUp,
+                                standings_snapshot: data.groupStandings,
+                                scorers_snapshot: data.topScorers,
+                                bracket_snapshot: data.playoffBracket,
+                                media_zip_url: null
+                              });
+                          
+                              if (error) {
+                                console.error(error);
+                                alert("Errore durante il salvataggio");
+                                return;
+                              }
+                          
+                              // Aggiorna subito la lista Albo d'Oro
+                              const { data: anni } = await supabase
+                                .from("albo_doro")
+                                .select("id, year, winner")
+                                .order("year", { ascending: false });
+                          
+                              setAlboDoro(anni ?? []);
+                          
+                              alert("🏆 Albo d'Oro salvato!");
+                            }}
+                          />
                         )}
                       </div>
                   
