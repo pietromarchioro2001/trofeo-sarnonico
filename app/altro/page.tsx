@@ -1,24 +1,24 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Image from 'next/image';
-import { useAuth } from '@/lib/AuthContext';
-import { createClient } from '@/lib/supabase/client';
-import { uploadFile } from '@/lib/supabase/storage';
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
+import { useAuth } from "@/lib/AuthContext";
+import { createClient } from "@/lib/supabase/client";
+import { uploadFile } from "@/lib/supabase/storage";
 import {
   AdminLiberatorieManager,
   AdminMultiUpload,
   AdminContactsEditor,
   AdminSaveAlboDoro,
+  type AlboDoroData,
   type TeamLiberatorie,
   type UploadedDocument,
-  type AlboDoroData,
   type EventoProloco,
   type Sponsor,
-  type ContattiData
-} from '@/components/AdminButtons';
-import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+  type ContattiData,
+} from "@/components/AdminButtons";
 
 // ✅ AGGIUNTO 'social' ai tipi
 type SectionId = 'liberatorie' | 'albo-oro' | 'regolamento' | 'eventi' | 'sponsor' | 'contatti' | 'social';
@@ -114,9 +114,7 @@ export default function AltroPage() {
     instagram: 'https://instagram.com/proloco',
     whatsapp: '+39 333 1234567'
   });
-  const [alboDoro, setAlboDoro] = useState<
-    { id: string; year: number; winner: string }[]
-  >([]);
+  const [alboDoro, setAlboDoro] = useState<AlboDoroData[]>([]);
   const [isGenerating, setIsGenerating] = useState<'coming-soon' | 'classifica' | 'partite-giornata' | null>(null);
 
   useEffect(() => {
