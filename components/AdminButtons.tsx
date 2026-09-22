@@ -53,9 +53,14 @@ export type MatchCard = {
 
 export type AlboDoroData = {
   id?: string;
+
   year: number;
+
   winner: string;
   runnerUp: string;
+
+  topScorer: string;
+  mvp: string;
 
   standings_snapshot: {
     gironeA: TeamStats[];
@@ -67,7 +72,8 @@ export type AlboDoroData = {
   bracket_snapshot: {
     quarti: MatchCard[];
     semifinali: MatchCard[];
-    finale: MatchCard[];
+    finale: MatchCard | null;
+    terzoQuarto: MatchCard | null;
   };
 
   media_zip_url?: string | null;
@@ -2421,7 +2427,7 @@ interface AdminSaveAlboDoroProps {
 
 export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, currentYear }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [formData, setFormData] = useState<Partial<AlboDoroData>>({ year: currentYear });
+    const [formData, setFormData] = useState<Partial<AlboDoroData>>({});
   const [showPreview, setShowPreview] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState("");
@@ -2431,14 +2437,14 @@ export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, cu
       onSave({
         year: formData.year || currentYear,
         winner: formData.winner,
-        runnerUp: formData.runnerUp || '',
-        topScorer: formData.topScorer!,
-        mvp: formData.mvp!,
-        groupStandings: [],
-        playoffBracket: []
+        runnerUp: formData.runnerUp || "",
+        topScorer: formData.topScorer,
+        mvp: formData.mvp,
+        standings_snapshot: formData.standings_snapshot!,
+        scorers_snapshot: formData.scorers_snapshot!,
+        bracket_snapshot: formData.bracket_snapshot!,
+        media_zip_url: formData.media_zip_url ?? null,
       });
-      setIsOpen(false);
-      alert('✅ Albo d\'Oro aggiornato!');
     }
   };
   return (
