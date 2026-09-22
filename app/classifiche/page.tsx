@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
 import { createClient } from '@/lib/supabase/client';
 import { AdminCreateQuarters, AdminCreateSemifinals, AdminCreateFinals } from '@/components/AdminButtons';
+import GironiSnapshot from '@/components/albo/GironiSnapshot'
 
 // Tipi corretti per Supabase
 interface Team {
@@ -389,76 +390,12 @@ export default function ClassifichePage() {
 
       {/* CONTENUTO TAB */}
       <div className="px-3 sm:px-4">
-        {/* === GIRONI === */}
-        {activeTab === 'gironi' && (
-          <>
-            {(['gironeA', 'gironeB'] as const).map((gironeKey) => {
-              const gironeName = gironeKey === 'gironeA' ? 'GIRONE A' : 'GIRONE B';
-              const teams = standings[gironeKey];
-              
-              return (
-                <div key={gironeKey} className="mb-6">
-                  <h2 className="text-lg font-black text-[#581C24] uppercase tracking-wider mb-3">{gironeName}</h2>
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="flex items-center px-3 py-2 bg-gray-50 border-b border-gray-200 text-[8px] font-bold text-gray-600 uppercase">
-                      <div className="w-5 text-center flex-shrink-0">#</div>
-                      <div className="flex-1 pl-1">SQUADRA</div>
-                      <div className="w-6 text-center flex-shrink-0">PT</div>
-                      <div className="w-5 text-center flex-shrink-0">PG</div>
-                      <div className="w-4 text-center flex-shrink-0">V</div>
-                      <div className="w-4 text-center flex-shrink-0">P</div>
-                      <div className="w-4 text-center flex-shrink-0">S</div>
-                      <div className="w-5 text-center flex-shrink-0">GF</div>
-                      <div className="w-5 text-center flex-shrink-0">GS</div>
-                      <div className="w-6 text-center flex-shrink-0">DR</div>
-                    </div>
-                    <div className="divide-y divide-gray-100">
-                      {teams.length === 0 ? (
-                        <div className="px-3 py-4 text-center text-gray-500 text-sm">Squadre non presenti</div>
-                      ) : (
-                        teams.map((team, index) => {
-                          const isLive = liveMatchesMap.has(team.id);
-                          const liveData = liveMatchesMap.get(team.id);
-
-                          return (
-                            <div key={team.id} className={`flex items-center px-3 py-2 transition-colors ${isLive ? 'bg-[#581C24]/5' : ''}`}>
-                              <div className="w-5 text-center flex-shrink-0">
-                                <span className={`font-bold text-xs ${isLive ? 'text-[#581C24]' : 'text-gray-700'}`}>{index + 1}</span>
-                              </div>
-                              <div className="flex-1 pl-1 flex items-center gap-1.5 min-w-0">
-                                <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${isLive ? 'bg-[#581C24]/10' : 'bg-gray-100'}`}>
-                                  {team.logo_url ? (
-                                    <Image src={team.logo_url} alt={team.name} width={20} height={20} className="object-cover" />
-                                  ) : (
-                                    <span className="text-[5px] text-gray-400">L</span>
-                                  )}
-                                </div>
-                                <span className={`font-bold text-[11px] uppercase truncate ${isLive ? 'text-[#581C24]' : 'text-[#000000]'}`}>{team.name}</span>
-                                {isLive && (
-                                  <Link href={`/partite/${liveData!.matchId}`} className="flex-shrink-0 px-1.5 py-0.5 bg-[#581C24] text-white text-[8px] font-bold rounded animate-pulse flex items-center gap-1 shadow-sm">
-                                    <span className="w-1 h-1 bg-white rounded-full" />
-                                    {liveData!.score}
-                                  </Link>
-                                )}
-                              </div>
-                              <div className="w-6 text-center flex-shrink-0"><span className={`font-black text-xs ${isLive ? 'text-[#581C24]' : 'text-[#581C24]'}`}>{team.pt}</span></div>
-                              <div className="w-5 text-center flex-shrink-0"><span className={`text-[10px] ${isLive ? 'text-[#581C24]/70' : 'text-gray-600'}`}>{team.pg}</span></div>
-                              <div className="w-4 text-center flex-shrink-0"><span className={`text-[10px] ${isLive ? 'text-[#581C24]/70' : 'text-gray-600'}`}>{team.v}</span></div>
-                              <div className="w-4 text-center flex-shrink-0"><span className={`text-[10px] ${isLive ? 'text-[#581C24]/70' : 'text-gray-600'}`}>{team.p}</span></div>
-                              <div className="w-4 text-center flex-shrink-0"><span className={`text-[10px] ${isLive ? 'text-[#581C24]/70' : 'text-gray-600'}`}>{team.s}</span></div>
-                              <div className="w-5 text-center flex-shrink-0"><span className={`text-[10px] ${isLive ? 'text-[#581C24]/70' : 'text-gray-600'}`}>{team.gf}</span></div>
-                              <div className="w-5 text-center flex-shrink-0"><span className={`text-[10px] ${isLive ? 'text-[#581C24]/70' : 'text-gray-600'}`}>{team.gs}</span></div>
-                              <div className="w-6 text-center flex-shrink-0"><span className={`text-[10px] ${isLive ? 'text-[#581C24]/70' : 'text-gray-600'}`}>{team.dr > 0 ? `+${team.dr}` : team.dr}</span></div>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </>
+        {/* GIRONI */}
+        {activeTab === "gironi" && (
+          <GironiSnapshot
+            gironeA={gironeA}
+            gironeB={gironeB}
+          />
         )}
 
         {/* === FASE FINALE === */}
