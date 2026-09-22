@@ -153,20 +153,14 @@ export default function AlboDoroPage() {
   return (
     <div className="min-h-screen bg-[#F5F5F7] pb-24">
       {/* HEADER */}
-      <div className="relative h-40 sm:h-48 w-full overflow-hidden">
-      <Image
-        src="/header-classifiche.jpg"
-        alt="Classifiche"
-        fill
-        className="object-cover"
-        priority
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-transparent" />
-      <div className="absolute inset-0 flex items-start justify-center pt-6">
-        <h1 className="text-3xl font-black text-white uppercase tracking-wider drop-shadow-2xl font-oswald">
-          TROFEO SARNONICO {year}
-        </h1>
-      </div>
+        <div className="relative h-40 sm:h-48 w-full overflow-hidden">
+        <Image src="/header-standing.jpg" alt="Classifiche" fill className="object-cover" priority />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-transparent" />
+        <div className="absolute inset-0 flex items-start justify-center pt-6">
+          <h1 className="text-3xl font-black text-white uppercase tracking-wider drop-shadow-2xl font-oswald">
+            TROFEO SARNONICO {year}
+          </h1>
+        </div>
     </div>
 
       {/* TAB NAVIGATION */}
