@@ -4,8 +4,9 @@ import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { X, Upload, Trash2, Download, Eye } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import GironiSnapshot from '@/components/albo/GironiSnapshot'
-import MarcatoriSnapshot from '@/components/albo/MarcatoriSnapshot'
+import GironiSnapshot from '@/components/albo/GironiSnapshot';
+import MarcatoriSnapshot from '@/components/albo/MarcatoriSnapshot';
+import FaseFinaleSnapshot from '@/components/albo/FaseFinaleSnapshot'
 
 type TabType = "gironi" | "marcatori" | "fase-finale" | "media"
 
@@ -2448,6 +2449,13 @@ export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, cu
   const gironeA = previewStandings.gironeA;
   const gironeB = previewStandings.gironeB;
   const [previewScorers, setPreviewScorers] = useState<TopScorer[]>([]);
+  const [previewBracket, setPreviewBracket] =
+  useState<AlboDoroData['bracket_snapshot']>({
+    quarti: [],
+    semifinali: [],
+    finale: null,
+    terzoQuarto: null,
+  })
 
   const loadPreviewStandings = async () => {
   setPreviewLoading(true);
@@ -2619,6 +2627,110 @@ export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, cu
     );
   }
 };
+
+  const loadPreviewBracket = async () => {
+  try {
+    const supabase = createClient()
+
+    const { data: matches, error: matchesError } = await supabase
+      .from('matches')
+      .select(
+        'id, phase, status, match_key, home_score, away_score, home_penalties, away_penalties, home_team_id, away_team_id'
+      )
+      .in('phase', [
+        'QUARTI',
+        'SEMIFINALI',
+        'FINALE',
+        'FINALE_3_4',
+      ])
+      .order('match_key', { ascending: true })
+      .order('id', { ascending: true })
+
+    if (matchesError) throw matchesError
+
+    const teamIds = Array.from(
+      new Set(
+        (matches || [])
+          .flatMap((match: any) => [
+            match.home_team_id,
+            match.away_team_id,
+          ])
+          .filter(Boolean)
+      )
+    )
+
+    let teams: any[] = []
+
+    if (teamIds.length > 0) {
+      const { data: teamsData, error: teamsError } =
+        await supabase
+          .from('teams')
+          .select('id, name, logo_url')
+          .in('id', teamIds)
+
+      if (teamsError) throw teamsError
+
+      teams = teamsData || []
+    }
+
+    const getTeam = (id: string | null) =>
+      teams.find((team) => team.id === id)
+
+    const mapMatch = (match: any): MatchCard => {
+      const homeTeam = getTeam(match.home_team_id)
+      const awayTeam = getTeam(match.away_team_id)
+
+      return {
+        home: homeTeam?.name || 'TBD',
+        away: awayTeam?.name || 'TBD',
+        homeLogo: homeTeam?.logo_url || null,
+        awayLogo: awayTeam?.logo_url || null,
+        homeScore: match.home_score,
+        awayScore: match.away_score,
+        played: match.status === 'FINITA',
+      }
+    }
+
+    const quarti = (matches || [])
+      .filter((match: any) => match.phase === 'QUARTI')
+      .map(mapMatch)
+
+    const semifinali = (matches || [])
+      .filter((match: any) => match.phase === 'SEMIFINALI')
+      .map(mapMatch)
+
+    const finaleMatch =
+      (matches || []).find(
+        (match: any) => match.phase === 'FINALE'
+      ) || null
+
+    const terzoQuartoMatch =
+      (matches || []).find(
+        (match: any) => match.phase === 'FINALE_3_4'
+      ) || null
+
+    const snapshot = {
+      quarti,
+      semifinali,
+      finale: finaleMatch ? mapMatch(finaleMatch) : null,
+      terzoQuarto: terzoQuartoMatch
+        ? mapMatch(terzoQuartoMatch)
+        : null,
+    }
+
+    setPreviewBracket(snapshot)
+
+    setFormData((prev) => ({
+      ...prev,
+      bracket_snapshot: snapshot,
+    }))
+  } catch (error) {
+    console.error(
+      'Errore caricamento fase finale preview:',
+      error
+    )
+  }
+}
   
   const handleSave = () => {
     if (formData.winner && formData.topScorer && formData.mvp) {
@@ -2639,12 +2751,13 @@ export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, cu
     <>
       <button
       onClick={async () => {
-        setShowPreview(true);
+        setShowPreview(true)
       
         await Promise.all([
           loadPreviewStandings(),
           loadPreviewScorers(),
-        ]);
+          loadPreviewBracket(),
+        ])
       }}
         className="w-full py-3 bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-[#581C24] font-black rounded-xl shadow-lg hover:shadow-xl transition-shadow text-sm uppercase tracking-wider"
       >
@@ -2726,19 +2839,13 @@ export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, cu
             )}
           
             {previewTab === "fase-finale" && (
-              <div>
-                <h3 className="font-black text-[#581C24] mb-3">FASE FINALE</h3>
-          
-                <div className="bg-white rounded-xl border p-6 text-center">
-                  <svg className="w-10 h-10 mx-auto text-[#581C24]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h10M7 12h10M7 17h10"/>
-                  </svg>
-          
-                  <p className="font-bold mt-3">Screenshot Bracket Finale</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Quarti, Semifinali e Finali con le card ufficiali
-                  </p>
-                </div>
+              <div id="preview-fase-finale">
+                <FaseFinaleSnapshot
+                  quarti={previewBracket.quarti}
+                  semifinali={previewBracket.semifinali}
+                  finale={previewBracket.finale}
+                  terzoQuarto={previewBracket.terzoQuarto}
+                />
               </div>
             )}
           
