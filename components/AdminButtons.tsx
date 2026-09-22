@@ -20,43 +20,58 @@ export interface TeamLiberatorie {
   documents: UploadedDocument[];
 }
 
-export type TeamStats = {
-  team_id?: string;
-  team_name: string;
-  logo_url?: string | null;
+// ===== Tipi Albo d'Oro =====
 
+export type TeamStats = {
+  team: string;
+  logo?: string | null;
   punti: number;
   giocate: number;
-  vinte: number;
-  pareggiate: number;
-  perse: number;
-
+  vittorie: number;
+  pareggi: number;
+  sconfitte: number;
   gol_fatti: number;
   gol_subiti: number;
-  differenza_reti: number;
+  diff: number;
 };
 
-export interface AlboDoroData {
-  year: number
+export type TopScorer = {
+  player: string;
+  team: string;
+  goals: number;
+};
 
-  winner: string
-  runnerUp: string
+export type MatchCard = {
+  home: string;
+  away: string;
+  homeLogo?: string | null;
+  awayLogo?: string | null;
+  homeScore: number | null;
+  awayScore: number | null;
+  played: boolean;
+};
+
+export type AlboDoroData = {
+  id?: string;
+  year: number;
+  winner: string;
+  runnerUp: string;
 
   standings_snapshot: {
-    gironeA: TeamStats[]
-    gironeB: TeamStats[]
-  }
+    gironeA: TeamStats[];
+    gironeB: TeamStats[];
+  };
 
-  scorers_snapshot: TopScorer[]
+  scorers_snapshot: TopScorer[];
 
   bracket_snapshot: {
-    quarti: MatchCard[]
-    semifinali: MatchCard[]
-    finali: MatchCard[]
-  }
+    quarti: MatchCard[];
+    semifinali: MatchCard[];
+    finale: MatchCard[];
+  };
 
-  media_zip_url: string | null
-}
+  media_zip_url?: string | null;
+};
 
 export interface EventoProloco {
   id: string;
