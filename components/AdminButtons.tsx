@@ -8,7 +8,6 @@ import GironiSnapshot from '@/components/albo/GironiSnapshot';
 import MarcatoriSnapshot from '@/components/albo/MarcatoriSnapshot';
 import FaseFinaleSnapshot from '@/components/albo/FaseFinaleSnapshot'
 import { toBlob } from 'html-to-image';
-import { createClient } from "@/lib/supabase/client";
 
 type TabType = "gironi" | "marcatori" | "fase-finale" | "media"
 
@@ -176,62 +175,58 @@ export const AdminPartiteButton = ({ onMatchCreated }: { onMatchCreated?: () => 
   const filteredTeams = teams.filter(t => t.girone === selectedGroup);
 
   const handleSave = async () => {
-  if (!formData.winner || !formData.topScorer || !formData.mvp) return;
-
-  const year = formData.year || currentYear;
-
-  if (
-    !screenshotsRef.current.gironi ||
-    !screenshotsRef.current.marcatori ||
-    !screenshotsRef.current.faseFinale
-  ) {
-    alert("Screenshot non disponibili");
+  if (!homeTeam || !awayTeam || !matchDate || !matchTime) {
+    setError('⚠️ Compila tutti i campi!');
     return;
   }
 
-  setSaving(true);
+  if (homeTeam === awayTeam) {
+    setError('⚠️ Le squadre devono essere diverse!');
+    return;
+  }
 
-  try {
-    const supabase = createClient();
+  const supabase = createClient();
 
-    const files = [
-      { name: "gironi.png", blob: screenshotsRef.current.gironi },
-      { name: "marcatori.png", blob: screenshotsRef.current.marcatori },
-      { name: "fase-finale.png", blob: screenshotsRef.current.faseFinale },
-    ];
+  const matchId = crypto.randomUUID();
 
-    for (const file of files) {
-      await supabase.storage
-        .from("tournament-files")
-        .upload(
-          `albo-doro/${year}/${file.name}`,
-          file.blob!,
-          {
-            upsert: true,
-            contentType: "image/png",
-          }
-        );
-    }
+  const { data, error } = await supabase
+    .from("matches")
+    .insert({
+      id: matchId,
+      home_team_id: homeTeam,
+      away_team_id: awayTeam,
+      match_date: matchDate,
+      match_time: matchTime,
+      status: "PROGRAMMATA",
+      phase: "GIRONI",
+      media_folder_path: `match-media/${matchId}`,
+    })
+    .select("id")
+    .single();
 
-    await onSave({
-      year,
-      winner: formData.winner,
-      runnerUp: formData.runnerUp || "",
-      topScorer: formData.topScorer,
-      mvp: formData.mvp,
-      standings_snapshot: formData.standings_snapshot!,
-      scorers_snapshot: formData.scorers_snapshot!,
-      bracket_snapshot: formData.bracket_snapshot!,
-      media_zip_url: null,
-    });
+  if (error) {
+    console.error(error);
+    setError("Errore nel salvataggio");
+    return;
+  }
 
-    setShowPassword(false);
-    alert("✅ Albo d'Oro salvato!");
-  } catch (e) {
-    console.error(e);
-    alert("Errore nel salvataggio");
-  } finally {
-    setSaving(false);
+  if (data?.id) {
+    fetch(
+      `/api/matches/${data.id}/generate-post?type=PRE_MATCH`
+    ).catch(console.error);
+  }
+
+  alert("✅ Partita creata con successo!");
+
+  setIsOpen(false);
+  setHomeTeam('');
+  setAwayTeam('');
+  setMatchDate('');
+  setMatchTime('');
+  setError('');
+
+  if (onMatchCreated) {
+    onMatchCreated();
   }
 };
 
@@ -2841,21 +2836,137 @@ export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, cu
   };
 };
   
-  const handleSave = () => {
-    if (formData.winner && formData.topScorer && formData.mvp) {
-      onSave({
-        year: formData.year || currentYear,
-        winner: formData.winner,
-        runnerUp: formData.runnerUp || "",
-        topScorer: formData.topScorer,
-        mvp: formData.mvp,
-        standings_snapshot: formData.standings_snapshot!,
-        scorers_snapshot: formData.scorers_snapshot!,
-        bracket_snapshot: formData.bracket_snapshot!,
-        media_zip_url: formData.media_zip_url ?? null,
-      });
+  const handleSave = async () => {
+  if (!formData.winner || !formData.topScorer || !formData.mvp) {
+    alert("Completa tutti i dati dell'Albo d'Oro.");
+    return;
+  }
+
+  const year = formData.year || currentYear;
+
+  const screenshots = screenshotsRef.current;
+
+  if (
+    !screenshots.gironi ||
+    !screenshots.marcatori ||
+    !screenshots.faseFinale
+  ) {
+    alert("Screenshot non disponibili. Torna indietro e premi AVANTI.");
+    return;
+  }
+
+  setSaving(true);
+
+  try {
+    const supabase = createClient();
+
+    // ============================================================
+    // 1. UPLOAD DEI 3 SCREENSHOT
+    // ============================================================
+
+    const screenshotFiles = [
+      {
+        name: "gironi.png",
+        blob: screenshots.gironi,
+      },
+      {
+        name: "marcatori.png",
+        blob: screenshots.marcatori,
+      },
+      {
+        name: "fase-finale.png",
+        blob: screenshots.faseFinale,
+      },
+    ];
+
+    for (const file of screenshotFiles) {
+      const path = `albo-doro/${year}/${file.name}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("tournament-files")
+        .upload(path, file.blob, {
+          upsert: true,
+          contentType: "image/png",
+          cacheControl: "31536000",
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
     }
-  };
+
+    // ============================================================
+    // 2. CREA LO ZIP DI TUTTE LE CARTELLE MATCH-MEDIA
+    // ============================================================
+
+    const mediaResponse = await fetch(
+      `/api/albo-doro/media?year=${year}`
+    );
+
+    if (!mediaResponse.ok) {
+      const errorText = await mediaResponse.text();
+      throw new Error(
+        errorText || "Errore generazione archivio media"
+      );
+    }
+
+    const mediaData = await mediaResponse.json();
+
+    if (!mediaData.success || !mediaData.url) {
+      throw new Error(
+        "Archivio media non generato correttamente"
+      );
+    }
+
+    // ============================================================
+    // 3. SALVA ALBO D'ORO
+    // ============================================================
+
+    await onSave({
+      year,
+      winner: formData.winner,
+      runnerUp: formData.runnerUp || "",
+      topScorer: formData.topScorer,
+      mvp: formData.mvp,
+      standings_snapshot:
+        formData.standings_snapshot!,
+      scorers_snapshot:
+        formData.scorers_snapshot!,
+      bracket_snapshot:
+        formData.bracket_snapshot!,
+      media_zip_url: mediaData.url,
+    });
+
+    // ============================================================
+    // 4. PULIZIA
+    // ============================================================
+
+    screenshotsRef.current = {
+      gironi: null,
+      marcatori: null,
+      faseFinale: null,
+    };
+
+    setShowPassword(false);
+    setPassword("");
+
+    alert(
+      `✅ Albo d'Oro ${year} salvato correttamente!`
+    );
+
+  } catch (error) {
+    console.error(
+      "Errore salvataggio Albo d'Oro:",
+      error
+    );
+
+    alert(
+      "Errore durante il salvataggio dell'Albo d'Oro."
+    );
+  } finally {
+    setSaving(false);
+  }
+};
   return (
     <>
       <button
@@ -3077,9 +3188,10 @@ export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, cu
   
               <button
                 onClick={handleSave}
-                className="flex-1 bg-[#581C24] text-white rounded-xl py-3 font-bold"
+                disabled={saving}
+                className="flex-1 bg-[#581C24] text-white rounded-xl py-3 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                CONFERMA
+                {saving ? "SALVATAGGIO..." : "CONFERMA"}
               </button>
             </div>
           </div>
