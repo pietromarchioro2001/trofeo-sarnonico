@@ -2748,38 +2748,54 @@ export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, cu
 }
 
   const captureSection = async (node: HTMLElement) => {
-  const images = Array.from(node.querySelectorAll('img'));
-
-  await Promise.all(
-    images.map(
-      (img) =>
-        new Promise<void>((resolve) => {
-          if (img.complete) {
+    const images = Array.from(node.querySelectorAll('img'));
+  
+    await Promise.all(
+      images.map((img) => {
+        if (img.complete) {
+          return Promise.resolve();
+        }
+  
+        // Forza il caricamento anche se l'immagine è lazy-loaded
+        img.loading = 'eager';
+  
+        return new Promise<void>((resolve) => {
+          let finished = false;
+  
+          const finish = () => {
+            if (finished) return;
+            finished = true;
+  
+            clearTimeout(timeout);
+            img.removeEventListener('load', finish);
+            img.removeEventListener('error', finish);
+  
             resolve();
-            return;
-          }
-
-          img.addEventListener('load', () => resolve(), { once: true });
-          img.addEventListener('error', () => resolve(), { once: true });
-        })
-    )
-  );
-
-  await document.fonts?.ready;
-
-  const blob = await toBlob(node, {
-    cacheBust: true,
-    backgroundColor: '#F5F5F7',
-    width: node.scrollWidth,
-    height: node.scrollHeight,
-  });
-
-  if (!blob) {
-    throw new Error('Impossibile generare lo screenshot');
-  }
-
-  return blob;
-};
+          };
+  
+          const timeout = window.setTimeout(finish, 2000);
+  
+          img.addEventListener('load', finish, { once: true });
+          img.addEventListener('error', finish, { once: true });
+        });
+      })
+    );
+  
+    await document.fonts?.ready;
+  
+    const blob = await toBlob(node, {
+      cacheBust: true,
+      backgroundColor: '#F5F5F7',
+      width: node.scrollWidth,
+      height: node.scrollHeight,
+    });
+  
+    if (!blob) {
+      throw new Error('Impossibile generare lo screenshot');
+    }
+  
+    return blob;
+  };
 
   const generateScreenshots = async () => {
   if (
