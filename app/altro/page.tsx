@@ -138,21 +138,22 @@ export default function AltroPage() {
         }
 
           const { data: alboData } = await supabase
-            .from("albo_doro")
-            .select(`
-              id,
-              year,
-              winner,
-              standings_snapshot,
-              scorers_snapshot,
-              bracket_snapshot,
-              media_zip_url
-            `)
-            .order("year", { ascending: false });
-          
+          .from("albo_doro")
+          .select(`
+            id,
+            year,
+            winner,
+            runner_up,
+            standings_snapshot,
+            scorers_snapshot,
+            bracket_snapshot,
+            media_zip_url
+          `)
+          .order("year", { ascending: false });
+                  
           if (alboData) {
             setAlboDoro(
-              alboData.map((a) => ({
+              alboData.map(a => ({
                 id: a.id,
                 year: a.year,
                 winner: a.winner,
