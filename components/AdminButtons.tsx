@@ -21,22 +21,25 @@ export interface TeamLiberatorie {
 }
 
 export interface AlboDoroData {
-  year: number;
+  year: number
+
+  winner: string
+  runnerUp: string
 
   standings_snapshot: {
-    gironeA: any[];
-    gironeB: any[];
-  };
+    gironeA: TeamStats[]
+    gironeB: TeamStats[]
+  }
 
-  scorers_snapshot: any[];
+  scorers_snapshot: TopScorer[]
 
   bracket_snapshot: {
-    quarti: any[];
-    semifinali: any[];
-    finali: any[];
-  };
+    quarti: MatchCard[]
+    semifinali: MatchCard[]
+    finali: MatchCard[]
+  }
 
-  media_zip_url?: string | null;
+  media_zip_url: string | null
 }
 
 export interface EventoProloco {
