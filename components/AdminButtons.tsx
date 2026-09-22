@@ -2477,16 +2477,29 @@ export const AdminSaveAlboDoro: React.FC<AdminSaveAlboDoroProps> = ({ onSave, cu
               </div>
             </div>
   
-            {/* Toolbar */}
-            <div className="bg-white px-3 py-3 flex gap-2 border-b overflow-x-auto">
-              {["GIRONI", "MARCATORI", "FASE FINALE", "MEDIA"].map((tab) => (
-                <div
-                  key={tab}
-                  className="whitespace-nowrap bg-[#581C24] text-white text-[10px] font-bold px-3 py-1 rounded-full"
-                >
-                  {tab}
-                </div>
-              ))}
+            {/* TAB NAVIGATION */}
+            <div className="relative z-20 -mt-8 px-3 mb-6">
+              <div className="bg-white rounded-2xl shadow-lg p-2 flex justify-center gap-2 max-w-md mx-auto">
+                {(['gironi', 'marcatori', 'fase-finale', 'media'] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`flex-1 py-3 rounded-xl text-[11px] font-black uppercase transition-all ${
+                      activeTab === tab
+                        ? 'bg-[#581C24] text-white shadow-md'
+                        : 'text-[#581C24]'
+                    }`}
+                  >
+                    {tab === 'gironi'
+                      ? 'GIRONI'
+                      : tab === 'marcatori'
+                      ? 'MARCATORI'
+                      : tab === 'fase-finale'
+                      ? 'FASE FINALE'
+                      : 'MEDIA'}
+                  </button>
+                ))}
+              </div>
             </div>
   
             <div className="p-4 space-y-5">
