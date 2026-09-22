@@ -153,15 +153,15 @@ export default function AltroPage() {
                   
           if (alboData) {
             setAlboDoro(
-              alboData.map(a => ({
+              (anni ?? []).map(a => ({
                 id: a.id,
                 year: a.year,
                 winner: a.winner,
-                runnerUp: a.runner_up,
-                standings_snapshot: a.standings_snapshot,
-                scorers_snapshot: a.scorers_snapshot,
-                bracket_snapshot: a.bracket_snapshot,
-                media_zip_url: a.media_zip_url,
+                runnerUp: "",
+                standings_snapshot: { gironeA: [], gironeB: [] },
+                scorers_snapshot: [],
+                bracket_snapshot: { quarti: [], semifinali: [], finali: [] },
+                media_zip_url: null,
               }))
             );
           }
