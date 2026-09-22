@@ -142,8 +142,8 @@ export default function AlboDoroPage() {
           {type === "gold" ? "1°" : type === "silver" ? "2°" : "3°"}
         </span>
       </div>
-    )
-  }
+    );
+  };
 
   if (loading) {
     return (
