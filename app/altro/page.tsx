@@ -17,6 +17,8 @@ import {
   type Sponsor,
   type ContattiData
 } from '@/components/AdminButtons';
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 
 // ✅ AGGIUNTO 'social' ai tipi
 type SectionId = 'liberatorie' | 'albo-oro' | 'regolamento' | 'eventi' | 'sponsor' | 'contatti' | 'social';
@@ -113,7 +115,9 @@ export default function AltroPage() {
     instagram: 'https://instagram.com/proloco',
     whatsapp: '+39 333 1234567'
   });
-
+  const [alboDoro, setAlboDoro] = useState<
+    { id: string; year: number; winner: string }[]
+  >([]);
   const [isGenerating, setIsGenerating] = useState<'coming-soon' | 'classifica' | 'partite-giornata' | null>(null);
 
   useEffect(() => {
@@ -135,6 +139,15 @@ export default function AltroPage() {
             website: s.website_url || undefined
           })));
         }
+
+          const { data: alboData } = await supabase
+            .from("albo_doro")
+            .select("id, year, winner")
+            .order("year", { ascending: false });
+          
+          if (alboData) {
+            setAlboDoro(alboData);
+          }
 
         const { data: contactsData } = await supabase
           .from("contacts")
@@ -611,25 +624,44 @@ export default function AltroPage() {
                     </div>
                   )}
 
-                  {item.id === 'albo-oro' && (
+                  {item.id === "albo-oro" && (
                     <div>
-                      <h2 className="text-lg font-black text-[#581C24] uppercase tracking-wider mb-4">Albo d'Oro</h2>
-                      {alboDoro ? (
-                        <div className="space-y-4">
-                          <div className="bg-gradient-to-br from-[#FFD700]/20 to-[#FFD700]/5 rounded-xl p-6 text-center border-2 border-[#FFD700]">
-                            <p className="text-sm text-gray-600 uppercase font-bold mb-2">Vincitore Edizione {alboDoro.year}</p>
-                            <p className="text-3xl font-black text-[#581C24]">{alboDoro.winner}</p>
-                            <p className="text-sm text-gray-500 mt-2">Finalista: {alboDoro.runnerUp}</p>
-                          </div>
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-lg font-black text-[#581C24] uppercase tracking-wider">
+                          Albo d'Oro
+                        </h2>
+                  
+                        {isStaffMode && (
+                          <AdminSaveAlboDoro />
+                        )}
+                      </div>
+                  
+                      {alboDoro.length === 0 ? (
+                        <div className="text-center py-10 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
+                          <p className="text-gray-500 font-medium">
+                            Nessuna edizione archiviata.
+                          </p>
                         </div>
                       ) : (
-                        <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
-                          <p className="text-gray-500 font-medium">I dati dell'Albo d'Oro verranno pubblicati a fine torneo.</p>
-                        </div>
-                      )}
-                      {isStaffMode && (
-                        <div className="mt-6 pt-4 border-t border-gray-200">
-                          <AdminSaveAlboDoro currentYear={new Date().getFullYear()} onSave={setAlboDoro} />
+                        <div className="space-y-3">
+                          {alboDoro.map((edizione) => (
+                            <Link
+                              key={edizione.id}
+                              href={`/albo-doro/${edizione.year}`}
+                              className="flex items-center justify-between p-4 rounded-xl bg-white border hover:border-[#581C24] hover:shadow-md transition-all"
+                            >
+                              <div>
+                                <p className="font-black text-[#581C24]">
+                                  TROFEO SARNONICO {edizione.year}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  Vincitore: {edizione.winner}
+                                </p>
+                              </div>
+                  
+                              <ChevronRight className="w-5 h-5 text-[#581C24]" />
+                            </Link>
+                          ))}
                         </div>
                       )}
                     </div>
